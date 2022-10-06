@@ -158,12 +158,12 @@ export class BitgetApi implements ExchangeApi {
     const { apiKey, apiSecret, apiPassphrase } = this;
     // const { authVersion } = getConfig();
 
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().getTime();
     const mParams = String(JSON.stringify(params)).slice(1, -1);
     const formatedParams = String(mParams).replace(/\\/g, '');
     const data = (method === 'GET' || method === 'DELETE') ? this.formatQuery(params) : formatedParams;
     const message = timestamp + method + endpoint + data;
-    // console.log('message =>', message);
+    console.log('message =>', message);
     const signature = await this.signMessage(message, apiSecret);
     const headers: { [header: string]: number | string } = {
       'ACCESS-KEY': apiKey,
@@ -249,9 +249,9 @@ export class BitgetApi implements ExchangeApi {
   //  Account
   // ---------------------------------------------------------------------------------------------------
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-single-account Get Single Account} */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List} */
   getAccountInfo(params?: { [key: string]: any; }): Promise<AccountInfo> {
-    return this.get(`api/mix/v1/account/accounts`, { isPublic: true });
+    return this.get(`api/mix/v1/account/accounts`, { params });
   }
 
   getBalances(params?: { [key: string]: any }): Promise<Balance[]> { return {} as any; }

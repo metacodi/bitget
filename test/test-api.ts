@@ -40,7 +40,8 @@ const testApi = async () => {
 
     const api = new BitgetApi(options);
 
-
+    
+     console.log('getAccountInfo() =>', await api.getAccountInfo({ productType: 'umcbl'}));
 
   } catch (error) {
     console.error('API ERROR', error);
