@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { createHmac } from 'crypto';
 import { METHODS } from "http";
 
-import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest } from '@metacodi/abstract-exchange';
+import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, AssetInfo } from '@metacodi/abstract-exchange';
 // import { BitgetMarketType } from "./types/bitget.types";
 // import { formatMarketType } from './types/bitget-parsers';
 
@@ -250,9 +250,40 @@ export class BitgetApi implements ExchangeApi {
   //  Account
   // ---------------------------------------------------------------------------------------------------
 
+  /*
+    {
+      "marginCoin":"USDT",
+      "locked":"0.31876482",
+      "available":"10575.26735771",
+      "crossMaxAvailable":"10580.56434289",
+      "fixedMaxAvailable":"10580.56434289",
+      "maxTransferOut":"10572.92904289",
+      "equity":"10582.90265771",
+      "usdtEquity":"10582.902657719473",
+      "btcEquity":"0.204885807029"
+    }
+  */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List} */
-  getAccountInfo(params?: { [key: string]: any; }): Promise<AccountInfo> {
-    return this.get(`api/mix/v1/account/accounts`, { params });
+  async getAccountInfo(): Promise<AccountInfo> {
+    const { market } = this;
+    const params = { productType: 'umcbl'};
+    return this.get(`api/mix/v1/account/accounts`, { params }).then(response => {
+      const data = response.data[0];
+      const balances: AssetInfo[] = (response.data as any[]).map(d => ({ asset: d.marginCoin, locked: d.locked, free: d.available }));
+      return {
+        accountType: market,
+        balances,
+        // makerCommission: number;
+        // takerCommission: number;
+        // buyerCommission: number;
+        // sellerCommission: number;
+        // canTrade: boolean;
+        // canWithdraw: boolean;
+        // canDeposit: boolean;
+        // updateTime: number;
+        // permissions: MarketType[];
+      } as any;
+    });
   }
 
   getBalances(params?: { [key: string]: any }): Promise<Balance[]> { return {} as any; }
