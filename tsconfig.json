@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2015",
+    "lib": ["es2018", "DOM"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "outDir": "./dist/",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "resolveJsonModule": false,
+    "strictNullChecks": false,
+    "removeComments": true,
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "strict": true,
+  },
+  "exclude": [
+    "dist",
+    "test",
+    "precode",
+    "publish",
+    "node_modules",
+  ]
+}
