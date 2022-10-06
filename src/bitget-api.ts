@@ -2,15 +2,26 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { createHmac } from 'crypto';
 import { METHODS } from "http";
 
-import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions } from '@metacodi/abstract-exchange';
+import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest } from '@metacodi/abstract-exchange';
+// import { BitgetMarketType } from "./types/bitget.types";
+// import { formatMarketType } from './types/bitget-parsers';
 
 
 
-export class BitgetApi { // implements ExchangeApi {
-  
-  baseUrl(): string { return `www.bitget.com` };
+/** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
 
-  protected options: ApiOptions;
+export class BitgetApi implements ExchangeApi {
+
+  /** Retorna la url base sense el protocol.
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#restapi Rest Api}
+   * 
+   *  Bitget account can be used for login on Demo Trading. If you already have an Bitget account, you can log in directly.
+   *  Start API Demo Trading by the following steps:
+   *  Login Bitget —> Assets —> Start Demo Trading —> Personal Center —> Demo Trading API -> Create Demo Trading V5 APIKey —> Start your Demo Trading
+   */
+  baseUrl(): string { return `api.bitget.com` };
+
+  options: ApiOptions;
 
   constructor(
     options?: ApiOptions,
@@ -22,17 +33,19 @@ export class BitgetApi { // implements ExchangeApi {
   // ---------------------------------------------------------------------------------------------------
   //  options
   // ---------------------------------------------------------------------------------------------------
-  
+
+
   get market(): MarketType { return this.options?.market; }
 
+  /** {@link https://www.bitget.com/en/account/newapi API Management} */
   get apiKey(): string { return this.options?.apiKey; }
-  
+
   get apiSecret(): string { return this.options?.apiSecret; }
-  
+
   get apiPassphrase(): string { return this.options?.apiPassphrase; }
-  
+
   get isTest(): boolean { return !!this.options?.isTest; }
-  
+
   get defaultOptions(): Partial<ApiOptions> {
     return {
       isTest: false,
@@ -76,7 +89,7 @@ export class BitgetApi { // implements ExchangeApi {
     const config: AxiosRequestConfig<any> = {
       method,
       // url: 'https://' + [baseUrl, endpoint].join('/'),
-      headers: { ...headers as any},
+      headers: { ...headers as any },
       // timeout: 1000 * 60 * 5, // 5 min.
     };
 
@@ -87,21 +100,23 @@ export class BitgetApi { // implements ExchangeApi {
       endpoint += concat + query;
     }
 
+    //** Per a totes les consultes */
+    config.headers['Content-Type'] = 'application/json';
+    config.headers['Locale'] = 'en-US';
+
     if (method === 'POST' || method === 'PUT') {
-      config.headers['Content-Type'] = 'application/json' ;
-      config.headers['Accept'] = 'application/json' ;
       config.data = body;
-    }1
+    } 1
 
     if (!isPublic) {
       const authHeaders = await this.getAuthHeaders(method, '/' + endpoint, body);
       config.headers = { ...config.headers, ...authHeaders } as any;
     }
-    
+
     config.url = 'https://' + [baseUrl, endpoint].join('/');
 
     console.log(config);
-    
+
     return axios(config).then(response => {
       // console.log(config.url, response);
       if (response.status !== 200) { throw response; }
@@ -137,10 +152,12 @@ export class BitgetApi { // implements ExchangeApi {
     }
   }
 
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#api-verification API Verificatio} */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#signature Signature} */
   protected async getAuthHeaders(method: string, endpoint: string, params: any) {
     const { apiKey, apiSecret, apiPassphrase } = this;
     // const { authVersion } = getConfig();
-    
+
     const timestamp = new Date().toISOString();
     const mParams = String(JSON.stringify(params)).slice(1, -1);
     const formatedParams = String(mParams).replace(/\\/g, '');
@@ -149,11 +166,10 @@ export class BitgetApi { // implements ExchangeApi {
     // console.log('message =>', message);
     const signature = await this.signMessage(message, apiSecret);
     const headers: { [header: string]: number | string } = {
-      'OK-ACCESS-KEY': apiKey,
-      'OK-ACCESS-SIGN': signature,
-      'OK-ACCESS-TIMESTAMP': timestamp,
-      'OK-ACCESS-PASSPHRASE': apiPassphrase || '',
-      'x-simulated-trading': this.isTest ? '1' : '0',
+      'ACCESS-KEY': apiKey,
+      'ACCESS-SIGN': signature,
+      'ACCESS-TIMESTAMP': timestamp,
+      'ACCESS-PASSPHRASE': apiPassphrase || '',
     };
     return headers;
   }
@@ -192,7 +208,7 @@ export class BitgetApi { // implements ExchangeApi {
     // Si no s'ha pogut importar la funció en entorn browser, li donem suport.
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secret);
-    const algorithm = {name: 'HMAC', hash: {name: 'SHA-256'}};
+    const algorithm = { name: 'HMAC', hash: { name: 'SHA-256' } };
     const extractable = false;
     const keyUsages: KeyUsage[] = ['sign'];
     const key = await window.crypto.subtle.importKey('raw', keyData, algorithm, extractable, keyUsages);
@@ -217,8 +233,56 @@ export class BitgetApi { // implements ExchangeApi {
 
 
   // ---------------------------------------------------------------------------------------------------
-  //  Public
+  //  Market
   // ---------------------------------------------------------------------------------------------------
+
+  getExchangeInfo(): Promise<ExchangeInfo> { return {} as any; }
+
+  getPriceTicker(symbol: SymbolType): Promise<MarketPrice> { return {} as any; }
+
+  getKlines(params: KlinesRequest): Promise<MarketKline[]> { return {} as any; }
+
+  // getOrderBookTicker(params: OrderBookTickerRequest): Promise<OrderBookTicker | OrderBookTicker[]> { return {} as any; }
+
+
+  // ---------------------------------------------------------------------------------------------------
+  //  Account
+  // ---------------------------------------------------------------------------------------------------
+
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-single-account Get Single Account} */
+  getAccountInfo(params?: { [key: string]: any; }): Promise<AccountInfo> {
+    return this.get(`api/mix/v1/account/accounts`, { isPublic: true });
+  }
+
+  getBalances(params?: { [key: string]: any }): Promise<Balance[]> { return {} as any; }
+
+  getPositions(params?: { [key: string]: any }): Promise<Position[]> { return {} as any; }
+
+  getLeverage(symbol: SymbolType, mode?: MarginMode): Promise<LeverageInfo> { return {} as any; }
+
+  setLeverage(params: LeverageInfo): void { return {} as any; }
+
+
+  //  Account Orders
+  // ---------------------------------------------------------------------------------------------------
+
+  getAllOrders(params: GetOrdersRequest): Promise<Order[]> { return {} as any; }
+
+  getOpenOrders(params: GetOpenOrdersRequest): Promise<Order[]> { return {} as any; }
+
+  getOrder(params: GetOrderRequest): Promise<Order> { return {} as any; }
+
+  // getAccountTradeList(params: GetOrdersRequest): Promise<Order[]> { return {} as any; }
+
+
+  //  Trade Orders
+  // ---------------------------------------------------------------------------------------------------
+
+  postOrder(params: PostOrderRequest): Promise<Order> { return {} as any; }
+
+  cancelOrder(params: CancelOrderRequest): Promise<Order> { return {} as any; }
+
+  cancelAllSymbolOrders(symbol: SymbolType): Promise<Order> { return {} as any; }
 
 
 }
