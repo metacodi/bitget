@@ -156,20 +156,23 @@ export class BitgetApi implements ExchangeApi {
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#signature Signature} */
   protected async getAuthHeaders(method: string, endpoint: string, params: any) {
     const { apiKey, apiSecret, apiPassphrase } = this;
-    // const { authVersion } = getConfig();
 
-    const timestamp = new Date().getTime();
+    const timestamp = Date.now();
     const mParams = String(JSON.stringify(params)).slice(1, -1);
     const formatedParams = String(mParams).replace(/\\/g, '');
     const data = (method === 'GET' || method === 'DELETE') ? this.formatQuery(params) : formatedParams;
     const message = timestamp + method + endpoint + data;
-    console.log('message =>', message);
+    // console.log('message =>', message);
     const signature = await this.signMessage(message, apiSecret);
+    const locale = 'en-US';
     const headers: { [header: string]: number | string } = {
-      'ACCESS-KEY': apiKey,
       'ACCESS-SIGN': signature,
       'ACCESS-TIMESTAMP': timestamp,
-      'ACCESS-PASSPHRASE': apiPassphrase || '',
+      'ACCESS-KEY': apiKey,
+      'ACCESS-PASSPHRASE': apiPassphrase,
+      'Content-Type': 'application/json',
+      Cookie: 'locale=' + locale,
+      locale,
     };
     return headers;
   }
@@ -179,7 +182,6 @@ export class BitgetApi implements ExchangeApi {
     if (!!params && JSON.stringify(params).length !== 2) {
       const serialisedParams = this.serialiseParams(params, { encodeValues: true });
       return '?' + serialisedParams;
-      // return '?' + qs.stringify(params)
     } else {
       return '';
     }
@@ -191,14 +193,13 @@ export class BitgetApi implements ExchangeApi {
     const encodeValues = options.encodeValues === undefined ? true : options.encodeValues;
     return Object.keys(params).map(key => {
       const value = params[key];
-      if (strictValidation && value === undefined) {
+      if (strictValidation && (value === null || value === undefined || isNaN(value))) {
         throw new Error('Failed to sign API request due to undefined parameter');
       }
-      const encodedValue = encodeValues ? encodeURIComponent(value) : value;
+      const encodedValue = value ? (encodeValues ? encodeURIComponent(value) : value) : null;
       return `${key}=${encodedValue}`;
     }).join('&');
   };
-
 
   async signMessage(message: string, secret: string): Promise<string> {
     // Si és possible, fem servir la funció de crypto.
