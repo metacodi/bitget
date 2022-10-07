@@ -8,20 +8,24 @@ import { BitgetMarketType, BitgetWsChannelEvent } from './bitget.types';
 
 
 export const parseSymbol = (symbol: string): SymbolType => {
+  // TODO: Resoldre el symbol a partir d'una llista obtinguda de l'exchange.
   switch (symbol) {
-    case 'BTCUSDT': return 'BTC_USDT';
-    case 'ETCUSDT': return 'ETC_USDT';
-    case 'BNBUSDT': return 'BNB_USDT';
+    case 'BTCUSDT': return { baseAsset: 'BTC', quoteAsset: 'USDT' };
+    case 'ETCUSDT': return { baseAsset: 'ETC', quoteAsset: 'USDT' };
+    case 'BNBUSDT': return { baseAsset: 'BNB', quoteAsset: 'USDT' };
     default: throw ({ message: `No s'ha implementat el parser Bitget pel symbol '${symbol}'` });
   }
 }
 
 export const formatSymbol = (symbol: SymbolType): string => {
-  return symbol.replace('_', '');
+  // TODO: Resoldre el symbol a partir d'una llista obtinguda de l'exchange.
+  const { baseAsset, quoteAsset } = symbol;
+  return `${baseAsset}${quoteAsset}`;
 }
 
 
 export const parseMarketType = (market: BitgetMarketType): MarketType => {
+  // TODO: Obtenir el producte a partir de la llista de símbols obtinguda de l'exchange.
   switch (market) {
     case 'SP': return 'spot';
     case 'mc': return 'futures';
@@ -32,6 +36,7 @@ export const parseMarketType = (market: BitgetMarketType): MarketType => {
 }
 
 export const formatMarketType = (market: MarketType): BitgetMarketType => {
+  // TODO: Obtenir el producte a partir de la llista de símbols obtinguda de l'exchange.
   switch (market) {
     case 'spot': return 'SP';
     // case 'futures': return 'FUTURES';

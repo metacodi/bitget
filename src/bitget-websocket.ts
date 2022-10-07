@@ -335,7 +335,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const instId = `${formatSymbol(symbol)}`;
     const instType = this.bitgetMarket;
     // NOTA: L'ordre dels paràmetres és important per fer mathcing de la channelKey.
-    return this.registerChannelSubscription({ instType, channel, instId });
+    return this.registerChannelSubscription({ channel, instType, instId });
   }
 
   /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#candlesticks-channel Candlesticks channel} */
@@ -344,7 +344,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const instId = `${formatSymbol(symbol)}`;
     const instType = this.bitgetMarket;
     // NOTA: L'ordre dels paràmetres és important per fer mathcing de la channelKey.
-    return this.registerChannelSubscription({ instType, channel, instId });
+    return this.registerChannelSubscription({ channel, instType, instId });
   }
 
 
@@ -358,7 +358,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const instId = asset ? asset : 'default';
     const instType = this.market === 'spot' ? 'spbl' : 'umcbl';
     // NOTA: L'ordre dels paràmetres és important per fer mathcing de la channelKey.
-    return this.registerChannelSubscription({ instType, channel, instId });
+    return this.registerChannelSubscription({ channel, instType, instId });
   }
 
   /** {@link } */
@@ -384,7 +384,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
 
   protected registerChannelSubscription(args: BitgetWsSubscriptionArguments | BitgetWsSubscriptionArguments[]) {
     if (!Array.isArray(args)) { args = [args] };
-    // Ex: channelKey = 'orders#SWAP;orders-algo#SWAP'
+    // Ex: channelKey = 'tickers#USDT'
     const channelKey = args.map(arg => buildChannelKey(arg)).join(';');
     const stored = this.emitters[channelKey]
     if (stored) { return stored; }
