@@ -1,15 +1,12 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { createHmac } from 'crypto';
-import { METHODS } from "http";
+import moment, { unitOfTime } from 'moment';
 
-import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, AssetInfo, MarketSymbol, Limit } from '@metacodi/abstract-exchange';
-// import { BitgetMarketType } from "./types/bitget.types";
-// import { formatMarketType } from './types/bitget-parsers';
-
+import { timestamp } from "@metacodi/node-utils";
+import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, AssetInfo, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType } from '@metacodi/abstract-exchange';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
-
 export class BitgetApi implements ExchangeApi {
 
   /** Retorna la url base sense el protocol.
@@ -35,7 +32,6 @@ export class BitgetApi implements ExchangeApi {
   // ---------------------------------------------------------------------------------------------------
   //  options
   // ---------------------------------------------------------------------------------------------------
-
 
   get market(): MarketType { return this.options?.market; }
 
@@ -241,11 +237,9 @@ export class BitgetApi implements ExchangeApi {
 
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Symbols - Spot} */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols - Futures} */
-  async getExchangeInfo(): Promise<ExchangeInfo> {
-    const params = this.market === 'futures' ? { productType: 'umcbl' } : {};
-    const urlMarket = this.market === 'futures' ? `api/mix/v1/market/contracts` : `api/spot/v1/public/products`;
-
-    let limits: Limit[] = [];
+  async getExchangeInfo(): Promise<any> {
+    // Obtenim els límits.
+    const limits: Limit[] = [];
     if (this.market === 'spot') {
       limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
       limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
@@ -253,48 +247,160 @@ export class BitgetApi implements ExchangeApi {
       limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
       limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
     }
-    return this.get(urlMarket, { params }).then(response => {
-      let symbols: MarketSymbol[] = [];
-      const data: any[] = response;
-      // data.map(s => {
-      //   if (this.market === 'spot') {
-      //     symbols.push({
-      //       symbol: {
-      //         baseAsset: 
-      //         qu
-      //       },
-      //       ready: s.status === 'online',
-      //       quotePrecision?: 3,
-      //       basePrecision?: 8,
-      //       quantityPrecision?: s.quantityScale,
-      //       pricePrecision?: s.priceScale,
-      //     });
-  
-      //   } else if (this.market === 'futures') {
-  
-      //   }
-      // });
+    // Obtenim els símbols.
+    this.symbols = [];
+    const url = this.market === 'spot' ? `api/spot/v1/public/products` : `api/mix/v1/market/contracts`;
+    if (this.market === 'spot') {
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Symbols - Spot} */
+      const response = await this.get(url);
+      if (response?.msg !== 'success') { throw `No s'han pogut obtenir els símbols d'spot a Bitget.`; }
+      this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType: 'spot' })));
 
-      return { symbols, limits }
+    } else {
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols - Futures} */
+      ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
+        if (this.isTest) { productType = `s${productType}`; }
+        const response = await this.get(url, { params: { productType } });
+        if (response?.msg !== 'success') { throw `No s'han pogut obtenir els símbols pel producte '${productType}' de futurs a Bitget.`; }
+        this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType })));
+      });
+    }
+  }
+
+  getSymbolProduct(symbol: SymbolType): string {
+    const { baseAsset, quoteAsset } = symbol;
+    const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
+    if (found) { return found.symbol; } else { throw `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
+  }
+
+  getProductType(symbol: SymbolType): string {
+    const { baseAsset, quoteAsset } = symbol;
+    const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
+    if (found) { return found.productType; } else { throw `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
+  }
+
+  getInstrumentId(symbol: SymbolType): string {
+    const { baseAsset, quoteAsset } = symbol;
+    const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
+    if (found) { return found.symbolName; } else { throw `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
+  }
+  
+  getSymbolType(instId: string): SymbolType {
+    const found = this.symbols.find(s => s.symbolName === instId);
+    if (found) {
+      return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
+    } else { throw `No s'ha trobat el símbol ${instId} a Bitget.`; }
+  }
+
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-single-ticker Get Single Ticker}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-symbol-mark-price Get Symbol Mark Price}
+   */
+  async getPriceTicker(symbol: SymbolType): Promise<MarketPrice> {
+    const { baseAsset, quoteAsset } = symbol;
+    const url = this.market === 'spot' ? `api/spot/v1/market/ticker` : `api/mix/v1/market/mark-price`;
+    const bitgetSymbol = this.getSymbolProduct(symbol);
+    return this.get(`${url}?symbol=${bitgetSymbol}`, { isPublic: true }).then(response => {
+      if (response?.msg !== 'success') { throw `No s'han pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.`; }
+      const data = response.data[0];
+      if (this.market === 'spot') {
+        return {
+          symbol,
+          price: +data.close,
+          timestamp: timestamp(data.ts),
+          baseVolume: +data.baseVol,
+          quoteVolume: +data.quoteVol,
+        }
+      } else {
+        return {
+          symbol,
+          price: +data.markPrice,
+          timestamp: timestamp(+data.timestamp),
+          baseVolume: undefined,
+          quoteVolume: undefined,
+        }
+      }
     });
   }
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Symbols - Spot} */
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols - Futures} */
-  async getSymbols(): Promise<any[]> {
-    const params = this.market === 'futures' ? { productType: 'umcbl' } : {};
-    const urlMarket = this.market === 'futures' ? `api/mix/v1/market/contracts` : `api/spot/v1/public/products`;
-
-    return this.get(urlMarket, { params }).then(response => {
-      this.symbols = response.data;
-      return this.symbols;
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-candle-data Get Candle Data}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-candle-data Get Candle Data}
+   */
+  async getKlines(params: KlinesRequest): Promise<MarketKline[]> {
+    const { limit } = params;
+    const { baseAsset, quoteAsset } = params.symbol;
+    const url = this.market === 'spot' ? `api/spot/v1/market/candles` : `api/mix/v1/market/candles`;
+    const symbol = this.getSymbolProduct(params.symbol);
+    const unit = params.interval.charAt(params.interval.length - 1) as unitOfTime.DurationConstructor;
+    const interval = ['h', 'd', 'w', 'y'].includes(unit) ? params.interval.toLocaleUpperCase() : params.interval;
+    const intervalField = this.market === 'spot' ? 'period' : 'granularity';
+    const start: string | moment.MomentInput = params.start ? moment(params.start) : moment();
+    const endTime: string | moment.MomentInput = params.end ? moment(params.end) : '';
+    const startField = this.market === 'spot' ? 'after' : 'startTime';
+    const endField = this.market === 'spot' ? 'before' : 'endTime';
+    const toUnix = (time: string | moment.MomentInput): string => { return moment(time).unix().toString() + '000'; }
+    // Ex: ?symbol=BTCUSDT_UMCBL&granularity=300&startTime=1659406928000&endTime=1659410528000
+    const requestKlines = (query: string): Promise<MarketKline[]> => this.get(`${url}${query}`, { isPublic: true }).then(response => {
+      if (response?.msg !== 'success') { throw `No s'han pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.`; }
+      return (response.data as any[]).map(data => {
+        if (this.market === 'spot') {
+          return {
+            symbol: params.symbol,
+            interval: params.interval,
+            openTime: timestamp(+data.ts),
+            closeTime: calculateCloseTime(timestamp(+data.ts), params.interval),
+            open: +data.open,
+            high: +data.high,
+            low: +data.low,
+            close: +data.close,
+            baseVolume: +data.baseVol,
+            quoteVolume: +data.quoteVol,
+          }
+        } else {
+          return {
+            symbol: params.symbol,
+            interval: params.interval,
+            openTime: timestamp(+data[0]),
+            closeTime: calculateCloseTime(timestamp(+data[0]), params.interval),
+            open: +data[1],
+            high: +data[2],
+            low: +data[3],
+            close: +data[4],
+            baseVolume: +data[5],
+            quoteVolume: +data[6],
+          }
+        }
+      });
     });
+    const results: MarketKline[] = [];
+    
+    let startTime: string | moment.MomentInput = start;
+    if (!endTime && !limit) {
+      const query = this.formatQuery({ symbol, [intervalField]: interval });
+      results.push(...await requestKlines(query));
+
+    } else if (!endTime && !!limit) {
+      do {
+        const query = this.formatQuery({ symbol, [intervalField]: interval, [startField]: toUnix(startTime) });
+        const response = await requestKlines(query);
+        if (!response.length) { break; }
+        results.push(...response);
+        startTime = results[results.length - 1].openTime;
+      } while (results.length < limit);
+      if (results.length > limit) { results.splice(limit); }
+
+    } else {
+      do {
+        const query = this.formatQuery({ symbol, [intervalField]: interval, [startField]: toUnix(startTime), [endField]: toUnix(endTime) });
+        const response = await requestKlines(query);
+        if (!response.length) { break; }
+        results.push(...response);
+        startTime = results[results.length - 1].openTime;
+      } while (moment(startTime).isAfter(moment(endTime)));
+    }
+    return Promise.resolve(results);
   }
-
-
-  getPriceTicker(symbol: SymbolType): Promise<MarketPrice> { return {} as any; }
-
-  getKlines(params: KlinesRequest): Promise<MarketKline[]> { return {} as any; }
 
   // getOrderBookTicker(params: OrderBookTickerRequest): Promise<OrderBookTicker | OrderBookTicker[]> { return {} as any; }
 
@@ -303,19 +409,6 @@ export class BitgetApi implements ExchangeApi {
   //  Account
   // ---------------------------------------------------------------------------------------------------
 
-  /*
-    {
-      "marginCoin":"USDT",
-      "locked":"0.31876482",
-      "available":"10575.26735771",
-      "crossMaxAvailable":"10580.56434289",
-      "fixedMaxAvailable":"10580.56434289",
-      "maxTransferOut":"10572.92904289",
-      "equity":"10582.90265771",
-      "usdtEquity":"10582.902657719473",
-      "btcEquity":"0.204885807029"
-    }
-  */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List Futures} */
   /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-account Get Account List Spot} */
   async getAccountInfo(): Promise<AccountInfo> {

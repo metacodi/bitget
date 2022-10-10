@@ -2,13 +2,14 @@ import WebSocket from 'isomorphic-ws';
 import EventEmitter from 'events';
 import { Subject, interval, timer, Subscription } from 'rxjs';
 import { createHmac } from 'crypto';
+import moment from 'moment';
 
-import { MarketType, SymbolType, MarketPrice, KlinesRequest, MarketKline, KlineIntervalType, Order, CoinType, ApiOptions, isSubjectUnobserved, matchChannelKey, buildChannelKey } from '@metacodi/abstract-exchange';
+import { timestamp } from '@metacodi/node-utils';
+import { MarketType, SymbolType, MarketPrice, KlinesRequest, MarketKline, KlineIntervalType, Order, CoinType, ApiOptions, isSubjectUnobserved, matchChannelKey, buildChannelKey, calculateCloseTime } from '@metacodi/abstract-exchange';
 import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, WsAccountUpdate, WsBalancePositionUpdate } from '@metacodi/abstract-exchange';
 
 import { BitgetApi } from './bitget-api';
-import { BitgetMarketType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
-import { formatMarketType, formatSymbol, parseKlineTickerEvent, parsePriceTickerEvent } from './bitget-parsers';
+import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
 
 
 
@@ -53,7 +54,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   //  options
   // ---------------------------------------------------------------------------------------------------
 
-  get bitgetMarket(): BitgetMarketType { return formatMarketType(this.market); }
+  get instType(): BitgetInstrumentType { return this.market === 'spot' ? 'SP' : 'mc'; }
 
   get market(): MarketType { return this.options?.market; }
 
@@ -329,21 +330,25 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   //  Public channels
   // ---------------------------------------------------------------------------------------------------
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#tickers-channel Tickers channel} */
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#tickers-channel Tickers channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#tickers-channel Tickers channel}
+   */
   priceTicker(symbol: SymbolType): Subject<MarketPrice> {
     const channel: BitgetWsChannelType = `ticker`;
-    const instId = `${formatSymbol(symbol)}`;
-    const instType = this.bitgetMarket;
-    // NOTA: L'ordre dels paràmetres és important per fer mathcing de la channelKey.
+    const { instType } = this;
+    const instId = this.api.getInstrumentId(symbol);
     return this.registerChannelSubscription({ channel, instType, instId });
   }
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#candlesticks-channel Candlesticks channel} */
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#candlesticks-channel Candlesticks channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#candlesticks-channel Candlesticks channel}
+   */
   klineTicker(symbol: SymbolType, interval: KlineIntervalType): Subject<MarketKline> {
     const channel: BitgetWsChannelType = `candle${interval}`;
-    const instId = `${formatSymbol(symbol)}`;
-    const instType = this.bitgetMarket;
-    // NOTA: L'ordre dels paràmetres és important per fer mathcing de la channelKey.
+    const { instType } = this;
+    const instId = this.api.getInstrumentId(symbol);
     return this.registerChannelSubscription({ channel, instType, instId });
   }
 
@@ -434,8 +439,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     console.log('getChannelParser => ', arg);
     const channel = arg.channel.startsWith('candle') ? 'klines' : arg.channel;
     switch (channel) {
-      case 'ticker': return parsePriceTickerEvent;
-      case 'klines': return parseKlineTickerEvent;
+      case 'ticker': return this.parsePriceTickerEvent;
+      case 'klines': return this.parseKlineTickerEvent;
       // case 'account': return parseAccountUpdateEvent;
       // case 'balance_and_position': return parseBalancePositionUpdateEvent;
       // case 'orders': return parseOrderUpdateEvent;
@@ -454,6 +459,54 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     console.log(this.wsId, '=> unsubscribing...', arg);
     const data: BitgetWsSubscriptionRequest = { op: "unsubscribe", args: [arg] };
     this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error as any) : undefined);
+  }
+
+
+  // ---------------------------------------------------------------------------------------------------
+  //  parsers
+  // ---------------------------------------------------------------------------------------------------
+
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#tickers-channel Tickers channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#tickers-channel Tickers channel}
+   */
+  parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice {
+    const symbol = this.api.getSymbolType(ev.arg.instId);
+    const data = ev.data[0];
+    const baseVolume = +data.baseVolume;
+    const quoteVolume = +data.quoteVolume;
+    const ts = +data[this.market === 'spot' ? 'ts' : 'systemTime'];
+    return {
+      symbol,
+      price: +data.last,
+      baseVolume, quoteVolume,
+      timestamp: timestamp(moment(ts)),
+    }
+  }
+
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#candlesticks-channel Candlesticks channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#candlesticks-channel Candlesticks channel}
+   */
+  parseKlineTickerEvent(ev: BitgetWsChannelEvent): MarketKline {
+    const symbol = this.api.getSymbolType(ev.arg.instId);
+    const candle = ev.arg.channel.replace('candle', '');
+    const unit = candle.charAt(candle.length - 1);
+    const interval = (['H', 'D', 'W', 'Y'].includes(unit) ? candle.toLocaleLowerCase() : candle) as KlineIntervalType;
+    // En la primera connexió ens arriben 500 candles de cop, notifiquem només la darrera que és la més recent.
+    const data = ev.data[ev.data.length - 1];
+    const openTime = timestamp(moment(+data[0]));
+    const closeTime = calculateCloseTime(openTime, interval);
+    const baseVolume = +data[5];
+    const quoteVolume = +data[5] * +data[4];
+    return {
+      symbol, openTime, closeTime, interval,
+      open: +data[1],
+      high: +data[2],
+      low: +data[3],
+      close: +data[4],
+      baseVolume, quoteVolume,
+    }
   }
 
 

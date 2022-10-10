@@ -3,16 +3,15 @@ import moment from 'moment';
 import { timestamp } from '@metacodi/node-utils';
 import { ApiOptions, MarketType, SymbolType, MarketPrice, WsStreamType, KlineIntervalType, CoinType } from '@metacodi/abstract-exchange';
 
-import { parseMarketType, parseSymbol } from './bitget-parsers';
-
 
 // ---------------------------------------------------------------------------------------------------
 //  shared types
 // ---------------------------------------------------------------------------------------------------
 
-export type BitgetMarketType = 'SP' | 'mc';
+export type BitgetInstrumentType = 'SP' | 'mc';
 
 export type BitgetUrlMarketType = 'spot' | 'mix';
+
 
 
 
