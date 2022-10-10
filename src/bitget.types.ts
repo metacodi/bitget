@@ -1,7 +1,7 @@
 import moment from 'moment';
 
 import { timestamp } from '@metacodi/node-utils';
-import { ApiOptions, MarketType, SymbolType, MarketPrice, WsStreamType, KlineIntervalType } from '@metacodi/abstract-exchange';
+import { ApiOptions, MarketType, SymbolType, MarketPrice, WsStreamType, KlineIntervalType, CoinType } from '@metacodi/abstract-exchange';
 
 import { parseMarketType, parseSymbol } from './bitget-parsers';
 
@@ -11,6 +11,10 @@ import { parseMarketType, parseSymbol } from './bitget-parsers';
 // ---------------------------------------------------------------------------------------------------
 
 export type BitgetMarketType = 'SP' | 'mc';
+
+export type BitgetUrlMarketType = 'spot' | 'mix';
+
+
 
 
 // ---------------------------------------------------------------------------------------------------
@@ -35,7 +39,7 @@ export interface BitgetWsLoginRequest {
 
 export interface BitgetWsSubscriptionRequest {
   op: 'subscribe' | 'unsubscribe';
-  args: [ { [key: string]: any } ];
+  args: [{ [key: string]: any }];
 }
 
 export type BitgetWsChannelEvent = { arg: BitgetWsSubscriptionArguments } & { data: any[] };
