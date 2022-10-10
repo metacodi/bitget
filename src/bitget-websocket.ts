@@ -24,7 +24,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   /** Opcions de configuració. */
   protected options: WebsocketOptions;
   /** Referència a la instància del websocket subjacent. */
-  protected ws: WebSocket
+  protected ws: WebSocket;
   /** Subscripció al interval que envia un ping al servidor per mantenir viva la connexió.  */
   protected pingTimer?: Subscription;
   /** Subscriptor al timer que controla la resposta del servidor. */
