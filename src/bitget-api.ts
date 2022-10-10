@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { createHmac } from 'crypto';
 import { METHODS } from "http";
 
-import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, AssetInfo } from '@metacodi/abstract-exchange';
+import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, AssetInfo, MarketSymbol, Limit } from '@metacodi/abstract-exchange';
 // import { BitgetMarketType } from "./types/bitget.types";
 // import { formatMarketType } from './types/bitget-parsers';
 
@@ -22,6 +22,8 @@ export class BitgetApi implements ExchangeApi {
   baseUrl(): string { return `api.bitget.com` };
 
   options: ApiOptions;
+  user_id: String;
+  symbols: any[] = [];
 
   constructor(
     options?: ApiOptions,
@@ -237,7 +239,58 @@ export class BitgetApi implements ExchangeApi {
   //  Market
   // ---------------------------------------------------------------------------------------------------
 
-  getExchangeInfo(): Promise<ExchangeInfo> { return {} as any; }
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Symbols - Spot} */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols - Futures} */
+  async getExchangeInfo(): Promise<ExchangeInfo> {
+    const params = this.market === 'futures' ? { productType: 'umcbl' } : {};
+    const urlMarket = this.market === 'futures' ? `api/mix/v1/market/contracts` : `api/spot/v1/public/products`;
+
+    let limits: Limit[] = [];
+    if (this.market === 'spot') {
+      limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
+      limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
+    } else if (this.market === 'futures') {
+      limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
+      limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
+    }
+    return this.get(urlMarket, { params }).then(response => {
+      let symbols: MarketSymbol[] = [];
+      const data: any[] = response;
+      // data.map(s => {
+      //   if (this.market === 'spot') {
+      //     symbols.push({
+      //       symbol: {
+      //         baseAsset: 
+      //         qu
+      //       },
+      //       ready: s.status === 'online',
+      //       quotePrecision?: 3,
+      //       basePrecision?: 8,
+      //       quantityPrecision?: s.quantityScale,
+      //       pricePrecision?: s.priceScale,
+      //     });
+  
+      //   } else if (this.market === 'futures') {
+  
+      //   }
+      // });
+
+      return { symbols, limits }
+    });
+  }
+
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Symbols - Spot} */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols - Futures} */
+  async getSymbols(): Promise<any[]> {
+    const params = this.market === 'futures' ? { productType: 'umcbl' } : {};
+    const urlMarket = this.market === 'futures' ? `api/mix/v1/market/contracts` : `api/spot/v1/public/products`;
+
+    return this.get(urlMarket, { params }).then(response => {
+      this.symbols = response.data;
+      return this.symbols;
+    });
+  }
+
 
   getPriceTicker(symbol: SymbolType): Promise<MarketPrice> { return {} as any; }
 
@@ -263,13 +316,29 @@ export class BitgetApi implements ExchangeApi {
       "btcEquity":"0.204885807029"
     }
   */
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List} */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List Futures} */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-account Get Account List Spot} */
   async getAccountInfo(): Promise<AccountInfo> {
     const { market } = this;
-    const params = { productType: 'umcbl'};
-    return this.get(`api/mix/v1/account/accounts`, { params }).then(response => {
+    const params = this.market === 'futures' ? { productType: 'umcbl' } : {};
+    const urlMarket = this.market === 'futures' ? `api/mix/v1/account/accounts` : `api/spot/v1/account/assets`;
+
+    // ApiKey Info
+    /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#prepare-to-integrate Prepare to integrate} Permisions API */
+    /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-apikey-info Get ApiKey Info} */
+
+    const InfoApiKey = await this.get(`api/spot/v1/account/getInfo`);
+    console.log('InfoApiKey => ', InfoApiKey);
+
+    this.user_id = InfoApiKey?.data?.user_id;
+
+    const canWithdraw: boolean = InfoApiKey?.data?.authorities?.some((a: any) => a === 'withdraw');
+    const canTrade: boolean = InfoApiKey?.data?.authorities?.some((a: any) => a === 'trade');
+
+    return this.get(urlMarket, { params }).then(response => {
+      console.log(response);
       const data = response.data[0];
-      const balances: AssetInfo[] = (response.data as any[]).map(d => ({ asset: d.marginCoin, locked: d.locked, free: d.available }));
+      const balances: AssetInfo[] = (response.data as any[]).map(d => ({ asset: d.coinName, locked: d.lock, free: d.available }));
       return {
         accountType: market,
         balances,
@@ -277,11 +346,11 @@ export class BitgetApi implements ExchangeApi {
         // takerCommission: number;
         // buyerCommission: number;
         // sellerCommission: number;
-        // canTrade: boolean;
-        // canWithdraw: boolean;
-        // canDeposit: boolean;
+        canTrade,
+        canWithdraw,
+        canDeposit: true,
         // updateTime: number;
-        // permissions: MarketType[];
+        permissions: ['spot', 'futures']
       } as any;
     });
   }
@@ -316,5 +385,6 @@ export class BitgetApi implements ExchangeApi {
 
   cancelAllSymbolOrders(symbol: SymbolType): Promise<Order> { return {} as any; }
 
+  
 
 }

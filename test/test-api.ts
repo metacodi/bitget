@@ -34,6 +34,7 @@ const testApi = async () => {
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
+      // market: 'spot',
       market: 'futures',
       isTest,
     } as any;
@@ -41,7 +42,7 @@ const testApi = async () => {
     const api = new BitgetApi(options);
 
     
-    //  console.log('getAccountInfo() =>', await api.getAccountInfo());
+     console.log('getAccountInfo() =>', await api.getAccountInfo());
     //  console.log('getAccountInfo() =>', await api.getAccountInfo({ productType: 'umcbl'}));
 
     
