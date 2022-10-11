@@ -476,7 +476,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const baseVolume = +data.baseVolume;
     const quoteVolume = +data.quoteVolume;
     const ts = +data[this.market === 'spot' ? 'ts' : 'systemTime'];
-    return {
+    return { 
       symbol,
       price: +data.last,
       baseVolume, quoteVolume,

@@ -12,8 +12,9 @@ export type BitgetInstrumentType = 'SP' | 'mc';
 
 export type BitgetUrlMarketType = 'spot' | 'mix';
 
+export type BitgetOrderForceType = 'normal' | 'post_only' | 'fok' | 'ioc';
 
-
+export type BitgetOrderStatus = 'new' | 'partial_fill' | 'full_fill' | 'cancelled';
 
 
 // ---------------------------------------------------------------------------------------------------
