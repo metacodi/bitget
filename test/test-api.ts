@@ -2,7 +2,7 @@ import moment from 'moment';
 import { interval } from 'rxjs';
 import * as fs from 'fs';
 
-import { Resource } from '@metacodi/node-utils';
+import { Resource, Terminal } from '@metacodi/node-utils';
 import { ApiOptions } from '@metacodi/abstract-exchange';
 
 import { BitgetApi } from '../src/bitget-api';
@@ -45,7 +45,7 @@ const testApi = async () => {
       console.log('getExchangeInfo() =>', await api.getExchangeInfo());
       //  console.log('getAccountInfo() =>', await api.getAccountInfo().catch(e => console.log(e)));
       // console.log('getLeverage() =>', await api.getLeverage({ quoteAsset: 'USDT', baseAsset: 'BTC'}, 'isolated'));
-      console.log('setLeverage() =>', await api.setLeverage({ symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, coin: 'USDT', longLeverage: 75, shortLeverage: 75, mode: 'isolated'} ));
+      // console.log('setLeverage() =>', await api.setLeverage({ symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, coin: 'USDT', longLeverage: 75, shortLeverage: 75, mode: 'isolated'} ));
       // api.getExchangeInfo().then(async response => {
       // })
 
@@ -53,7 +53,8 @@ const testApi = async () => {
     
 
   } catch (error) {
-    console.log('API ERROR', error);
+    Terminal.error(error, false);
+    console.log(error);
   }
 };
 
