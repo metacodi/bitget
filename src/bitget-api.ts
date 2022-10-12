@@ -256,7 +256,7 @@ export class BitgetApi implements ExchangeApi {
       this.currencies = [];
       /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-coin-list Get Coin List} */
       const response = await this.get(`api/spot/v1/public/currencies`, { isPublic: true });
-      if (response?.msg !== 'success') { throw `No s'han pogut obtenir les monedes a Bitget.`; }
+      if (response?.msg !== 'success') { reject(`No s'han pogut obtenir les monedes a Bitget.`); }
       this.currencies.push(...response.data);
 
       // Obtenim els símbols.
@@ -265,16 +265,16 @@ export class BitgetApi implements ExchangeApi {
       if (this.market === 'spot') {
         /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-symbols Get Symbols} */
         const response = await this.get(url, { isPublic: true });
-        if (response?.msg !== 'success') { throw `No s'han pogut obtenir els símbols d'spot a Bitget.`; }
+        if (response?.msg !== 'success') { reject(`No s'han pogut obtenir els símbols d'spot a Bitget.`); }
         this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType: 'spot' })));
         resolve({ limits });
       } else {
         /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols} */
         const tareas: any[] = [];
-        ['umcbl', 'dmcbl', 'cmcbl'].forEach(async productType => {
+        ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
           if (this.isTest) { productType = `s${productType}`; }
           tareas.push(this.get(url, { params: { productType }, isPublic: true }).then(response => {
-            if (response?.msg !== 'success') { throw `No s'han pogut obtenir els símbols pel producte '${productType}' de futurs a Bitget.`; }
+            if (response?.msg !== 'success') { reject(`No s'han pogut obtenir els símbols pel producte '${productType}' de futurs a Bitget.`); }
             this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType })));
             return;
           }));
@@ -574,11 +574,11 @@ export class BitgetApi implements ExchangeApi {
   async setLeverage(params: SetLeverage): Promise<void> {
     const { baseAsset, quoteAsset } = params.symbol;
     const symbol = this.getSymbolProduct(params.symbol);
-    const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage+'', holdSide: params.mode === 'cross' ? 'crossed' : 'isolated' };
-    // const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage+'' };
+    // const responseLong = await this.post(`api/mix/v1/account/setMarginMode`, { params: dataLong });
+    const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage, holdSide: 'long' };
     const responseLong = await this.post(`api/mix/v1/account/setLeverage`, { params: dataLong });
     if (responseLong?.msg !== 'success') { throw `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
-    const dataShort = { symbol, marginCoin: quoteAsset, leverage: params.shortLeverage, holdSide: params.mode === 'cross' ? 'crossed' : 'isolated' };
+    const dataShort = { symbol, marginCoin: quoteAsset, leverage: params.shortLeverage, holdSide: 'short' };
     const responseShort = await this.post(`api/mix/v1/account/setLeverage`, { params: dataShort });
     if (responseShort?.msg !== 'success') { throw `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
     return Promise.resolve();
