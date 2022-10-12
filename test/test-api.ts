@@ -42,12 +42,13 @@ const testApi = async () => {
     const api = new BitgetApi(options);
 
     
-     console.log('getExchangeInfo() =>', await api.getExchangeInfo());
-    //  console.log('getAccountInfo() =>', await api.getAccountInfo().catch(e => console.log(e)));
-     api.getAccountInfo().then(r => console.log(r)).catch(e => {
-      console.log(e)
-     });
-    //  console.log('getAccountInfo() =>', await api.getAccountInfo({ productType: 'umcbl'}));
+      console.log('getExchangeInfo() =>', await api.getExchangeInfo());
+      //  console.log('getAccountInfo() =>', await api.getAccountInfo().catch(e => console.log(e)));
+      // console.log('getLeverage() =>', await api.getLeverage({ quoteAsset: 'USDT', baseAsset: 'BTC'}, 'isolated'));
+      console.log('setLeverage() =>', await api.setLeverage({ symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, coin: 'USDT', longLeverage: 20, shortLeverage: 50, mode: 'isolated'} ));
+      // api.getExchangeInfo().then(async response => {
+      // })
+
 
     
 

@@ -241,42 +241,47 @@ export class BitgetApi implements ExchangeApi {
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols - Futures}
    */
   async getExchangeInfo(): Promise<ExchangeInfo> {
-    // Obtenim els límits.
-    const limits: Limit[] = [];
-    if (this.market === 'spot') {
-      limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
-      limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
-    } else if (this.market === 'futures') {
-      limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
-      limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
-    }
+    return new Promise<any>(async (resolve: any, reject: any) => {
+      // Obtenim els límits.
+      const limits: Limit[] = [];
+      if (this.market === 'spot') {
+        limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
+        limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
+      } else if (this.market === 'futures') {
+        limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
+        limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
+      }
 
-    // Obtenim les monedes.
-    this.currencies = [];
-    /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-coin-list Get Coin List} */
-    const response = await this.get(`api/spot/v1/public/currencies`, { isPublic: true });
-    if (response?.msg !== 'success') { throw `No s'han pogut obtenir les monedes a Bitget.`; }
-    this.currencies.push(...response.data);
+      // Obtenim les monedes.
+      this.currencies = [];
+      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-coin-list Get Coin List} */
+      const response = await this.get(`api/spot/v1/public/currencies`, { isPublic: true });
+      if (response?.msg !== 'success') { throw `No s'han pogut obtenir les monedes a Bitget.`; }
+      this.currencies.push(...response.data);
 
-    // Obtenim els símbols.
-    this.symbols = [];
-    const url = this.market === 'spot' ? `api/spot/v1/public/products` : `api/mix/v1/market/contracts`;
-    if (this.market === 'spot') {
-      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-symbols Get Symbols} */
-      const response = await this.get(url, { isPublic: true });
-      if (response?.msg !== 'success') { throw `No s'han pogut obtenir els símbols d'spot a Bitget.`; }
-      this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType: 'spot' })));
-
-    } else {
-      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols} */
-      ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
-        if (this.isTest) { productType = `s${productType}`; }
-        const response = await this.get(url, { params: { productType }, isPublic: true });
-        if (response?.msg !== 'success') { throw `No s'han pogut obtenir els símbols pel producte '${productType}' de futurs a Bitget.`; }
-        this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType })));
-      });
-    }
-    return Promise.resolve({ limits });
+      // Obtenim els símbols.
+      this.symbols = [];
+      const url = this.market === 'spot' ? `api/spot/v1/public/products` : `api/mix/v1/market/contracts`;
+      if (this.market === 'spot') {
+        /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-symbols Get Symbols} */
+        const response = await this.get(url, { isPublic: true });
+        if (response?.msg !== 'success') { throw `No s'han pogut obtenir els símbols d'spot a Bitget.`; }
+        this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType: 'spot' })));
+        resolve({ limits });
+      } else {
+        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols} */
+        const tareas: any[] = [];
+        ['umcbl', 'dmcbl', 'cmcbl'].forEach(async productType => {
+          if (this.isTest) { productType = `s${productType}`; }
+          tareas.push(this.get(url, { params: { productType }, isPublic: true }).then(response => {
+            if (response?.msg !== 'success') { throw `No s'han pogut obtenir els símbols pel producte '${productType}' de futurs a Bitget.`; }
+            this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType })));
+            return;
+          }));
+        });
+        Promise.all(tareas).then(() => resolve({ limits }));
+      }
+    });
   }
 
   async getMarketSymbol(symbol: SymbolType): Promise<MarketSymbol> {
@@ -476,80 +481,75 @@ export class BitgetApi implements ExchangeApi {
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List Futures}
    */
   async getAccountInfo(): Promise<AccountInfo> {
-    return new Promise<AccountInfo>(async (resolve, reject) => {
-      // ApiKey Info
-      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-apikey-info Get ApiKey Info} */
-      const InfoApiKey = await this.get(`api/spot/v1/account/getInfo`);
-      this.user_id = InfoApiKey?.data?.user_id;
-      const canWithdraw = InfoApiKey?.data?.authorities?.some((a: any) => a === 'withdraw');
-      const canTrade = InfoApiKey?.data?.authorities?.some((a: any) => a === 'trade');
-      const canDeposit = InfoApiKey?.data?.authorities?.some((a: any) => a === 'deposit');
-      const accountInfo: AccountInfo = { canTrade, canWithdraw, canDeposit, balances: [], positions: [] };
+    // ApiKey Info
+    /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-apikey-info Get ApiKey Info} */
+    const InfoApiKey = await this.get(`api/spot/v1/account/getInfo`);
+    this.user_id = InfoApiKey?.data?.user_id;
+    const canWithdraw = InfoApiKey?.data?.authorities?.some((a: any) => a === 'withdraw');
+    const canTrade = InfoApiKey?.data?.authorities?.some((a: any) => a === 'trade');
+    const canDeposit = InfoApiKey?.data?.authorities?.some((a: any) => a === 'deposit');
+    const accountInfo: AccountInfo = { canTrade, canWithdraw, canDeposit, balances: [], positions: [] };
 
+    if (this.market === 'spot') {
+      // Balances
+      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-account Get Account List Spot} */
+      const response = await this.get(`api/spot/v1/account/assets`);
+      if (response?.msg !== 'success') { throw `No s'han pogut obtenir els balances per ${this.market} a Bitget.`; }
+      accountInfo.balances.push(...(response.data as any[]).map(b => {
+        const balance: Balance = {
+          asset: b.coinName,
+          balance: +b.available + +b.frozen,
+          available: +b.available,
+          locked: +b.frozen,
+          remainder: 0.0,
+          fee: 0.0,
+        };
+        return balance;
+      }));
+      return Promise.resolve<AccountInfo>(accountInfo);
 
-
-
-      if (this.market === 'spot') {
-        // Balances
-        /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-account Get Account List Spot} */
-        const response = await this.get(`api/spot/v1/account/assets`);
-        if (response?.msg !== 'success') { console.error(`No s'han pogut obtenir els balances per ${this.market} a Bitget.`); return}
+    } else {
+      // Balances futures
+      ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
+        if (this.isTest) { productType = `s${productType}`; }
+        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List} */
+        const response = await this.get(`api/mix/v1/account/accounts?productType=${productType}`);
+        if (response?.msg !== 'success') { throw `No s'han pogut obtenir els balances per ${this.market} a Bitget.`; }
         accountInfo.balances.push(...(response.data as any[]).map(b => {
           const balance: Balance = {
-            asset: b.coinName,
-            balance: +b.available + +b.frozen,
+            asset: b.marginCoin,
+            balance: +b.available + +b.locked,
             available: +b.available,
-            locked: +b.frozen,
+            locked: +b.locked,
             remainder: 0.0,
             fee: 0.0,
           };
           return balance;
         }));
-        resolve(accountInfo);
+      });
+      // Positions futures
+      ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
+        if (this.isTest) { productType = `s${productType}`; }
+        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-position Get All Position} */
+        const response = await this.get(`api/mix/v1/position/allPosition?productType=${productType}`);
+        if (response?.msg !== 'success') { throw `No s'han pogut obtenir les posicions per ${this.market} a Bitget.`; }
 
-      } else {
-        // Balances futures
-        ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
-          if (this.isTest) { productType = `s${productType}`; }
-          /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List} */
-          const response = await this.get(`api/mix/v1/account/accounts?productType=${productType}`);
-          if (response?.msg !== 'success') { console.error(`No s'han pogut obtenir els balances per ${this.market} ${productType} a Bitget.`); return}
-          accountInfo.balances.push(...(response.data as any[]).map(b => {
-            const balance: Balance = {
-              asset: b.marginCoin,
-              balance: +b.available + +b.locked,
-              available: +b.available,
-              locked: +b.locked,
-              remainder: 0.0,
-              fee: 0.0,
-            };
-            return balance;
-          }));
-        });
-        // Positions futures
-        ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
-          if (this.isTest) { productType = `s${productType}`; }
-          /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-position Get All Position} */
-          const response = await this.get(`api/mix/v1/position/allPosition?productType=${productType}`);
-          if (response?.msg !== 'success') { console.error(`No s'han pogut obtenir les posicions per ${this.market} ${productType} a Bitget.`); return}
-
-          accountInfo.positions.push(...(response.data as any[]).map(p => {
-            const symbol = this.resolveSymbolType(p.symbol);
-            const position: Position = {
-              symbol,
-              marginAsset: p.marginCoin,
-              positionAmount: +p.available,
-              entryPrice: +p.averageOpenPrice,
-              unrealisedPnl: +p.unrealizedPL,
-              marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
-              positionSide: p.holdSide,
-            };
-            return position;
-          }).filter(p => p.positionAmount !== 0.0));
-        });
-        resolve(accountInfo);
-      }
-    })
+        accountInfo.positions.push(...(response.data as any[]).map(p => {
+          const symbol = this.resolveSymbolType(p.symbol);
+          const position: Position = {
+            symbol,
+            marginAsset: p.marginCoin,
+            positionAmount: +p.available,
+            entryPrice: +p.averageOpenPrice,
+            unrealisedPnl: +p.unrealizedPL,
+            marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
+            positionSide: p.holdSide,
+          };
+          return position;
+        }).filter(p => p.positionAmount !== 0.0));
+      });
+      return Promise.resolve<AccountInfo>(accountInfo);
+    }
   }
 
   // getBalances(params?: { [key: string]: any }): Promise<Balance[]> { return {} as any; }
@@ -564,8 +564,8 @@ export class BitgetApi implements ExchangeApi {
     if (response?.msg !== 'success') { throw `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
     return Promise.resolve<LeverageInfo>({
       symbol,
-      longLeverage: +response.data.longLeverage,
-      shortLeverage: +response.data.shortLeverage,
+      longLeverage: +response.data.fixedLongLeverage,
+      shortLeverage: +response.data.fixedShortLeverage,
       leverage: +response.data.crossMarginLeverage,
     });
   }
@@ -574,7 +574,8 @@ export class BitgetApi implements ExchangeApi {
   async setLeverage(params: SetLeverage): Promise<void> {
     const { baseAsset, quoteAsset } = params.symbol;
     const symbol = this.getSymbolProduct(params.symbol);
-    const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage, holdSide: params.mode === 'cross' ? 'crossed' : 'isolated' };
+    const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage+'', holdSide: params.mode === 'cross' ? 'crossed' : 'isolated' };
+    // const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage+'' };
     const responseLong = await this.post(`api/mix/v1/account/setLeverage`, { params: dataLong });
     if (responseLong?.msg !== 'success') { throw `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
     const dataShort = { symbol, marginCoin: quoteAsset, leverage: params.shortLeverage, holdSide: params.mode === 'cross' ? 'crossed' : 'isolated' };
