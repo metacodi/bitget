@@ -476,74 +476,78 @@ export class BitgetApi implements ExchangeApi {
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List Futures}
    */
   async getAccountInfo(): Promise<AccountInfo> {
-    // ApiKey Info
-    /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-apikey-info Get ApiKey Info} */
-    const InfoApiKey = await this.get(`api/spot/v1/account/getInfo`);
-    this.user_id = InfoApiKey?.data?.user_id;
-    const canWithdraw = InfoApiKey?.data?.authorities?.some((a: any) => a === 'withdraw');
-    const canTrade = InfoApiKey?.data?.authorities?.some((a: any) => a === 'trade');
-    const canDeposit = InfoApiKey?.data?.authorities?.some((a: any) => a === 'deposit');
-    const accountInfo: AccountInfo = { canTrade, canWithdraw, canDeposit, balances: [], positions: [] };
+    return new Promise<AccountInfo>(async (resolve: any, reject: any) => {
 
-    if (this.market === 'spot') {
-      // Balances
-      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-account Get Account List Spot} */
-      const response = await this.get(`api/spot/v1/account/assets`);
-      if (response?.msg !== 'success') { throw `No s'han pogut obtenir els balances per ${this.market} a Bitget.`; }
-      accountInfo.balances.push(...(response.data as any[]).map(b => {
-        const balance: Balance = {
-          asset: b.coinName,
-          balance: +b.available + +b.frozen,
-          available: +b.available,
-          locked: +b.frozen,
-          remainder: 0.0,
-          fee: 0.0,
-        };
-        return balance;
-      }));
-      return Promise.resolve<AccountInfo>(accountInfo);
-    
-    } else {
-      // Balances futures
-      ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
-        if (this.isTest) { productType = `s${productType}`; }
-        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List} */
-        const response = await this.get(`api/mix/v1/account/account?productType=${productType}`);
-        if (response?.msg !== 'success') { throw `No s'han pogut obtenir els balances per ${this.market} a Bitget.`; }
+      // ApiKey Info
+      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-apikey-info Get ApiKey Info} */
+      const InfoApiKey = await this.get(`api/spot/v1/account/getInfo`);
+      this.user_id = InfoApiKey?.data?.user_id;
+      const canWithdraw = InfoApiKey?.data?.authorities?.some((a: any) => a === 'withdraw');
+      const canTrade = InfoApiKey?.data?.authorities?.some((a: any) => a === 'trade');
+      const canDeposit = InfoApiKey?.data?.authorities?.some((a: any) => a === 'deposit');
+      const accountInfo: AccountInfo = { canTrade, canWithdraw, canDeposit, balances: [], positions: [] };
+  
+      if (this.market === 'spot') {
+        // Balances
+        /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-account Get Account List Spot} */
+        const response = await this.get(`api/spot/v1/account/assets`);
+        if (response?.msg !== 'success') { reject(`No s'han pogut obtenir els balances per ${this.market} a Bitget.`); }
         accountInfo.balances.push(...(response.data as any[]).map(b => {
           const balance: Balance = {
-            asset: b.marginCoin,
-            balance: +b.available + +b.locked,
+            asset: b.coinName,
+            balance: +b.available + +b.frozen,
             available: +b.available,
-            locked: +b.locked,
+            locked: +b.frozen,
             remainder: 0.0,
             fee: 0.0,
           };
           return balance;
         }));
-      });
-      // Positions futures
-      ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
-        if (this.isTest) { productType = `s${productType}`; }
-        const symbol = this.resolveSymbolType(productType);
-        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-position Get All Position} */
-        const response = await this.get(`api/mix/v1/position/allPosition?productType=${productType}`);
-        if (response?.msg !== 'success') { throw `No s'han pogut obtenir les posicions per ${this.market} a Bitget.`; }
-        accountInfo.positions.push(...(response.data as any[]).map(p => {
-          const position: Position = {
-            symbol,
-            marginAsset: p.marginCoin,
-            positionAmount: +p.available,
-            entryPrice: +p.averageOpenPrice,
-            unrealisedPnl: +p.unrealizedPL,
-            marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
-            positionSide: p.holdSide,
-          };
-          return position;
-        }));
-      });
-      return Promise.resolve<AccountInfo>(accountInfo);
-    }
+        resolve(accountInfo);
+      
+      } else {
+        // Balances futures
+        ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
+          if (this.isTest) { productType = `s${productType}`; }
+          /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List} */
+          const response = await this.get(`api/mix/v1/account/account?productType=${productType}`);
+          if (response?.msg !== 'success') { reject(`No s'han pogut obtenir els balances per ${this.market} a Bitget.`); }
+          accountInfo.balances.push(...(response.data as any[]).map(b => {
+            const balance: Balance = {
+              asset: b.marginCoin,
+              balance: +b.available + +b.locked,
+              available: +b.available,
+              locked: +b.locked,
+              remainder: 0.0,
+              fee: 0.0,
+            };
+            return balance;
+          }));
+        });
+        // Positions futures
+        ['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
+          if (this.isTest) { productType = `s${productType}`; }
+          const symbol = this.resolveSymbolType(productType);
+          /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-position Get All Position} */
+          const response = await this.get(`api/mix/v1/position/allPosition?productType=${productType}`);
+          if (response?.msg !== 'success') { reject(`No s'han pogut obtenir les posicions per ${this.market} a Bitget.`); }
+          accountInfo.positions.push(...(response.data as any[]).map(p => {
+            const position: Position = {
+              symbol,
+              marginAsset: p.marginCoin,
+              positionAmount: +p.available,
+              entryPrice: +p.averageOpenPrice,
+              unrealisedPnl: +p.unrealizedPL,
+              marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
+              positionSide: p.holdSide,
+            };
+            return position;
+          }));
+        });
+        resolve(accountInfo);
+      }
+
+    });
   }
 
   // getBalances(params?: { [key: string]: any }): Promise<Balance[]> { return {} as any; }

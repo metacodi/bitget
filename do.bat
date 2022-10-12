@@ -17,6 +17,8 @@ if [%1]==[test] (
     npx ts-node test/test-api.ts
   ) else if [%2]==[user] (
     npx ts-node test/test-ws-user.ts
+  ) else if [%2]==[req] (
+    npx ts-node test/test-req.ts
   ) else (
     npx ts-node test/test-ws-market.ts
   )
