@@ -576,6 +576,7 @@ export class BitgetApi implements ExchangeApi {
     const symbol = this.getSymbolProduct(params.symbol);
     const dataMarginMode = { symbol, marginCoin: quoteAsset, marginMode: params.mode === 'cross' ? 'crossed' : 'fixed' };
     const responseMarginMode = await this.post(`api/mix/v1/account/setMarginMode`, { params: dataMarginMode });
+    if (responseMarginMode?.msg !== 'success') { throw `No s'ha pogut establir el mode a ${params.mode} del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
     if (params.mode === 'cross') { 
       const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage };
       const responseLong = await this.post(`api/mix/v1/account/setLeverage`, { params: dataLong });
