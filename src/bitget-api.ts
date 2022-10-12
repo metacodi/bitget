@@ -574,13 +574,20 @@ export class BitgetApi implements ExchangeApi {
   async setLeverage(params: SetLeverage): Promise<void> {
     const { baseAsset, quoteAsset } = params.symbol;
     const symbol = this.getSymbolProduct(params.symbol);
-    // const responseLong = await this.post(`api/mix/v1/account/setMarginMode`, { params: dataLong });
-    const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage, holdSide: 'long' };
-    const responseLong = await this.post(`api/mix/v1/account/setLeverage`, { params: dataLong });
-    if (responseLong?.msg !== 'success') { throw `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
-    const dataShort = { symbol, marginCoin: quoteAsset, leverage: params.shortLeverage, holdSide: 'short' };
-    const responseShort = await this.post(`api/mix/v1/account/setLeverage`, { params: dataShort });
-    if (responseShort?.msg !== 'success') { throw `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
+    const dataMarginMode = { symbol, marginCoin: quoteAsset, marginMode: params.mode === 'cross' ? 'crossed' : 'fixed' };
+    const responseMarginMode = await this.post(`api/mix/v1/account/setMarginMode`, { params: dataMarginMode });
+    if (params.mode === 'cross') { 
+      const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage };
+      const responseLong = await this.post(`api/mix/v1/account/setLeverage`, { params: dataLong });
+      if (responseLong?.msg !== 'success') { throw `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
+    } else {
+      const dataLong = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage, holdSide: 'long' };
+      const responseLong = await this.post(`api/mix/v1/account/setLeverage`, { params: dataLong });
+      if (responseLong?.msg !== 'success') { throw `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
+      const dataShort = { symbol, marginCoin: quoteAsset, leverage: params.shortLeverage, holdSide: 'short' };
+      const responseShort = await this.post(`api/mix/v1/account/setLeverage`, { params: dataShort });
+      if (responseShort?.msg !== 'success') { throw `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.`; }
+    }
     return Promise.resolve();
   }
 
