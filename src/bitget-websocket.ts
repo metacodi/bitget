@@ -5,8 +5,8 @@ import { createHmac } from 'crypto';
 import moment from 'moment';
 
 import { timestamp } from '@metacodi/node-utils';
-import { MarketType, SymbolType, MarketPrice, KlinesRequest, MarketKline, KlineIntervalType, Order, CoinType, ApiOptions, isSubjectUnobserved, matchChannelKey, buildChannelKey, calculateCloseTime } from '@metacodi/abstract-exchange';
-import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, WsAccountUpdate, WsBalancePositionUpdate } from '@metacodi/abstract-exchange';
+import { MarketType, SymbolType, MarketPrice, MarketKline, KlineIntervalType, Order, CoinType, isSubjectUnobserved, matchChannelKey, buildChannelKey, calculateCloseTime } from '@metacodi/abstract-exchange';
+import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, WsAccountUpdate } from '@metacodi/abstract-exchange';
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
@@ -365,13 +365,6 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const instType = this.market === 'spot' ? 'spbl' : 'umcbl';
     // NOTA: L'ordre dels paràmetres és important per fer mathcing de la channelKey.
     return this.registerChannelSubscription({ channel, instType, instId });
-  }
-
-  /** {@link } */
-  balancePositionUpdate(): Subject<WsBalancePositionUpdate> {
-    // const channel: BitgetWsChannelType = 'balance_and_position';
-    // return this.registerChannelSubscription({ channel });
-    return {} as any;
   }
 
   /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#order-channel Order channel} */

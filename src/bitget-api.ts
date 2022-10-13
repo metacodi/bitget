@@ -3,7 +3,7 @@ import { createHmac } from 'crypto';
 import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from "@metacodi/node-utils";
-import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage } from '@metacodi/abstract-exchange';
+import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage } from '@metacodi/abstract-exchange';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
@@ -594,33 +594,13 @@ export class BitgetApi implements ExchangeApi {
   //  Account Orders
   // ---------------------------------------------------------------------------------------------------
 
-  /** 
-  * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List - SPOT} 
-  * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-history Get order history - SPOT} 
-  * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES} 
-  * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-history-orders Get History Orders - FUTURES} 
-  * */
-  getAllOrders(params: GetOrdersRequest): Promise<Order[]> {
-    // const { limit } = params;
-    // const { baseAsset, quoteAsset } = params.symbol;
-    // const urlAll = this.market === 'spot' ? `api/spot/v1/trade/open-orders` : `api/mix/v1/market/candles`;
-    // const urlHistory = this.market === 'spot' ? `api/spot/v1/trade/history` : `api/mix/v1/market/candles`;
-    // const symbol = this.getSymbolProduct(params.symbol);
-    // const start: string | moment.MomentInput = params.start ? moment(params.start) : moment();
-    // const endTime: string | moment.MomentInput = params.end ? moment(params.end) : '';
-    // const startField = this.market === 'spot' ? 'after' : 'startTime';
-    // const endField = this.market === 'spot' ? 'before' : 'endTime';
-    // const paramsRequest = { symbol , marginCoin: quoteAsset };
-    // const errorShort = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-    // const response = await this.get(params?.startTime ? urlHistory : urlAll, { , error });
-    return {} as any;
-  }
+  getHistoryOrders(params: any): Promise<Order[]> { return {} as any; }
 
-  getOpenOrders(params: GetOpenOrdersRequest): Promise<Order[]> { return {} as any; }
+  getOpenOrders(symbol: SymbolType): Promise<Order[]> { return {} as any; }
 
   getOrder(params: GetOrderRequest): Promise<Order> { return {} as any; }
 
-  // getAccountTradeList(params: GetOrdersRequest): Promise<Order[]> { return {} as any; }
+  // getAccountTradeList(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 
 
   //  Trade Orders
