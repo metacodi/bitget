@@ -42,17 +42,8 @@ const testMarketWs = async () => {
       isTest,
     };
 
-    const optionsApi: ApiOptions = {
-      ...getApiKeys({ isTest }),
-      // market: 'spot',
-      market,
-      isTest,
-    } as any;
-
-    
     const ws = new BitgetWebsocket(options);
-    ws.api = new BitgetApi(optionsApi);
-    await ws.api.getExchangeInfo();
+    await ws.initialize();
     // ws.addListener('message', msg => console.log('message =>', msg));
 
     // ---------------------------------------------------------------------------------------------------
@@ -60,9 +51,11 @@ const testMarketWs = async () => {
     // ---------------------------------------------------------------------------------------------------
 
     const ticker = ws.priceTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }).subscribe(data => console.log('priceTicker =>', data));
+
+    setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 10000);
+
     // const klines = ws.klineTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }, '1m').subscribe(data => console.log('klines =>', data));
     
-    setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 10000);
     // setTimeout(() => { console.log('Test => Unsubscribe klines'); klines.unsubscribe(); }, 5000);
     
     // setTimeout(() => { console.log('Reconnecting...'); ws.reconnect(); }, 52000);

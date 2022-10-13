@@ -5,12 +5,11 @@ import { createHmac } from 'crypto';
 import moment from 'moment';
 
 import { timestamp } from '@metacodi/node-utils';
-import { MarketType, SymbolType, MarketPrice, MarketKline, KlineIntervalType, Order, CoinType, isSubjectUnobserved, matchChannelKey, buildChannelKey, calculateCloseTime } from '@metacodi/abstract-exchange';
+import { MarketType, SymbolType, MarketPrice, MarketKline, KlineIntervalType, Order, CoinType, isSubjectUnobserved, matchChannelKey, buildChannelKey, calculateCloseTime, ApiOptions } from '@metacodi/abstract-exchange';
 import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, WsAccountUpdate } from '@metacodi/abstract-exchange';
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
-
 
 
 /**
@@ -21,7 +20,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   /** Estat de la connexió. */
   status: WsConnectionState = 'initial';
   /** Referència a la instància del client API. */
-  api: BitgetApi;
+  protected api: BitgetApi;
   /** Opcions de configuració. */
   protected options: WebsocketOptions;
   /** Referència a la instància del websocket subjacent. */
@@ -46,8 +45,6 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   ) {
     super();
     this.options = { ...this.defaultOptions, ...options };
-
-    this.initialize();
   }
 
   // ---------------------------------------------------------------------------------------------------
@@ -83,10 +80,24 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     }
   }
 
-  protected async initialize() {
-    // Iniciem la connexió amb l'stream de l'exchange.
-    this.connect();
+  
+  // ---------------------------------------------------------------------------------------------------
+  //  api
+  // ---------------------------------------------------------------------------------------------------
+
+  protected getApiClient(): BitgetApi {
+    const { market } = this;
+    const { apiKey, apiSecret, apiPassphrase, isTest } = this.options;
+    return new BitgetApi({ market, apiKey, apiSecret, apiPassphrase, isTest });
   }
+
+  async initialize() {
+    // Instanciem un client per l'API.
+    this.api = this.getApiClient();
+    // Iniciem la connexió amb l'stream de l'exchange.
+    await this.connect();
+  }
+
 
   // ---------------------------------------------------------------------------------------------------
   //  connect . close . login
@@ -99,6 +110,10 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   async connect() {
     const { market } = this;
     const { pingInterval, pongTimeout, isTest } = this.options;
+    // Obtenim la info de l'exchange.
+    await this.api.getExchangeInfo();
+    // Obtenim una clau per l'stream d'usuari.
+    if (this.streamType === 'user') { await this.api.getAccountInfo(); }
 
     const url = market === 'spot' ? `wss://ws.bitget.com/spot/v1/stream` : `wss://ws.bitget.com/mix/v1/stream`;
 
@@ -283,7 +298,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
 
   protected onWsMessage(event: WebSocket.MessageEvent) {
     const data = this.parseWsMessage(event);
-    console.log(JSON.stringify(data));
+    // console.log(JSON.stringify(data));
     this.emit('message', data);
     switch (this.discoverEventType(data)) {
       case 'login':
@@ -420,7 +435,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const hasSubscriptions = !isSubjectUnobserved(stored);
     if (hasSubscriptions) {
       const parser = this.getChannelParser(ev.arg);
-      const value = parser ? parser(ev) : ev;
+      const value = parser ? parser.bind(this)(ev) : ev;
       stored.next(value);
     } else {
       this.unsubscribeChannel(ev.arg);
@@ -431,7 +446,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   }
 
   protected getChannelParser(arg: BitgetWsSubscriptionArguments): any {
-    console.log('getChannelParser => ', arg);
+    // console.log('getChannelParser => ', arg);
     const channel = arg.channel.startsWith('candle') ? 'klines' : arg.channel;
     switch (channel) {
       case 'ticker': return this.parsePriceTickerEvent;
@@ -465,7 +480,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
    * {@link https://bitgetlimited.github.io/apidoc/en/spot/#tickers-channel Tickers channel}
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#tickers-channel Tickers channel}
    */
-  parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice {
+   parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice {
     const data = ev.data[0];
     const symbol = this.api.getSymbolType(ev.arg.instId);
     const baseVolume = +data.baseVolume;

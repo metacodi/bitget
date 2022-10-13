@@ -44,6 +44,7 @@ const testMarketWs = async () => {
     };
 
     const ws = new BitgetWebsocket(options);
+    await ws.initialize();
 
     // ws.addListener('message', msg => console.log('message =>', msg));
     
