@@ -3,7 +3,7 @@ import { createHmac } from 'crypto';
 import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from "@metacodi/node-utils";
-import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrdersRequest, GetOpenOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage } from '@metacodi/abstract-exchange';
+import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetHistoryOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage } from '@metacodi/abstract-exchange';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
@@ -594,13 +594,13 @@ export class BitgetApi implements ExchangeApi {
   //  Account Orders
   // ---------------------------------------------------------------------------------------------------
 
-  getAllOrders(params: GetOrdersRequest): Promise<Order[]> { return {} as any; }
+  getHistoryOrders(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 
-  getOpenOrders(params: GetOpenOrdersRequest): Promise<Order[]> { return {} as any; }
+  getOpenOrders(symbol: SymbolType): Promise<Order[]> { return {} as any; }
 
   getOrder(params: GetOrderRequest): Promise<Order> { return {} as any; }
 
-  // getAccountTradeList(params: GetOrdersRequest): Promise<Order[]> { return {} as any; }
+  // getAccountTradeList(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 
 
   //  Trade Orders

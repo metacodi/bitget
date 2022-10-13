@@ -1,7 +1,7 @@
 import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from '@metacodi/node-utils';
-import { SymbolType, WsStreamType, MarketType, MarketPrice, MarketKline, calculateCloseTime, KlineIntervalType, Order, WsBalancePositionUpdate, WsAccountUpdate, OrderSide, OrderType } from '@metacodi/abstract-exchange';
+import { SymbolType, WsStreamType, MarketType, MarketPrice, MarketKline, calculateCloseTime, KlineIntervalType, Order, WsAccountUpdate, OrderSide, OrderType } from '@metacodi/abstract-exchange';
 
 import { BitgetWsChannelEvent } from './bitget.types';
 
