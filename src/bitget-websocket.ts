@@ -292,6 +292,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       case 'ticker':
       case 'klines':
       case 'account':
+      case 'orders':
         const obj = data as BitgetWsChannelEvent;
         this.emitChannelEvent(obj);
         break;
