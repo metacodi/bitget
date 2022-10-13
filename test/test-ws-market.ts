@@ -1,9 +1,11 @@
-import { MarketType, WebsocketOptions } from '@metacodi/abstract-exchange';
+import { ApiOptions, MarketType, WebsocketOptions } from '@metacodi/abstract-exchange';
 import * as fs from 'fs';
 
 import { Resource } from '@metacodi/node-utils';
 
 import { BitgetWebsocket } from '../src/bitget-websocket';
+import { BitgetApi } from '../src/bitget-api';
+import { getApiKeys } from './api-keys';
 
 
 /**
@@ -29,8 +31,8 @@ const testMarketWs = async () => {
 
     console.log('---------------- Market WebSocket TEST ----------------------');
 
-    // const market: MarketType = 'spot';
-    const market: MarketType = 'futures';
+    const market: MarketType = 'spot';
+    // const market: MarketType = 'futures';
 
     const isTest = false;
 
@@ -40,19 +42,28 @@ const testMarketWs = async () => {
       isTest,
     };
 
-    const ws = new BitgetWebsocket(options);
+    const optionsApi: ApiOptions = {
+      ...getApiKeys({ isTest }),
+      // market: 'spot',
+      market,
+      isTest,
+    } as any;
+
     
+    const ws = new BitgetWebsocket(options);
+    ws.api = new BitgetApi(optionsApi);
+    await ws.api.getExchangeInfo();
     // ws.addListener('message', msg => console.log('message =>', msg));
 
     // ---------------------------------------------------------------------------------------------------
     //  PUBLIC
     // ---------------------------------------------------------------------------------------------------
 
-    // const ticker = ws.priceTicker('BTC_USDT').subscribe(data => console.log('priceTicker =>', data));
-    const klines = ws.klineTicker('BTC_USDT', '1m').subscribe(data => console.log('klines =>', data));
+    const ticker = ws.priceTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }).subscribe(data => console.log('priceTicker =>', data));
+    // const klines = ws.klineTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }, '1m').subscribe(data => console.log('klines =>', data));
     
-    // setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 2000);
-    setTimeout(() => { console.log('Test => Unsubscribe klines'); klines.unsubscribe(); }, 5000);
+    setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 10000);
+    // setTimeout(() => { console.log('Test => Unsubscribe klines'); klines.unsubscribe(); }, 5000);
     
     // setTimeout(() => { console.log('Reconnecting...'); ws.reconnect(); }, 52000);
     

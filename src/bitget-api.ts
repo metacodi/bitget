@@ -3,7 +3,7 @@ import { createHmac } from 'crypto';
 import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from "@metacodi/node-utils";
-import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetHistoryOrdersRequest, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage } from '@metacodi/abstract-exchange';
+import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
@@ -339,7 +339,7 @@ export class BitgetApi implements ExchangeApi {
   getInstrumentId(symbol: SymbolType): string {
     const { baseAsset, quoteAsset } = symbol;
     const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    if (found) { return found.symbolName; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    if (found) { return this.market ==='spot' ? found.symbolName : String(found.symbol).split('_')[0]; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
   }
 
   getSymbolType(instId: string): SymbolType {
@@ -507,7 +507,7 @@ export class BitgetApi implements ExchangeApi {
         return balance;
       }));
       return Promise.resolve(accountInfo);
-    
+
     } else {
       // Balances futures
       await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
@@ -575,7 +575,7 @@ export class BitgetApi implements ExchangeApi {
     const dataMarginMode = { symbol, marginCoin: quoteAsset, marginMode: params.mode === 'cross' ? 'crossed' : 'fixed' };
     const errorMarginMode = { code: 500, message: `No s'ha pogut establir el mode a ${params.mode} del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     await this.post(`api/mix/v1/account/setMarginMode`, { params: dataMarginMode, error: errorMarginMode });
-    if (params.mode === 'cross') { 
+    if (params.mode === 'cross') {
       const dataCross = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage };
       const errorCross = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
       await this.post(`api/mix/v1/account/setLeverage`, { params: dataCross, error: errorCross });
