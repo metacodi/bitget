@@ -8,7 +8,7 @@ import { ApiOptions, MarketType, SymbolType, MarketPrice, WsStreamType, KlineInt
 //  shared types
 // ---------------------------------------------------------------------------------------------------
 
-export type BitgetInstrumentType = 'SP' | 'mc';
+export type BitgetInstrumentType = 'sp' | 'mc';
 
 export type BitgetUrlMarketType = 'spot' | 'mix';
 

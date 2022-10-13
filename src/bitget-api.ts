@@ -339,7 +339,7 @@ export class BitgetApi implements ExchangeApi {
   getInstrumentId(symbol: SymbolType): string {
     const { baseAsset, quoteAsset } = symbol;
     const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    if (found) { return found.symbolName; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    if (found) { return this.market ==='spot' ? found.symbolName : String(found.symbol).split('_')[0]; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
   }
 
   getSymbolType(instId: string): SymbolType {
@@ -507,7 +507,7 @@ export class BitgetApi implements ExchangeApi {
         return balance;
       }));
       return Promise.resolve(accountInfo);
-    
+
     } else {
       // Balances futures
       await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
@@ -575,7 +575,7 @@ export class BitgetApi implements ExchangeApi {
     const dataMarginMode = { symbol, marginCoin: quoteAsset, marginMode: params.mode === 'cross' ? 'crossed' : 'fixed' };
     const errorMarginMode = { code: 500, message: `No s'ha pogut establir el mode a ${params.mode} del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     await this.post(`api/mix/v1/account/setMarginMode`, { params: dataMarginMode, error: errorMarginMode });
-    if (params.mode === 'cross') { 
+    if (params.mode === 'cross') {
       const dataCross = { symbol, marginCoin: quoteAsset, leverage: params.longLeverage };
       const errorCross = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
       await this.post(`api/mix/v1/account/setLeverage`, { params: dataCross, error: errorCross });
@@ -594,7 +594,27 @@ export class BitgetApi implements ExchangeApi {
   //  Account Orders
   // ---------------------------------------------------------------------------------------------------
 
-  getAllOrders(params: GetOrdersRequest): Promise<Order[]> { return {} as any; }
+  /** 
+  * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List - SPOT} 
+  * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-history Get order history - SPOT} 
+  * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES} 
+  * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-history-orders Get History Orders - FUTURES} 
+  * */
+  getAllOrders(params: GetOrdersRequest): Promise<Order[]> {
+    // const { limit } = params;
+    // const { baseAsset, quoteAsset } = params.symbol;
+    // const urlAll = this.market === 'spot' ? `api/spot/v1/trade/open-orders` : `api/mix/v1/market/candles`;
+    // const urlHistory = this.market === 'spot' ? `api/spot/v1/trade/history` : `api/mix/v1/market/candles`;
+    // const symbol = this.getSymbolProduct(params.symbol);
+    // const start: string | moment.MomentInput = params.start ? moment(params.start) : moment();
+    // const endTime: string | moment.MomentInput = params.end ? moment(params.end) : '';
+    // const startField = this.market === 'spot' ? 'after' : 'startTime';
+    // const endField = this.market === 'spot' ? 'before' : 'endTime';
+    // const paramsRequest = { symbol , marginCoin: quoteAsset };
+    // const errorShort = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+    // const response = await this.get(params?.startTime ? urlHistory : urlAll, { , error });
+    return {} as any;
+  }
 
   getOpenOrders(params: GetOpenOrdersRequest): Promise<Order[]> { return {} as any; }
 

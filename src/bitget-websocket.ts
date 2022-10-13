@@ -21,7 +21,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   /** Estat de la connexió. */
   status: WsConnectionState = 'initial';
   /** Referència a la instància del client API. */
-  protected api: BitgetApi;
+  api: BitgetApi;
   /** Opcions de configuració. */
   protected options: WebsocketOptions;
   /** Referència a la instància del websocket subjacent. */
@@ -54,7 +54,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   //  options
   // ---------------------------------------------------------------------------------------------------
 
-  get instType(): BitgetInstrumentType { return this.market === 'spot' ? 'SP' : 'mc'; }
+  get instType(): BitgetInstrumentType { return this.market === 'spot' ? 'sp' : 'mc'; }
 
   get market(): MarketType { return this.options?.market; }
 
@@ -283,6 +283,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
 
   protected onWsMessage(event: WebSocket.MessageEvent) {
     const data = this.parseWsMessage(event);
+    console.log(JSON.stringify(data));
     this.emit('message', data);
     switch (this.discoverEventType(data)) {
       case 'login':
@@ -471,8 +472,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#tickers-channel Tickers channel}
    */
   parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice {
-    const symbol = this.api.getSymbolType(ev.arg.instId);
     const data = ev.data[0];
+    const symbol = this.api.getSymbolType(ev.arg.instId);
     const baseVolume = +data.baseVolume;
     const quoteVolume = +data.quoteVolume;
     const ts = +data[this.market === 'spot' ? 'ts' : 'systemTime'];
