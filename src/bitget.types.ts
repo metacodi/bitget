@@ -16,6 +16,7 @@ export type BitgetOrderForceType = 'normal' | 'post_only' | 'fok' | 'ioc';
 
 export type BitgetOrderStatus = 'new' | 'partial_fill' | 'full_fill' | 'cancelled';
 
+export type BitgetOrderSide = 'buy' | 'sell';
 
 // ---------------------------------------------------------------------------------------------------
 //  Websocket

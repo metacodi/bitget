@@ -3,8 +3,23 @@ import moment, { unitOfTime } from 'moment';
 import { timestamp } from '@metacodi/node-utils';
 import { SymbolType, WsStreamType, MarketType, MarketPrice, MarketKline, calculateCloseTime, KlineIntervalType, Order, WsAccountUpdate, OrderSide, OrderType } from '@metacodi/abstract-exchange';
 
-import { BitgetWsChannelEvent } from './bitget.types';
+import { BitgetOrderSide, BitgetWsChannelEvent } from './bitget.types';
 
+export const parseOrderSide = (market: BitgetOrderSide): OrderSide => {
+  switch (market) {
+    case 'buy': return 'buy';
+    case 'sell': return 'sell';
+    default: throw ({ message: `No s'ha implementat el parser OKX pel OrderSide type '${market}'` });
+  }
+}
+
+export const formatOrderSide = (market: OrderSide): BitgetOrderSide => {
+  switch (market) {
+    case 'buy': return 'buy';
+    case 'sell': return 'sell';
+    default: throw ({ message: `No s'ha implementat el format OKX pel OrderSide type '${market}'` });
+  }
+}
 
 // export const parseSymbol = (symbol: string): SymbolType => {
 //   // TODO: Resoldre el symbol a partir d'una llista obtinguda de l'exchange.
