@@ -339,7 +339,7 @@ export class BitgetApi implements ExchangeApi {
   getInstrumentId(symbol: SymbolType): string {
     const { baseAsset, quoteAsset } = symbol;
     const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    if (found) { return this.market ==='spot' ? found.symbolName : String(found.symbol).split('_')[0]; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    if (found) { return this.market === 'spot' ? found.symbolName : String(found.symbol).split('_')[0]; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
   }
 
   getSymbolType(instId: string): SymbolType {
@@ -355,7 +355,6 @@ export class BitgetApi implements ExchangeApi {
       return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
     } else { throw { code: 500, message: `No s'ha trobat el símbol ${symbol} a Bitget.` }; }
   }
-
 
   /**
    * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-single-ticker Get Single Ticker}
@@ -590,15 +589,65 @@ export class BitgetApi implements ExchangeApi {
     return Promise.resolve();
   }
 
-
   //  Account Orders
   // ---------------------------------------------------------------------------------------------------
 
   getHistoryOrders(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 
-  getOpenOrders(symbol: SymbolType): Promise<Order[]> { return {} as any; }
+  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List - SPOT } */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES } */
+  async getOpenOrders(symbol: SymbolType): Promise<Order[]> {
+    const { baseAsset, quoteAsset } = symbol;
+    const bitgetSymbol = this.getSymbolProduct(symbol);
+    const procutType = this.getProductType(symbol);
+    const params = this.market === 'spot' ? { symbol: bitgetSymbol } : { procutType, marginCoin: quoteAsset };
+    const error = { code: 500, message: `No s'ha pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+    const url = this.market === 'spot' ? `api/spot/v1/trade/open-orders` : `api/mix/v1/order/marginCoinCurrent`;
+    const response = await this.get(url, { params, error });
 
-  getOrder(params: GetOrderRequest): Promise<Order> { return {} as any; }
+    const results: Order[] = [];
+    if(this.market === 'spot') {
+      results.map(res => {
+        
+      });
+    } else {
+
+    }
+    return Promise.resolve(results);
+  }
+
+  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-details Get order details - SPOT } */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-order-details Get order details - FUTURES } */
+  async getOrder(params: GetOrderRequest): Promise<Order> {
+    const { baseAsset, quoteAsset } = params.symbol;
+    const bitgetSymbol = this.getSymbolProduct(params.symbol);
+    const paramsOrder = { symbol: bitgetSymbol, marginCoin: quoteAsset };
+    const error = { code: 500, message: `No s'ha pogut obtenir la order a Bitget.` };
+    const url = this.market === 'spot' ? `api/spot/v1/trade/orderInfo` : `api/mix/v1/order/detail`;
+    const response = await this.get(url, { params, error });
+    return Promise.resolve<Order>({
+      id: response.clientOrderId,
+      exchangeId: response.orderId,
+      side: parseOrderSide(response.side as BitgetOrderSide),
+      type: OrderType,
+      status: OrderStatus,
+      // symbol?: SymbolType,
+      // baseQuantity?: number,
+      // quoteQuantity?: number,
+      // price?: number,
+      // stopPrice?: number,
+      // rejectReason?: string,
+      // isOco?: boolean,
+      // created?: string,
+      // posted?: string,
+      // executed?: string,
+      // syncronized?: boolean,
+      // idOrderBuyed?: string,
+      // profit?: number,
+      // commission?: number,
+      // commissionAsset?: CoinType,
+    });
+  }
 
   // getAccountTradeList(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 
