@@ -23,7 +23,7 @@ export type BitgetOrderStatus = 'new' | 'partial_fill' | 'full_fill' | 'cancelle
 
 export type BitgetWsChannelType = 'ticker' | `candle${KlineIntervalType}` | 'account' | 'positions' | 'balance_and_position' | 'orders' | 'orders-algo' | 'liquidation-warning';
 
-export type BitgetWsEventType = 'login' | 'subscribe' | 'unsubscribe';
+export type BitgetWsEventType = 'pong' | 'login' | 'subscribe' | 'unsubscribe';
 
 export interface BitgetWsLoginRequest {
   op: 'login',

@@ -266,7 +266,7 @@ export class BitgetApi implements ExchangeApi {
       /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-symbols Get Symbols} */
       const error = { code: 500, message: `No s'han pogut obtenir els símbols d'spot a Bitget.` };
       const response = await this.get(url, { isPublic: true, error });
-      this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType: 'spot' })));
+      this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType: 'spbl' })));
       return Promise.resolve({ limits });
     } else {
       await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
@@ -611,7 +611,6 @@ export class BitgetApi implements ExchangeApi {
   cancelOrder(params: CancelOrderRequest): Promise<Order> { return {} as any; }
 
   cancelAllSymbolOrders(symbol: SymbolType): Promise<Order> { return {} as any; }
-
 
 
 }

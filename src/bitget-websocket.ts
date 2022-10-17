@@ -75,7 +75,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     return {
       isTest: true,
       reconnectPeriod: 5 * 1000,
-      pingInterval: 18 * 1000,
+      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#connect Connect } */
+      pingInterval: 25 * 1000,
       pongTimeout: 10 * 1000,
     }
   }
@@ -162,7 +163,6 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     this.close();
     setTimeout(() => this.connect(), this.reconnectPeriod);
   }
-
 
   async close() {
     try {
@@ -259,7 +259,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
           console.log(this.wsId, `=> Pong timeout - closing socket to reconnect`);
           this.reconnect();
         });
-        this.ws.ping();
+        // this.ws.ping();
+        this.ws.send('ping');
       } else {
         // this.ws.send(0x09);
         // this.ws.send(Buffer.alloc(0x09));
@@ -305,6 +306,9 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         this.loggedIn = true;
         this.onConnected();
         break;
+      case 'pong':
+        this.onWsPong(event);
+        break;
       case 'ticker':
       case 'klines':
       case 'account':
@@ -325,7 +329,11 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         return this.parseWsMessage(parsedEvent.data);
       }
     }
-    return event?.data ? JSON.parse(event.data) : event;
+    if (event?.data === 'pong') {
+      return { event: 'pong' };
+    } else {
+      return event?.data ? JSON.parse(event.data) : event;
+    }
   }
 
   protected discoverEventType(data: any): BitgetWsChannelType | 'klines' | BitgetWsEventType | undefined {
@@ -379,7 +387,6 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const channel: BitgetWsChannelType = 'account';
     const instId = asset ? asset : 'default';
     const instType = this.market === 'spot' ? 'spbl' : 'umcbl';
-    // NOTA: L'ordre dels paràmetres és important per fer mathcing de la channelKey.
     return this.registerChannelSubscription({ channel, instType, instId });
   }
 
@@ -435,7 +442,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const hasSubscriptions = !isSubjectUnobserved(stored);
     if (hasSubscriptions) {
       const parser = this.getChannelParser(ev.arg);
-      const value = parser ? parser.bind(this)(ev) : ev;
+      const value = parser ? parser.call(this, ev) : ev;
       stored.next(value);
     } else {
       this.unsubscribeChannel(ev.arg);
@@ -445,7 +452,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     }
   }
 
-  protected getChannelParser(arg: BitgetWsSubscriptionArguments): any {
+  protected getChannelParser(arg: BitgetWsSubscriptionArguments): Function {
     // console.log('getChannelParser => ', arg);
     const channel = arg.channel.startsWith('candle') ? 'klines' : arg.channel;
     switch (channel) {
