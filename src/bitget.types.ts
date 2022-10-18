@@ -12,11 +12,39 @@ export type BitgetInstrumentType = 'sp' | 'mc';
 
 export type BitgetUrlMarketType = 'spot' | 'mix';
 
-export type BitgetOrderForceType = 'normal' | 'post_only' | 'fok' | 'ioc';
+/** {@link https://bitgetlimited.github.io/apidoc/en/spot/#ordertypeforce } */
+export type BitgetOrderForceType =
+  'normal' | //	Good till cancel
+  'post_only' | //	Maker Only
+  'fok' | //	Fill Or Kill（FOK）
+  'ioc'  //	Immediate-Or-Cancel（IOC）
+  ;
 
-export type BitgetOrderStatus = 'new' | 'partial_fill' | 'full_fill' | 'cancelled';
+/** {@link https://bitgetlimited.github.io/apidoc/en/spot/#status } */
+export type BitgetOrderStatus =
+  'new' | //	Unfilled
+  'partial_fill' | //	Partially filled
+  'full_fill' | //	Fully filled
+  'cancelled' //	Cancelled
+  ;
 
+/** {@link https://bitgetlimited.github.io/apidoc/en/spot/#side } */
 export type BitgetOrderSide = 'buy' | 'sell';
+
+/** {@link https://bitgetlimited.github.io/apidoc/en/spot/#ordertype } */
+export type BitgetOrderType =
+'market' | // market order
+'limit' // limit order
+;
+
+/** {@link https://bitgetlimited.github.io/apidoc/en/spot/#accounttype } */
+export type accountType =
+  'EXCHANGE' | //	spot account
+  'OTC_SGD' | //	Otc account
+  'CONTRACT' | //	contract account
+  'USD_MIX' | //	Mix account
+  'USDT_MIX' //	USDT Future Account
+  ;
 
 // ---------------------------------------------------------------------------------------------------
 //  Websocket

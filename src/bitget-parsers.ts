@@ -1,15 +1,15 @@
 import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from '@metacodi/node-utils';
-import { SymbolType, WsStreamType, MarketType, MarketPrice, MarketKline, calculateCloseTime, KlineIntervalType, Order, WsAccountUpdate, OrderSide, OrderType } from '@metacodi/abstract-exchange';
+import { SymbolType, WsStreamType, MarketType, MarketPrice, MarketKline, calculateCloseTime, KlineIntervalType, Order, WsAccountUpdate, OrderSide, OrderType, OrderStatus } from '@metacodi/abstract-exchange';
 
-import { BitgetOrderSide, BitgetWsChannelEvent } from './bitget.types';
+import { BitgetOrderSide, BitgetOrderStatus, BitgetOrderType, BitgetWsChannelEvent } from './bitget.types';
 
 export const parseOrderSide = (market: BitgetOrderSide): OrderSide => {
   switch (market) {
     case 'buy': return 'buy';
     case 'sell': return 'sell';
-    default: throw ({ message: `No s'ha implementat el parser OKX pel OrderSide type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderSide type '${market}'` });
   }
 }
 
@@ -17,7 +17,43 @@ export const formatOrderSide = (market: OrderSide): BitgetOrderSide => {
   switch (market) {
     case 'buy': return 'buy';
     case 'sell': return 'sell';
-    default: throw ({ message: `No s'ha implementat el format OKX pel OrderSide type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el format Bitget pel OrderSide type '${market}'` });
+  }
+}
+
+
+export const parseOrderType = (market: BitgetOrderType): OrderType => {
+  switch (market) {
+    case 'market': return 'market';
+    case 'limit': return 'limit';
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${market}'` });
+  }
+}
+
+export const formatOrderType = (market: OrderType): BitgetOrderType => {
+  switch (market) {
+    case 'market': return 'market';
+    case 'limit': return 'limit';
+    default: throw ({ message: `No s'ha implementat el format Bitget pel OrderSide type '${market}'` });
+  }
+}
+export const parseOrderStatus = (market: BitgetOrderStatus): OrderStatus => {
+  switch (market) {
+    case 'new': return 'new';
+    case 'full_fill': return 'filled';
+    case 'partial_fill': return 'partial';
+    case 'cancelled': return 'canceled';
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderStatus type '${market}'` });
+  }
+}
+
+export const formatOrderStatus = (market: OrderStatus): BitgetOrderStatus => {
+  switch (market) {
+    case 'new': return 'new';
+    case 'filled': return 'full_fill';
+    case 'partial': return 'partial_fill';
+    case 'canceled': return 'cancelled';
+    default: throw ({ message: `No s'ha implementat el format Bitget pel OrderStatus type '${market}'` });
   }
 }
 

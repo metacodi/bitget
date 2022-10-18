@@ -4,6 +4,8 @@ import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from "@metacodi/node-utils";
 import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
+import { BitgetOrderSide, BitgetOrderType } from './bitget.types';
+import { parseOrderSide, parseOrderType } from "./bitget-parsers";
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
@@ -626,37 +628,36 @@ export class BitgetApi implements ExchangeApi {
 
   /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-details Get order details - SPOT } */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-order-details Get order details - FUTURES } */
-  getOrder(params: GetOrderRequest): Promise<Order> { return {} as any; }
-  // async getOrder(params: GetOrderRequest): Promise<Order> {
-  //   const { baseAsset, quoteAsset } = params.symbol;
-  //   const bitgetSymbol = this.getSymbolProduct(params.symbol);
-  //   const paramsOrder = { symbol: bitgetSymbol, marginCoin: quoteAsset };
-  //   const error = { code: 500, message: `No s'ha pogut obtenir la order a Bitget.` };
-  //   const url = this.market === 'spot' ? `api/spot/v1/trade/orderInfo` : `api/mix/v1/order/detail`;
-  //   const response = await this.get(url, { params, error });
-  //   return Promise.resolve<Order>({
-  //     id: response.clientOrderId,
-  //     exchangeId: response.orderId,
-  //     side: parseOrderSide(response.side as BitgetOrderSide),
-  //     type: OrderType,
-  //     status: OrderStatus,
-  //     // symbol?: SymbolType,
-  //     // baseQuantity?: number,
-  //     // quoteQuantity?: number,
-  //     // price?: number,
-  //     // stopPrice?: number,
-  //     // rejectReason?: string,
-  //     // isOco?: boolean,
-  //     // created?: string,
-  //     // posted?: string,
-  //     // executed?: string,
-  //     // syncronized?: boolean,
-  //     // idOrderBuyed?: string,
-  //     // profit?: number,
-  //     // commission?: number,
-  //     // commissionAsset?: CoinType,
-  //   });
-  // }
+  async getOrder(params: GetOrderRequest): Promise<Order> {
+    const { baseAsset, quoteAsset } = params.symbol;
+    const bitgetSymbol = this.getSymbolProduct(params.symbol);
+    const paramsOrder = { symbol: bitgetSymbol, marginCoin: quoteAsset };
+    const error = { code: 500, message: `No s'ha pogut obtenir la order a Bitget.` };
+    const url = this.market === 'spot' ? `api/spot/v1/trade/orderInfo` : `api/mix/v1/order/detail`;
+    const response = await this.get(url, { params, error });
+    return Promise.resolve<Order>({
+      id: response.clientOrderId,
+      exchangeId: response.orderId,
+      side: parseOrderSide(response.side as BitgetOrderSide),
+      type: parseOrderType(response.orderType as BitgetOrderType),
+      status: OrderStatus,
+      // symbol?: SymbolType,
+      // baseQuantity?: number,
+      // quoteQuantity?: number,
+      // price?: number,
+      // stopPrice?: number,
+      // rejectReason?: string,
+      // isOco?: boolean,
+      // created?: string,
+      // posted?: string,
+      // executed?: string,
+      // syncronized?: boolean,
+      // idOrderBuyed?: string,
+      // profit?: number,
+      // commission?: number,
+      // commissionAsset?: CoinType,
+    });
+  }
 
   // getAccountTradeList(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 
