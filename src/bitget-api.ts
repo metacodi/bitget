@@ -220,16 +220,23 @@ export class BitgetApi implements ExchangeApi {
     const { response, request, message } = e;
     // Si no hem rebut una resposta...
     if (!response) { throw request ? e : message; }
-    throw {
-      ...error,
-      requestCode: response.data?.code,
-      requestMessage: response.data?.msg,
-      body: response.data,
-      headers: response.headers,
-      requestUrl: url,
-      requestBody: request.body,
-      options: { ...this.options },
-    };
+    if (response?.data?.code === 429) {
+      throw {
+        code: 429,
+
+      };
+    } else {
+      throw {
+        ...error,
+        requestCode: response.data?.code,
+        requestMessage: response.data?.msg,
+        body: response.data,
+        headers: response.headers,
+        requestUrl: url,
+        requestBody: request.body,
+        options: { ...this.options },
+      };
+    }
   }
 
 
@@ -275,7 +282,7 @@ export class BitgetApi implements ExchangeApi {
         /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols} */
         const error = { code: 500, message: `No s'han pogut obtenir els símbols pel producte '${productType}' de futurs a Bitget.` };
         const response = await this.get(url, { params: { productType }, isPublic: true, error });
-        this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType })));
+        this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType, symbolName: `${symbol.baseCoin}${symbol.quoteCoin}` })));
       }));
       return Promise.resolve({ limits });
     }
@@ -339,17 +346,18 @@ export class BitgetApi implements ExchangeApi {
   getInstrumentId(symbol: SymbolType): string {
     const { baseAsset, quoteAsset } = symbol;
     const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    if (found) { return this.market === 'spot' ? found.symbolName : String(found.symbol).split('_')[0]; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    // if (found) { return this.market === 'spot' ? found.symbolName : `${found.baseCoin}${found.quoteCoin}`; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    if (found) { return found.symbolName; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
   }
 
-  getSymbolType(instId: string): SymbolType {
+  parseInstrumentId(instId: string): SymbolType {
     const found = this.symbols.find(s => s.symbolName === instId);
     if (found) {
       return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
     } else { throw { code: 500, message: `No s'ha trobat el símbol ${instId} a Bitget.` }; }
   }
 
-  resolveSymbolType(symbol: string): SymbolType {
+  parseSymbolProduct(symbol: string): SymbolType {
     const found = this.symbols.find(s => s.symbol === symbol);
     if (found) {
       return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
@@ -535,7 +543,7 @@ export class BitgetApi implements ExchangeApi {
         const params = { productType };
         const response = await this.get(`api/mix/v1/position/allPosition`, { params, error });
         accountInfo.positions.push(...(response.data as any[]).map(p => {
-          const symbol = this.resolveSymbolType(p.symbol);
+          const symbol = this.parseSymbolProduct(p.symbol);
           const position: Position = {
             symbol,
             marginAsset: p.marginCoin,
@@ -598,56 +606,57 @@ export class BitgetApi implements ExchangeApi {
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES } */
   async getOpenOrders(symbol: SymbolType): Promise<Order[]> {
     const { baseAsset, quoteAsset } = symbol;
-    const bitgetSymbol = this.getSymbolProduct(symbol);
-    const procutType = this.getProductType(symbol);
-    const params = this.market === 'spot' ? { symbol: bitgetSymbol } : { procutType, marginCoin: quoteAsset };
     const error = { code: 500, message: `No s'ha pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-    const url = this.market === 'spot' ? `api/spot/v1/trade/open-orders` : `api/mix/v1/order/marginCoinCurrent`;
-    const response = await this.get(url, { params, error });
-
     const results: Order[] = [];
-    if(this.market === 'spot') {
-      results.map(res => {
-        
-      });
+    if (this.market === 'spot') {
+      const params = { symbol: this.getSymbolProduct(symbol) };
+      const response = await this.get(`api/spot/v1/trade/open-orders`, { params, error });
+      results.push(...(response.data as any[]).map(b => {
+        return {} as any;
+      }));
     } else {
-
+      const params = { procutType: this.getProductType(symbol), marginCoin: quoteAsset };
+      const response = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params, error });
+      results.push(...(response.data as any[]).map(b => {
+        return {} as any;
+      }));
     }
     return Promise.resolve(results);
   }
 
   /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-details Get order details - SPOT } */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-order-details Get order details - FUTURES } */
-  async getOrder(params: GetOrderRequest): Promise<Order> {
-    const { baseAsset, quoteAsset } = params.symbol;
-    const bitgetSymbol = this.getSymbolProduct(params.symbol);
-    const paramsOrder = { symbol: bitgetSymbol, marginCoin: quoteAsset };
-    const error = { code: 500, message: `No s'ha pogut obtenir la order a Bitget.` };
-    const url = this.market === 'spot' ? `api/spot/v1/trade/orderInfo` : `api/mix/v1/order/detail`;
-    const response = await this.get(url, { params, error });
-    return Promise.resolve<Order>({
-      id: response.clientOrderId,
-      exchangeId: response.orderId,
-      side: parseOrderSide(response.side as BitgetOrderSide),
-      type: OrderType,
-      status: OrderStatus,
-      // symbol?: SymbolType,
-      // baseQuantity?: number,
-      // quoteQuantity?: number,
-      // price?: number,
-      // stopPrice?: number,
-      // rejectReason?: string,
-      // isOco?: boolean,
-      // created?: string,
-      // posted?: string,
-      // executed?: string,
-      // syncronized?: boolean,
-      // idOrderBuyed?: string,
-      // profit?: number,
-      // commission?: number,
-      // commissionAsset?: CoinType,
-    });
-  }
+  getOrder(params: GetOrderRequest): Promise<Order> { return {} as any; }
+  // async getOrder(params: GetOrderRequest): Promise<Order> {
+  //   const { baseAsset, quoteAsset } = params.symbol;
+  //   const bitgetSymbol = this.getSymbolProduct(params.symbol);
+  //   const paramsOrder = { symbol: bitgetSymbol, marginCoin: quoteAsset };
+  //   const error = { code: 500, message: `No s'ha pogut obtenir la order a Bitget.` };
+  //   const url = this.market === 'spot' ? `api/spot/v1/trade/orderInfo` : `api/mix/v1/order/detail`;
+  //   const response = await this.get(url, { params, error });
+  //   return Promise.resolve<Order>({
+  //     id: response.clientOrderId,
+  //     exchangeId: response.orderId,
+  //     side: parseOrderSide(response.side as BitgetOrderSide),
+  //     type: OrderType,
+  //     status: OrderStatus,
+  //     // symbol?: SymbolType,
+  //     // baseQuantity?: number,
+  //     // quoteQuantity?: number,
+  //     // price?: number,
+  //     // stopPrice?: number,
+  //     // rejectReason?: string,
+  //     // isOco?: boolean,
+  //     // created?: string,
+  //     // posted?: string,
+  //     // executed?: string,
+  //     // syncronized?: boolean,
+  //     // idOrderBuyed?: string,
+  //     // profit?: number,
+  //     // commission?: number,
+  //     // commissionAsset?: CoinType,
+  //   });
+  // }
 
   // getAccountTradeList(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 

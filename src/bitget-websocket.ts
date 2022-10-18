@@ -312,13 +312,17 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       case 'ticker':
       case 'klines':
       case 'account':
+      case 'positions':
       case 'orders':
+      case 'ordersAlgo':
         const obj = data as BitgetWsChannelEvent;
         this.emitChannelEvent(obj);
         break;
+      case 'error':
+        throw { code: data.code, message: `WEBSOCKET-ERROR: ${data.msg}` };
       default:
         console.log('onWsMessage =>', data);
-        console.log(JSON.stringify(data));
+        // console.log(JSON.stringify(data));
     }
   }
 
@@ -382,21 +386,41 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   //  Private channels
   // ---------------------------------------------------------------------------------------------------
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#account-channel Account channel} */
-  accountUpdate(asset?: CoinType): Subject<WsAccountUpdate> {
-    const channel: BitgetWsChannelType = 'account';
-    const instId = asset ? asset : 'default';
-    const instType = this.market === 'spot' ? 'spbl' : 'umcbl';
-    return this.registerChannelSubscription({ channel, instType, instId });
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#account-channel Account channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#account-channel Account channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#positions-channel Positions channel}
+   */
+  accountUpdate(symbol?: SymbolType): Subject<WsAccountUpdate> {
+    if (this.market === 'spot') {
+      // NOTA: el canal `account` no accepta monedes per `instId`, només 'default'.
+      return this.registerChannelSubscription({ channel: 'account', instType: 'spbl', instId: 'default' });
+    } else {
+      const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
+      const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
+      // NOTA: el canal `account` no accepta monedes per `instId`, només 'default'.
+      // NOTA: el canal `positions` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
+      return this.registerChannelSubscription([{ channel: 'account', instType, instId: 'default' }, { channel: 'positions', instType, instId }]);
+    }
   }
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#order-channel Order channel} */
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#order-channel Order channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#order-channel Order channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#plan-order-channel Plan Order Channel}
+   */
   orderUpdate(symbol?: SymbolType): Subject<Order> {
-    // const instType = this.bitgetMarket;
-    // const uly = symbol ? { uly: formatSymbol(symbol) } : undefined;
-    // const subject = this.registerChannelSubscription([{ channel: 'orders', instType, ...uly }, { channel: 'orders-algo', instType, ...uly }]);
-    // return subject;
-    return {} as any;
+    if (this.market === 'spot') {
+      const instId = symbol ? { instId: this.api.getSymbolProduct(symbol) } : 'default';
+      // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
+      return this.registerChannelSubscription({ channel: 'orders', instType: 'spbl', instId });
+    } else {
+      const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
+      const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
+      // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
+      // NOTA: el canal `ordersAlgo` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
+      return this.registerChannelSubscription([{ channel: 'orders', instType, instId: 'default' }, { channel: 'ordersAlgo', instType, instId }]);
+    }
   }
 
 
@@ -408,12 +432,12 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     if (!Array.isArray(args)) { args = [args] };
     // Ex: channelKey = 'tickers#USDT'
     const channelKey = args.map(arg => buildChannelKey(arg)).join(';');
-    const stored = this.emitters[channelKey]
-    if (stored) { return stored; }
+    const emitter = this.emitters[channelKey]
+    if (emitter) { return emitter; }
     const created = new Subject<any>();
     this.emitters[channelKey] = created;
     this.subArguments[channelKey] = args;
-    if (this.status === 'connected') { args.map(a => this.subscribeChannel(a)); }
+    if (this.status === 'connected') { args.map(arg => this.subscribeChannel(arg)); }
     return created;
   }
 
@@ -437,16 +461,16 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     // NOTA: Eliminem l'identificador d'usuari que l'exchange ha afegit a la resposta per fer coincidir la channelKey.
     delete ev.arg.uid;
     const channelKey = Object.keys(this.subArguments).find(key => !!this.subArguments[key].find(arg => matchChannelKey(arg, ev.arg)));
-    const stored = this.emitters[channelKey];
-    if (!stored) { return; }
-    const hasSubscriptions = !isSubjectUnobserved(stored);
+    const emitter = this.emitters[channelKey];
+    if (!emitter) { return; }
+    const hasSubscriptions = !isSubjectUnobserved(emitter);
     if (hasSubscriptions) {
       const parser = this.getChannelParser(ev.arg);
       const value = parser ? parser.call(this, ev) : ev;
-      stored.next(value);
+      emitter.next(value);
     } else {
       this.unsubscribeChannel(ev.arg);
-      if (stored) { stored.complete(); }
+      if (emitter) { emitter.complete(); }
       delete this.emitters[channelKey];
       delete this.subArguments[channelKey];
     }
@@ -489,7 +513,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
    */
    parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice {
     const data = ev.data[0];
-    const symbol = this.api.getSymbolType(ev.arg.instId);
+    const symbol = this.api.parseInstrumentId(ev.arg.instId);
     const baseVolume = +data.baseVolume;
     const quoteVolume = +data.quoteVolume;
     const ts = +data[this.market === 'spot' ? 'ts' : 'systemTime'];
@@ -506,7 +530,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#candlesticks-channel Candlesticks channel}
    */
   parseKlineTickerEvent(ev: BitgetWsChannelEvent): MarketKline {
-    const symbol = this.api.getSymbolType(ev.arg.instId);
+    const symbol = this.api.parseInstrumentId(ev.arg.instId);
     const candle = ev.arg.channel.replace('candle', '');
     const unit = candle.charAt(candle.length - 1);
     const interval = (['H', 'D', 'W', 'Y'].includes(unit) ? candle.toLocaleLowerCase() : candle) as KlineIntervalType;

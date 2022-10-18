@@ -1,7 +1,7 @@
-import { MarketType, WebsocketOptions } from '@metacodi/abstract-exchange';
 import * as fs from 'fs';
 
-import { Resource } from '@metacodi/node-utils';
+import { Resource, Terminal, timestamp } from '@metacodi/node-utils';
+import { MarketType, SymbolType, WebsocketOptions } from '@metacodi/abstract-exchange';
 
 import { BitgetWebsocket } from '../src/bitget-websocket';
 
@@ -16,15 +16,17 @@ import { getApiKeys } from './api-keys';
 
 
 /** Archivo donde se escribirá la salida. */
-const logFileName = 'results/klines-1m.json';
+const logFileName = 'log/accountUpdate.ts';
 
 /** Escribe en el archivo `logFileName`. */
-function writeLog(variable: string, data: any) {
-  const url = Resource.normalize(`./test/${logFileName}`);
+function writeLog(variable: string, data: any, fileName?: string) {
+  const url = Resource.normalize(`./test/${fileName || logFileName}`);
   const value = JSON.stringify(data, null, ' ');
   console.log(value);
   fs.appendFileSync(url, `const ${variable} = ${value};\n\n`);
 }
+
+const unixTime = () => timestamp().replace(new RegExp(`[ :.-]`, 'g'), '_');
 
 const testMarketWs = async () => {
   try {
@@ -34,7 +36,7 @@ const testMarketWs = async () => {
     // const market: MarketType = 'spot';
     const market: MarketType = 'futures';
 
-    const isTest = true;
+    const isTest = false;
 
     const options: WebsocketOptions = {
       streamType: 'user',
@@ -48,23 +50,22 @@ const testMarketWs = async () => {
 
     // ws.addListener('message', msg => console.log('message =>', msg));
     
-    const accountUpdate = ws.accountUpdate().subscribe(data => console.log('accountUpdate =>', data));
-    // const accountUpdate = ws.accountUpdate('BTC').subscribe(data => console.log('accountUpdate =>', data));
-    // const accountETH = ws.accountUpdate({ ccy: 'ETH'}).subscribe(data => console.log('accountUpdate ETH =>', data));
-    // const positionsUpdate = ws.positionsUpdate({ instType: 'SWAP'}).subscribe(data => console.log('positionsUpdate =>', data));
-    // const balancePositioUpdate = ws.balancePositionUpdate().subscribe(data => console.log('balancePositionUpdate =>', data));
+    const symbol: SymbolType = { baseAsset: 'BTC', quoteAsset: 'USDT' };
+
+    // const accountUpdate = ws.accountUpdate().subscribe(data => console.log('accountUpdate =>', data));
+    const accountUpdate = ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/raw_accountUpdate-${market}.ts`));
+    // const accountUpdate = ws.accountUpdate(symbol).subscribe(data => console.log('accountUpdate =>', data));
 
     // const orderUpdate = ws.orderUpdate().subscribe(data => console.log('orderUpdate =>', data));
-    // const orderUpdate = ws.orderUpdate('BTC_USDT').subscribe(data => console.log('orderUpdate =>', data));
-    // const orderUpdate = ws.orderUpdate({ instType: 'SWAP'}).subscribe(data => console.log('orderUpdate =>', data));
-    // const orderUpdateSPOT = ws.orderUpdate({ instType: 'SPOT'}).subscribe(data => console.log('orderUpdate =>', data));
+    // const orderUpdate = ws.orderUpdate(symbol).subscribe(data => console.log('orderUpdate =>', data));
 
     // setTimeout(() => { console.log('Close...'); ws.close(); }, 120000);
     // setTimeout(() => { console.log('Test => Unsubscribe accountUpdate'); accountUpdate.unsubscribe(); }, 3000);
     // setTimeout(() => { console.log('Test => Unsubscribe orderUpdate'); orderUpdate.unsubscribe(); }, 3000);
 
   } catch (error) {
-    console.error('Websocket ERROR', error);
+    Terminal.error(error, false);
+    console.log(error);
   }
 };
 

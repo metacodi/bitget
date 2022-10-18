@@ -22,9 +22,9 @@ export type BitgetOrderSide = 'buy' | 'sell';
 //  Websocket
 // ---------------------------------------------------------------------------------------------------
 
-export type BitgetWsChannelType = 'ticker' | `candle${KlineIntervalType}` | 'account' | 'positions' | 'balance_and_position' | 'orders' | 'orders-algo' | 'liquidation-warning';
+export type BitgetWsChannelType = 'ticker' | `candle${KlineIntervalType}` | 'account' | 'positions' | 'balance_and_position' | 'orders' | 'ordersAlgo' | 'liquidation-warning';
 
-export type BitgetWsEventType = 'pong' | 'login' | 'subscribe' | 'unsubscribe';
+export type BitgetWsEventType = 'pong' | 'login' | 'subscribe' | 'unsubscribe' | 'error';
 
 export interface BitgetWsLoginRequest {
   op: 'login',
