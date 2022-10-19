@@ -29,8 +29,8 @@ const testMarketWs = async () => {
 
     console.log('---------------- Market WebSocket TEST ----------------------');
 
-    const market: MarketType = 'spot';
-    // const market: MarketType = 'futures';
+    // const market: MarketType = 'spot';
+    const market: MarketType = 'futures';
 
     const isTest = false;
 

@@ -4,8 +4,8 @@ import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from "@metacodi/node-utils";
 import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
-import { BitgetOrderSide, BitgetOrderType, BitgetOrderStatus } from './bitget.types';
-import { parseOrderSide, parseOrderStatus, parseOrderType } from "./bitget-parsers";
+import { BitgetOrderSide, BitgetOrderType, BitgetOrderStatus, BitgetPlanStatus, BitgetOrderTradeSide } from './bitget.types';
+import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, formatOrderSide, formatOrderType, formatOrderTradeSide } from './bitget-parsers';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
@@ -614,13 +614,49 @@ export class BitgetApi implements ExchangeApi {
       const params = { symbol: this.getSymbolProduct(symbol) };
       const response = await this.post(`api/spot/v1/trade/open-orders`, { params, error });
       results.push(...(response.data as any[]).map(o => {
-        return o as any;
+        return {
+          id: o.clientOrderId,
+          exchangeId: o.orderId,
+          side: parseOrderSide(o.side),
+          type: parseOrderType(o.orderType),
+          status: parseOrderStatus(o.status),
+          symbol: this.parseSymbolProduct(o.symbol),
+          baseQuantity: +o.quantity,
+          price: +o.price,
+          created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
+        };
       }));
     } else {
       const params = { productType: this.getProductType(symbol), marginCoin: quoteAsset };
       const response = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params, error });
       results.push(...(response.data as any[]).map(o => {
-        return o as any;
+        return {
+          id: o.clientOid,
+          exchangeId: o.orderId,
+          side: parsetOrderTradeSide(o.side),
+          type: parseOrderType(o.orderType),
+          status: parseOrderStatus(o.state),
+          symbol: this.parseSymbolProduct(o.symbol),
+          baseQuantity: +o.size,
+          price: +o.price,
+          created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
+        };
+      }));
+      const paramsPlan = { symbol: this.getSymbolProduct(symbol), productType: this.getProductType(symbol), marginCoin: quoteAsset };
+      const responsePlan = await this.get(`api/mix/v1/plan/currentPlan`, { params, error });
+      results.push(...(responsePlan.data as any[]).map(o => {
+        return {
+          id: null,
+          exchangeId: o.orderId,
+          side: parsetOrderTradeSide(o.side),
+          type: parseOrderType(o.orderType),
+          status: parsePlanStatus(o.status),
+          symbol: this.parseSymbolProduct(o.symbol),
+          baseQuantity: +o.size,
+          price: +o.executePrice,
+          stopPrice: +o.triggerPrice,
+          created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss'),
+        };
       }));
     }
     return Promise.resolve(results);
@@ -629,7 +665,7 @@ export class BitgetApi implements ExchangeApi {
   /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-details Get order details - SPOT } */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-order-details Get order details - FUTURES } */
   async getOrder(params: GetOrderRequest): Promise<any> {
-  // async getOrder(params: GetOrderRequest): Promise<Order> {
+    // async getOrder(params: GetOrderRequest): Promise<Order> {
     const { baseAsset, quoteAsset } = params.symbol;
     const bitgetSymbol = this.getSymbolProduct(params.symbol);
     const paramsOrder = { symbol: bitgetSymbol, marginCoin: quoteAsset };
@@ -637,28 +673,28 @@ export class BitgetApi implements ExchangeApi {
     const url = this.market === 'spot' ? `api/spot/v1/trade/orderInfo` : `api/mix/v1/order/detail`;
     const response = await this.get(url, { params, error });
     return response;
-    return Promise.resolve<Order>({
-      id: response.clientOrderId,
-      exchangeId: response.orderId,
-      side: parseOrderSide(response.side as BitgetOrderSide),
-      type: parseOrderType(response.orderType as BitgetOrderType),
-      status: parseOrderStatus(response.status as BitgetOrderStatus),
-      symbol: this.parseSymbolProduct(response.symbol),
-      baseQuantity: this.market === 'spot' ? +response.quantity : +response.quantity,
-      // quoteQuantity?: number,
-      price: +response.price,
-      // stopPrice?: number,
-      // rejectReason?: string,
-      // isOco?: boolean,
-      // created?: string,
-      // posted?: string,
-      // executed?: string,
-      // syncronized?: boolean,
-      // idOrderBuyed?: string,
-      // profit?: number,
-      // commission?: number,
-      // commissionAsset?: CoinType,
-    });
+    // return Promise.resolve<Order>({
+    //   id: response.clientOrderId,
+    //   exchangeId: response.orderId,
+    //   side: parseOrderSide(response.side),
+    //   type: parseOrderType(response.orderType),
+    //   status: parseOrderStatus(response.status),
+    //   symbol: this.parseSymbolProduct(response.symbol),
+    //   baseQuantity: this.market === 'spot' ? +response.quantity : +response.size,
+    //   // quoteQuantity?: number,
+    //   price: +response.price,
+    //   // stopPrice?: number,
+    //   // rejectReason?: string,
+    //   // isOco?: boolean,
+    //   created: moment(response.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
+    //   // posted?: string,
+    //   // executed?: string,
+    //   // syncronized?: boolean,
+    //   // idOrderBuyed?: string,
+    //   // profit?: number,
+    //   // commission?: number,
+    //   // commissionAsset?: CoinType,
+    // });
   }
 
   // getAccountTradeList(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
@@ -667,10 +703,65 @@ export class BitgetApi implements ExchangeApi {
   //  Trade Orders
   // ---------------------------------------------------------------------------------------------------
 
-  postOrder(params: PostOrderRequest): Promise<Order> { return {} as any; }
+  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#place-order Place order - SPOT } */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-order Place order - Futures } */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-stop-order Place Stop Order - Futures } */
+  async postOrder(params: PostOrderRequest): Promise<Order> {
+    const bitgetSymbol = this.getSymbolProduct(params.symbol);
+    if (this.market === 'spot') {
+      const paramsOrder = {
+        symbol: bitgetSymbol,
+        side: formatOrderSide(params.side),
+        orderType: formatOrderType(params.type),
+        force: 'normal',
+        price: +params.price,
+        quantity: +params.quantity,
+        clientOrderId: params.id
+      };
+      const error = { code: 500, message: `No s'ha pogut enviar la order en spot a Bitget.` };
+      const response = await this.post(`api/spot/v1/trade/orders`, { params: paramsOrder, error });
+      const order: Order = { status: 'new', exchangeId: response.orderId, ...params };
+      return order;
+    } else {
+      const { baseAsset, quoteAsset } = params.symbol;
+      let paramsOrder: any = {
+        symbol: bitgetSymbol,
+        marginCoin: quoteAsset,
+        size: +params.quantity,
+        clientOid: params.id,
+        side: formatOrderTradeSide(params.side),
+        timeInForceValue: 'normal',
+      };
+      if (params.type === 'limit' || params.type === 'market') {
+        const extraParams = {
+          price: +params.price,
+          orderType: formatOrderType(params.type),
+        };
+        paramsOrder = { ...paramsOrder, ...extraParams };
+        const error = { code: 500, message: `No s'ha pogut enviar la order en futures a Bitget.` };
+        const response = await this.post(`api/mix/v1/order/placeOrder`, { params: paramsOrder, error });
+        const order: Order = { status: 'new', exchangeId: response.orderId, ...params };
+        return order;
+
+      } else {
+        paramsOrder = { ...paramsOrder, executePrice: +params.price, } ;
+        if (params.type === 'stop'|| params.type === 'stop_loss_limit') {
+          paramsOrder = { ...paramsOrder, triggerPrice: +params.stopPrice, orderType: 'limit', triggerType: 'fill_price' } ;
+        }
+        if (params.type === 'stop_market') {
+          paramsOrder = { ...paramsOrder, triggerPrice: +params.stopPrice, orderType: 'market', triggerType: 'market_price' } ;
+        }
+
+        const error = { code: 500, message: `No s'ha pogut enviar la order de stop en futures a Bitget.` };
+        const response = await this.post(`api/mix/v1/plan/placePlan`, { params: paramsOrder, error });
+        const order: Order = { status: 'new', exchangeId: response.orderId, ...params };
+        return order;
+      }
+    }
+  }
 
   cancelOrder(params: CancelOrderRequest): Promise<Order> { return {} as any; }
 
   cancelAllSymbolOrders(symbol: SymbolType): Promise<Order> { return {} as any; }
-  
+
 }

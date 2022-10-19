@@ -19,6 +19,6 @@ fi
 
 if [ $FIRST_ARGUMENT == "test" ] 
 then
-  npx ts-node test/test.ts
+  npx ts-node test/test-api.ts
 fi
 

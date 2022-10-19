@@ -52,11 +52,11 @@ const testMarketWs = async () => {
     
     const symbol: SymbolType = { baseAsset: 'BTC', quoteAsset: 'USDT' };
 
-    // const accountUpdate = ws.accountUpdate().subscribe(data => console.log('accountUpdate =>', data));
-    const accountUpdate = ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/raw_accountUpdate-${market}.ts`));
+    const accountUpdate = ws.accountUpdate().subscribe(data => console.log('accountUpdate =>', data));
+    // const accountUpdate = ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/raw_accountUpdate-${market}.ts`));
     // const accountUpdate = ws.accountUpdate(symbol).subscribe(data => console.log('accountUpdate =>', data));
 
-    // const orderUpdate = ws.orderUpdate().subscribe(data => console.log('orderUpdate =>', data));
+    const orderUpdate = ws.orderUpdate().subscribe(data => console.log('orderUpdate =>', data));
     // const orderUpdate = ws.orderUpdate(symbol).subscribe(data => console.log('orderUpdate =>', data));
 
     // setTimeout(() => { console.log('Close...'); ws.close(); }, 120000);

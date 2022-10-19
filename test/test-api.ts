@@ -34,8 +34,8 @@ const testApi = async () => {
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
-      market: 'spot',
-      // market: 'futures',
+      // market: 'spot',
+      market: 'futures',
       isTest,
     } as any;
 
@@ -45,7 +45,7 @@ const testApi = async () => {
     
     const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
     console.log('getOpenOrders() =>', getOpenOrders );
-    writeLog('results/getOpenOrders.ts', getOpenOrders);
+    writeLog(`getOpenOrders_${options.market}`, getOpenOrders);
 
     // console.log('getLeverage() =>', await api.getLeverage({ quoteAsset: 'USDT', baseAsset: 'BTC'}, 'isolated'));
     // console.log('setLeverage() =>', await api.setLeverage({ symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, coin: 'USDT', longLeverage: 75, shortLeverage: 75, mode: 'cross'} ));

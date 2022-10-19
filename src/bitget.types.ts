@@ -28,14 +28,34 @@ export type BitgetOrderStatus =
   'cancelled' //	Cancelled
   ;
 
+/** {@link https://bitgetlimited.github.io/apidoc/en/mix/#planstatus } */
+export type BitgetPlanStatus =
+  'not_trigger' |
+  'triggered' |
+  'fail_trigger' |
+  'cancel'
+  ;
+
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#side } */
 export type BitgetOrderSide = 'buy' | 'sell';
 
+/** {@link https://bitgetlimited.github.io/apidoc/en/mix/#tradeside } */
+export type BitgetOrderTradeSide = 
+'open_long' |
+'open_short' |
+'close_long' |
+'close_short' |
+'burst_close_long' |
+'burst_close_short' |
+'offset_close_long' |
+'offset_close_short' 
+;
+
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#ordertype } */
 export type BitgetOrderType =
-'market' | // market order
-'limit' // limit order
-;
+  'market' | // market order
+  'limit' // limit order
+  ;
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#accounttype } */
 export type accountType =
