@@ -15,7 +15,7 @@ import { getApiKeys } from './api-keys';
  */
 
 /** Archivo donde se escribirá la salida. */
-const logFileName = 'results/getAssetBalance.ts';
+const logFileName = 'results/getOpenOrders.ts';
 
 /** Escribe en el archivo `logFileName`. */
 function writeLog(variable: string, data: any) {
@@ -34,15 +34,19 @@ const testApi = async () => {
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
-      // market: 'spot',
-      market: 'futures',
+      market: 'spot',
+      // market: 'futures',
       isTest,
     } as any;
 
     const api = new BitgetApi(options);
   
     console.log('getExchangeInfo() =>', await api.getExchangeInfo());
-    // console.log('getAccountInfo() =>', await api.getAccountInfo());
+    
+    const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
+    console.log('getOpenOrders() =>', getOpenOrders );
+    writeLog('results/getOpenOrders.ts', getOpenOrders);
+
     // console.log('getLeverage() =>', await api.getLeverage({ quoteAsset: 'USDT', baseAsset: 'BTC'}, 'isolated'));
     // console.log('setLeverage() =>', await api.setLeverage({ symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, coin: 'USDT', longLeverage: 75, shortLeverage: 75, mode: 'cross'} ));
     // api.getExchangeInfo().then(async response => {
