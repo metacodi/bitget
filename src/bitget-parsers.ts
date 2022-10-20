@@ -1,7 +1,7 @@
 import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from '@metacodi/node-utils';
-import { SymbolType, WsStreamType, MarketType, MarketPrice, MarketKline, calculateCloseTime, KlineIntervalType, Order, WsAccountUpdate, OrderSide, OrderType, OrderStatus } from '@metacodi/abstract-exchange';
+import { SymbolType, WsStreamType, MarketType, MarketPrice, MarketKline, calculateCloseTime, KlineIntervalType, Order, WsAccountUpdate, OrderSide, OrderType, OrderStatus, TradeSide } from '@metacodi/abstract-exchange';
 
 import { BitgetOrderSide, BitgetOrderStatus, BitgetOrderTradeSide, BitgetOrderType, BitgetPlanStatus, BitgetWsChannelEvent } from './bitget.types';
 
@@ -21,31 +21,49 @@ export const formatOrderSide = (market: OrderSide): BitgetOrderSide => {
   }
 }
 
-export const parsetOrderTradeSide = (market: BitgetOrderTradeSide): OrderSide => {
+export const parsetOrderSideFutures = (market: BitgetOrderTradeSide): OrderSide => {
+  switch (market) {
+    case 'open_long': 
+    case 'open_short': 
+      return 'buy';
+    case 'close_long': 
+    case 'close_short': 
+      return 'sell';
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderSideFutures type '${market}'` });
+  }
+}
+
+export const formatOrderTradeSide = (side: OrderSide, tradeSide: TradeSide): BitgetOrderTradeSide => {
+  switch (side) {
+    case 'buy': return tradeSide === 'long' ? 'open_long' : 'open_short';
+    case 'sell': return tradeSide === 'long' ? 'close_long' : 'close_short';
+    default: throw ({ message: `No s'ha implementat el format Bitget pel TradeSide type '${side}'` });
+  }
+}
+
+export const parsetOrderTradeSide = (market: BitgetOrderTradeSide): TradeSide => {
   switch (market) {
     case 'open_long': 
     case 'close_long': 
-      return 'buy';
+      return 'long';
     case 'open_short': 
     case 'close_short': 
-      return 'sell';
+      return 'short';
     default: throw ({ message: `No s'ha implementat el parser Bitget pel TradeSide type '${market}'` });
   }
 }
 
-export const formatOrderTradeSide = (market: OrderSide): BitgetOrderTradeSide => {
-  switch (market) {
-    case 'buy': return 'open_long';
-    case 'sell': return 'open_short';
-    default: throw ({ message: `No s'ha implementat el format Bitget pel TradeSide type '${market}'` });
-  }
-}
-
-
-export const parseOrderType = (market: BitgetOrderType): OrderType => {
+export const parseOrderType = (market: BitgetOrderType, ): OrderType => {
   switch (market) {
     case 'market': return 'market';
     case 'limit': return 'limit';
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${market}'` });
+  }
+}
+export const parseOrderTypeFutures = (market: BitgetOrderType): OrderType => {
+  switch (market) {
+    case 'market': return 'stop_market';
+    case 'limit': return 'stop';
     default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${market}'` });
   }
 }
