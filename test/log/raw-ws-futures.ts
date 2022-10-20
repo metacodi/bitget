@@ -758,3 +758,63 @@ const orders_sumcbl_2022_10_20_06_03_35_823 = {
  ]
 };
 
+const account_sumcbl_2022_10_20_12_33_41_064 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "sumcbl",
+  "channel": "account",
+  "instId": "default"
+ },
+ "data": [
+  {
+   "marginCoin": "SUSDT",
+   "locked": "0.00000000",
+   "available": "2962.03835639",
+   "maxOpenPosAvailable": "2962.03835639",
+   "maxTransferOut": "2962.03835639",
+   "equity": "2962.03835639",
+   "usdtEquity": "2962.038356399999"
+  }
+ ]
+};
+
+const positions_umcbl_2022_10_20_12_33_41_075 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "positions",
+  "instId": "default"
+ },
+ "data": []
+};
+
+const account_sumcbl_2022_10_20_12_35_51_755 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "sumcbl",
+  "channel": "account",
+  "instId": "default"
+ },
+ "data": [
+  {
+   "marginCoin": "SUSDT",
+   "locked": "0.00000000",
+   "available": "2962.03835639",
+   "maxOpenPosAvailable": "2962.03835639",
+   "maxTransferOut": "2962.03835639",
+   "equity": "2962.03835639",
+   "usdtEquity": "2962.038356399999"
+  }
+ ]
+};
+
+const positions_umcbl_2022_10_20_12_35_51_762 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "positions",
+  "instId": "default"
+ },
+ "data": []
+};
+

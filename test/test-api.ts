@@ -2,7 +2,7 @@ import moment from 'moment';
 import { interval } from 'rxjs';
 import * as fs from 'fs';
 
-import { Resource, Terminal } from '@metacodi/node-utils';
+import { Resource, Terminal, timestamp } from '@metacodi/node-utils';
 import { ApiOptions } from '@metacodi/abstract-exchange';
 
 import { BitgetApi } from '../src/bitget-api';
@@ -18,12 +18,14 @@ import { getApiKeys } from './api-keys';
 const logFileName = 'results/cancelAllOrder.ts';
 
 /** Escribe en el archivo `logFileName`. */
-function writeLog(variable: string, data: any) {
-  const url = Resource.normalize(`./test/${logFileName}`);
+function writeLog(variable: string, data: any, fileName?: string) {
+  const url = Resource.normalize(`./test/${fileName || logFileName}`);
   const value = JSON.stringify(data, null, ' ');
   console.log(value);
   fs.appendFileSync(url, `const ${variable} = ${value};\n\n`);
 }
+
+const unixTime = () => timestamp().replace(new RegExp(`[ :.-]`, 'g'), '_');
 
 const testApi = async () => {
   try {
@@ -43,9 +45,9 @@ const testApi = async () => {
 
     console.log('getExchangeInfo() =>', await api.getExchangeInfo());
 
-    // const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
-    // console.log('getOpenOrders() =>', getOpenOrders );
-    // writeLog(`getOpenOrders_${options.market}`, getOpenOrders);
+    const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
+    console.log('getOpenOrders() =>', getOpenOrders );
+    writeLog(`getOpenOrders_${options.market}`, getOpenOrders, 'results/getOpenOrders.ts');
 
     let id = 20;
     // // Post Order (market) buy
@@ -92,22 +94,22 @@ const testApi = async () => {
 
     // id++;
     // // Post Order (stop_market) buy
-    const postOrder_stop = await api.postOrder({
-      id: `1-1-${id}`,
-      side: 'buy',
-      type: 'stop_market',
-      trade: 'long',
-      symbol: {
-        quoteAsset: 'USDT',
-        baseAsset: 'BTC'
-      },
-      quantity: 0.05,
-      price: 18950,
-      stopPrice: 18960
-    });
+    // const postOrder_stop = await api.postOrder({
+    //   id: `1-1-${id}`,
+    //   side: 'buy',
+    //   type: 'stop_market',
+    //   trade: 'long',
+    //   symbol: {
+    //     quoteAsset: 'USDT',
+    //     baseAsset: 'BTC'
+    //   },
+    //   quantity: 0.05,
+    //   price: 18950,
+    //   stopPrice: 18960
+    // });
 
-    console.log('postOrder() =>', postOrder_stop);
-    writeLog(`postOrder_${options.market}`, postOrder_stop);
+    // console.log('postOrder() =>', postOrder_stop);
+    // writeLog(`postOrder_${options.market}`, postOrder_stop);
 
     // Cancel Order
     // const cancelOrder = await api.cancelOrder({ symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, exchangeId: '966846413174018048', triggered: true});
