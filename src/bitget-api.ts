@@ -804,6 +804,8 @@ export class BitgetApi implements ExchangeApi {
     }
   }
 
+  async cancelAllSymbolOrders(symbol: SymbolType, orders?: Order[]): Promise<Order[]> { return {} as any; }
+
   // async cancelAllSymbolOrders(symbol: SymbolType, orders?: Order[]): Promise<Order[]> {
   //   const bitgetSymbol = this.getSymbolProduct(symbol);
   //   const results: Order[] = [];

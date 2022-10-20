@@ -47,7 +47,7 @@ const testApi = async () => {
     // console.log('getOpenOrders() =>', getOpenOrders );
     // writeLog(`getOpenOrders_${options.market}`, getOpenOrders);
 
-    let id = 18;
+    let id = 20;
     // // Post Order (market) buy
     // const postOrder_buy = await api.postOrder({
     //   id: `1-1-${id}`,
@@ -92,22 +92,22 @@ const testApi = async () => {
 
     // id++;
     // // Post Order (stop_market) buy
-    // const postOrder_stop = await api.postOrder({
-    //   id: `1-1-${id}`,
-    //   side: 'buy',
-    //   type: 'stop_market',
-    //   trade: 'long',
-    //   symbol: {
-    //     quoteAsset: 'USDT',
-    //     baseAsset: 'BTC'
-    //   },
-    //   quantity: 0.05,
-    //   price: 18950,
-    //   stopPrice: 18960
-    // });
+    const postOrder_stop = await api.postOrder({
+      id: `1-1-${id}`,
+      side: 'buy',
+      type: 'stop_market',
+      trade: 'long',
+      symbol: {
+        quoteAsset: 'USDT',
+        baseAsset: 'BTC'
+      },
+      quantity: 0.05,
+      price: 18950,
+      stopPrice: 18960
+    });
 
-    // console.log('postOrder() =>', postOrder);
-    // writeLog(`postOrder_${options.market}`, postOrder);
+    console.log('postOrder() =>', postOrder_stop);
+    writeLog(`postOrder_${options.market}`, postOrder_stop);
 
     // Cancel Order
     // const cancelOrder = await api.cancelOrder({ symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, exchangeId: '966846413174018048', triggered: true});
@@ -115,9 +115,9 @@ const testApi = async () => {
     // writeLog(`cancelOrder_${options.market}`, cancelOrder);
 
     // Cancel All Orders
-    const cancelAllOrder = await api.cancelAllSymbolOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
-    console.log('cancelAllOrder() =>', cancelAllOrder);
-    writeLog(`cancelAllOrder_${options.market}`, cancelAllOrder);
+    // const cancelAllOrder = await api.cancelAllSymbolOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
+    // console.log('cancelAllOrder() =>', cancelAllOrder);
+    // writeLog(`cancelAllOrder_${options.market}`, cancelAllOrder);
 
 
 
