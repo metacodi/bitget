@@ -622,6 +622,7 @@ export class BitgetApi implements ExchangeApi {
       const params = { symbol: this.getSymbolProduct(symbol) };
       const response = await this.post(`api/spot/v1/trade/open-orders`, { params, error });
       results.push(...(response.data as any[]).map(o => {
+        // return o as any; 
         return {
           id: o.clientOrderId,
           exchangeId: o.orderId,
@@ -638,6 +639,7 @@ export class BitgetApi implements ExchangeApi {
       const params = { productType: this.getProductType(symbol), marginCoin: quoteAsset };
       const response = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params, error });
       results.push(...(response.data as any[]).map(o => {
+        // return o as any; 
         return {
           id: o.clientOid,
           exchangeId: o.orderId,
@@ -654,6 +656,7 @@ export class BitgetApi implements ExchangeApi {
       const paramsPlan = { symbol: this.getSymbolProduct(symbol), productType: this.getProductType(symbol), marginCoin: quoteAsset };
       const responsePlan = await this.get(`api/mix/v1/plan/currentPlan`, { params: paramsPlan, error });
       results.push(...(responsePlan.data as any[]).map(o => {
+        // return o as any; 
         return {
           id: null,
           exchangeId: o.orderId,

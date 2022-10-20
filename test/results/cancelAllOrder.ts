@@ -39,3 +39,19 @@ const postOrder_futures = {
  "stopPrice": 18960
 };
 
+const postOrder_futures = {
+ "status": "new",
+ "exchangeId": "966939575242526722",
+ "id": "1-1-20",
+ "side": "buy",
+ "type": "stop_market",
+ "trade": "long",
+ "symbol": {
+  "quoteAsset": "USDT",
+  "baseAsset": "BTC"
+ },
+ "quantity": 0.05,
+ "price": 18950,
+ "stopPrice": 18960
+};
+

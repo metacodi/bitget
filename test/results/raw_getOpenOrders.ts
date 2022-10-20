@@ -88,19 +88,38 @@ const getOpenOrders_futures = [
 ];
 
 
-const getOpenOrders_futures = [
+const getOpenOrders_futures_raw = [
  {
-  "exchangeId": "966644582781181953",
-  "side": "buy",
-  "type": "limit",
-  "status": "new",
-  "symbol": {
-   "baseAsset": "BTC",
-   "quoteAsset": "USDT"
-  },
-  "baseQuantity": 0.012,
-  "price": 17250,
-  "created": "2022-10-19 17:05:48"
+  "orderId": "966939575242526722",
+  "symbol": "SBTCSUSDT_SUMCBL",
+  "marginCoin": "SUSDT",
+  "size": "0.05",
+  "executePrice": "0",
+  "triggerPrice": "18960",
+  "status": "not_trigger",
+  "orderType": "market",
+  "planType": "normal_plan",
+  "side": "open_long",
+  "triggerType": "market_price",
+  "presetTakeProfitPrice": "0",
+  "presetTakeLossPrice": "0",
+  "cTime": "1666262280283"
+ },
+ {
+  "orderId": "966938684183617536",
+  "symbol": "SBTCSUSDT_SUMCBL",
+  "marginCoin": "SUSDT",
+  "size": "0.05",
+  "executePrice": "0",
+  "triggerPrice": "18960",
+  "status": "not_trigger",
+  "orderType": "market",
+  "planType": "normal_plan",
+  "side": "open_long",
+  "triggerType": "market_price",
+  "presetTakeProfitPrice": "0",
+  "presetTakeLossPrice": "0",
+  "cTime": "1666262067838"
  }
 ];
 
