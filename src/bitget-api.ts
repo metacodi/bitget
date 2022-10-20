@@ -611,17 +611,21 @@ export class BitgetApi implements ExchangeApi {
 
   getHistoryOrders(params: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List - SPOT } */
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES } */
-  async getOpenOrders(symbol: SymbolType): Promise<Order[]> {
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List - SPOT }
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES }
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List}
+   */
+  async getOpenOrders(symbol: SymbolType): Promise<Partial<Order>[]> {
     const baseAsset = this.isTest ? `S${symbol.baseAsset}` : symbol.baseAsset;
     const quoteAsset = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
     const error = { code: 500, message: `No s'ha pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-    const results: Order[] = [];
+    const results: Partial<Order>[] = [];
     if (this.market === 'spot') {
       const params = { symbol: this.getSymbolProduct(symbol) };
       const response = await this.post(`api/spot/v1/trade/open-orders`, { params, error });
       results.push(...(response.data as any[]).map(o => {
+        // return o as any;
         return {
           id: o.clientOrderId,
           exchangeId: o.orderId,
@@ -638,6 +642,7 @@ export class BitgetApi implements ExchangeApi {
       const params = { productType: this.getProductType(symbol), marginCoin: quoteAsset };
       const response = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params, error });
       results.push(...(response.data as any[]).map(o => {
+        // return o as any;
         return {
           id: o.clientOid,
           exchangeId: o.orderId,
@@ -654,8 +659,9 @@ export class BitgetApi implements ExchangeApi {
       const paramsPlan = { symbol: this.getSymbolProduct(symbol), productType: this.getProductType(symbol), marginCoin: quoteAsset };
       const responsePlan = await this.get(`api/mix/v1/plan/currentPlan`, { params: paramsPlan, error });
       results.push(...(responsePlan.data as any[]).map(o => {
+        // return o as any;
         return {
-          id: null,
+          // id: null,
           exchangeId: o.orderId,
           side: parsetOrderSideFutures(o.side),
           trade: parsetOrderTradeSide(o.side),
