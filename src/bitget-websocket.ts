@@ -400,7 +400,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
       // NOTA: el canal `account` no accepta monedes per `instId`, només 'default'.
       // NOTA: el canal `positions` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
-      return this.registerChannelSubscription([{ channel: 'account', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, { channel: 'positions', instType, instId }]);
+      return this.registerChannelSubscription([{ channel: 'account', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, { channel: 'positions', instType: this.isTest ? 's'+instType : instType, instId }]);
     }
   }
 
@@ -419,7 +419,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
       // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
       // NOTA: el canal `ordersAlgo` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
-      return this.registerChannelSubscription([{ channel: 'orders', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, { channel: 'ordersAlgo', instType, instId }]);
+      return this.registerChannelSubscription([{ channel: 'orders', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, { channel: 'ordersAlgo', instType: this.isTest ? 's'+instType : instType, instId }]);
     }
   }
 
