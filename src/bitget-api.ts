@@ -6,6 +6,7 @@ import { timestamp } from "@metacodi/node-utils";
 import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
 import { BitgetOrderSide, BitgetOrderType, BitgetOrderStatus, BitgetPlanStatus, BitgetOrderTradeSide } from './bitget.types';
 import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, formatOrderSide, formatOrderType, formatOrderTradeSide, parsetOrderSideFutures, parseOrderTypeFutures } from './bitget-parsers';
+import { map } from 'rxjs/operators';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
@@ -792,43 +793,61 @@ export class BitgetApi implements ExchangeApi {
       if (params.triggered) { paramsOrder = { ...paramsOrder, planType: 'normal_plan' }; }
       const error = { code: 500, message: `No s'ha pogut cancelar la order en spot a Bitget.` };
       const response = await this.post(params.triggered ? `api/mix/v1/plan/cancelPlan` : `api/mix/v1/order/cancel-order`, { params: paramsOrder, error });
-      const order: any = { status: 'new', id: response.data.clientOid, ...params };
-      return order;
+      // if (response.message === 'success') {
+      //   const order: Order = { status: 'cancel', id: response.data.clientOid, ...params };
+      //   return order;
+      // } else {
+      //   const order: any = { status: 'rejected', id: response.data.clientOid, ...params };
+      //   return order;
+
+      // }
     }
   }
 
-  async cancelAllSymbolOrders(symbol: SymbolType, orders?: Order[]): Promise<Order[]> {
-    const bitgetSymbol = this.getSymbolProduct(symbol);
-    const results: Order[] = [];
-    const orderIds: any[] = [];
-    if (orders === undefined) { orders = await this.getOpenOrders(symbol); }
-    if (orders && orders.length > 0) {
-      if (this.market === 'spot') {
-        orders.map(o => orderIds.push(o.exchangeId));
-        const error = { code: 500, message: `No s'ha pogut cancelar les order en spot a Bitget.` };
-        const response = await this.post(`api/spot/v1/trade/cancel-batch-orders`, { params: { symbol: bitgetSymbol, orderIds }, error });
-        const params = { symbol: bitgetSymbol, orderIds };
-      } else {
-        const orderNormal = orders.filter(o => o.type === 'market' || o.type === 'limit');
-        if (orderNormal && orderNormal.length > 0) {
-          orderNormal.map(o => orderIds.push(o.exchangeId));
-          const error = { code: 500, message: `No s'ha pogut cancelar les order en spot a Bitget.` };
-          const marginCoin = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
-          const params = { symbol: bitgetSymbol,marginCoin, orderIds };
-          const response = await this.post(`api/mix/v1/order/cancel-batch-orders`, { params, error });
-        }
-        const orderPlan = orders.filter(o => o.type !== 'market' && o.type !== 'limit');
-        if (orderPlan && orderPlan.length > 0) {
-          Promise.all(orderPlan.map(async o => {
-            orderIds.push(o.exchangeId);
-            /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#cancel-plan-order-tpsl} Limit rule: 10 times/1s (uid) */
-            setTimeout(async () => {
-              const response = await this.cancelOrder({ symbol, exchangeId: o.exchangeId, triggered: true });
-            }, 3600 / 10);
-          }));
-        }
-      }
-    }
-    return Promise.resolve(orderIds);
-  }
+  // async cancelAllSymbolOrders(symbol: SymbolType, orders?: Order[]): Promise<Order[]> {
+  //   const bitgetSymbol = this.getSymbolProduct(symbol);
+  //   const results: Order[] = [];
+  //   const orderIds: any[] = [];
+  //   const responseOrderCanceled: any[] = [];
+  //   const responseOrderFailed: any[] = [];
+  //   if (orders === undefined) { orders = await this.getOpenOrders(symbol); }
+  //   if (orders && orders.length > 0) {
+  //     if (this.market === 'spot') {
+  //       orders.map(o => orderIds.push(o.exchangeId));
+  //       const error = { code: 500, message: `No s'ha pogut cancelar les order en spot a Bitget.` };
+  //       const response = await this.post(`api/spot/v1/trade/cancel-batch-orders`, { params: { symbol: bitgetSymbol, orderIds }, error });
+  //       const params = { symbol: bitgetSymbol, orderIds };
+  //     } else {
+  //       const orderNormal = orders.filter(o => o.type === 'market' || o.type === 'limit');
+  //       if (orderNormal && orderNormal.length > 0) {
+  //         orderNormal.map(o => orderIds.push(o.exchangeId));
+  //         const error = { code: 500, message: `No s'ha pogut cancelar les order en spot a Bitget.` };
+  //         const marginCoin = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
+  //         const params = { symbol: bitgetSymbol, marginCoin, orderIds };
+  //         const response = await this.post(`api/mix/v1/order/cancel-batch-orders`, { params, error });
+  //         if (response.data && response.data.order_ids) { 
+  //           response.data.order_ids.map(id => {
+              
+  //           });
+  //           orders.map(o => { o.status = 'cancel'; return o; });
+  //           responseOrderCanceled.push(...(response.data.order_ids)); 
+  //         } 
+  //         if (response.data && response.data.fail_infos) { responseOrderFailed.push(...(response.data.fail_infos)); } 
+  //       }
+  //       const orderPlan = orders.filter(o => o.type !== 'market' && o.type !== 'limit');
+  //       if (orderPlan && orderPlan.length > 0) {
+  //         Promise.all(orderPlan.map(async o => {
+  //           orderIds.push(o.exchangeId);
+  //           /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#cancel-plan-order-tpsl} Limit rule: 10 times/1s (uid) */
+  //           setTimeout(async () => {
+  //             const response = await this.cancelOrder({ symbol, exchangeId: o.exchangeId, triggered: true });
+  //             // if (response && response.status === 'cancel') { responseOrderCanceled.push(...(response.exchangeId)); } 
+  //             // if (response && response.status === 'rejected') { responseOrderFailed.push(...(response.exchangeId)); } 
+  //           }, 3600 / 10);
+  //         }));
+  //       }
+  //     }
+  //   }
+  //   return Promise.resolve();
+  // }
 }
