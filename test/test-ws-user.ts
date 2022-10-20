@@ -36,7 +36,7 @@ const testMarketWs = async () => {
     // const market: MarketType = 'spot';
     const market: MarketType = 'futures';
 
-    const isTest = true;
+    const isTest = false;
 
     const options: WebsocketOptions = {
       streamType: 'user',
@@ -63,8 +63,8 @@ const testMarketWs = async () => {
     // setTimeout(() => { console.log('Test => Unsubscribe accountUpdate'); accountUpdate.unsubscribe(); }, 3000);
     // setTimeout(() => { console.log('Test => Unsubscribe orderUpdate'); orderUpdate.unsubscribe(); }, 3000);
     
-    ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/raw-ws-${market}.ts`));
-    ws.orderUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/raw-ws-${market}.ts`));
+    ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-01-${market}.ts`));
+    ws.orderUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-01-${market}.ts`));
 
   } catch (error) {
     Terminal.error(error, false);
