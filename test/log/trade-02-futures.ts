@@ -291,3 +291,210 @@ const positions_umcbl_2022_10_21_11_23_50_933 = {
  ]
 };
 
+const positions_umcbl_2022_10_21_11_28_33_465 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "positions",
+  "instId": "default"
+ },
+ "data": [
+  {
+   "posId": "967282645551177728",
+   "instId": "BTCUSDT_UMCBL",
+   "instName": "BTCUSDT",
+   "marginCoin": "USDT",
+   "margin": "0.7569",
+   "marginMode": "crossed",
+   "holdSide": "long",
+   "holdMode": "double_hold",
+   "total": "0.001",
+   "available": "0",
+   "locked": "0.001",
+   "averageOpenPrice": "18924",
+   "leverage": 25,
+   "achievedProfits": "0",
+   "upl": "0.0372",
+   "uplRate": "0.0491",
+   "liqPx": "-348951.07",
+   "keepMarginRate": "0.004",
+   "marginRate": "0.000237015559",
+   "cTime": "1666344074618",
+   "uTime": "1666344513350",
+   "markPrice": "18961.22"
+  }
+ ]
+};
+
+const orders_umcbl_2022_10_21_11_28_33_482 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "orders",
+  "instId": "default"
+ },
+ "data": [
+  {
+   "accFillSz": "0",
+   "cTime": 1666344513350,
+   "clOrdId": "967284485726560256",
+   "force": "normal",
+   "instId": "BTCUSDT_UMCBL",
+   "lever": "25",
+   "notionalUsd": "18.9605",
+   "ordId": "967284485709783041",
+   "ordType": "market",
+   "orderFee": [
+    {
+     "feeCcy": "USDT",
+     "fee": "0"
+    }
+   ],
+   "posSide": "long",
+   "px": "0",
+   "side": "sell",
+   "status": "new",
+   "sz": "0.001",
+   "tdMode": "cross",
+   "tgtCcy": "USDT",
+   "uTime": 1666344513350
+  }
+ ]
+};
+
+const account_umcbl_2022_10_21_11_28_33_564 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "account",
+  "instId": "default"
+ },
+ "data": [
+  {
+   "marginCoin": "USDT",
+   "locked": "0.00000000",
+   "available": "367.98742430",
+   "maxOpenPosAvailable": "367.98742430",
+   "maxTransferOut": "367.98742430",
+   "equity": "367.98742430",
+   "usdtEquity": "367.987424300000"
+  }
+ ]
+};
+
+const orders_umcbl_2022_10_21_11_28_33_583 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "orders",
+  "instId": "default"
+ },
+ "data": [
+  {
+   "accFillSz": "0.001",
+   "avgPx": "18960.5",
+   "cTime": 1666344513350,
+   "clOrdId": "967284485726560256",
+   "execType": "T",
+   "fillFee": "-0.0113763",
+   "fillFeeCcy": "USDT",
+   "fillNotionalUsd": "18.9605",
+   "fillPx": "18960.5",
+   "fillSz": "0.001",
+   "fillTime": "1666344513370",
+   "force": "normal",
+   "instId": "BTCUSDT_UMCBL",
+   "lever": "25",
+   "notionalUsd": "18.9605",
+   "ordId": "967284485709783041",
+   "ordType": "market",
+   "orderFee": [
+    {
+     "feeCcy": "USDT",
+     "fee": "-0.0113763"
+    }
+   ],
+   "pnl": "0.0365",
+   "posSide": "long",
+   "px": "0",
+   "side": "sell",
+   "status": "full-fill",
+   "sz": "0.001",
+   "tdMode": "cross",
+   "tgtCcy": "USDT",
+   "tradeId": "967284485810479193",
+   "uTime": 1666344513370
+  }
+ ]
+};
+
+const positions_umcbl_2022_10_21_11_28_33_601 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "positions",
+  "instId": "default"
+ },
+ "data": []
+};
+
+const account_umcbl_2022_10_21_11_37_16_103 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "account",
+  "instId": "default"
+ },
+ "data": [
+  {
+   "marginCoin": "USDT",
+   "locked": "0.00000000",
+   "available": "367.98742430",
+   "maxOpenPosAvailable": "367.98742430",
+   "maxTransferOut": "367.98742430",
+   "equity": "367.98742430",
+   "usdtEquity": "367.987424300000"
+  }
+ ]
+};
+
+const positions_umcbl_2022_10_21_11_37_16_109 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "positions",
+  "instId": "default"
+ },
+ "data": []
+};
+
+const account_umcbl_2022_10_21_11_37_26_231 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "account",
+  "instId": "default"
+ },
+ "data": [
+  {
+   "marginCoin": "USDT",
+   "locked": "0.00000000",
+   "available": "367.98742430",
+   "maxOpenPosAvailable": "367.98742430",
+   "maxTransferOut": "367.98742430",
+   "equity": "367.98742430",
+   "usdtEquity": "367.987424300000"
+  }
+ ]
+};
+
+const positions_umcbl_2022_10_21_11_37_26_243 = {
+ "action": "snapshot",
+ "arg": {
+  "instType": "umcbl",
+  "channel": "positions",
+  "instId": "default"
+ },
+ "data": []
+};
+

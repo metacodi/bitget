@@ -137,7 +137,7 @@ export class BitgetApi implements ExchangeApi {
     Object.keys(data).map(key => {
       const value = data[key];
       if (strictValidation && value === undefined) {
-        throw new Error('Failed to sign API request due to undefined parameter');
+        throw { code: 500, message: `Failed to sign API request due to undefined data parameter` };
       }
       const canEncode = method === 'GET' || method === 'DELETE';
       const encodedValue = encodeValues && canEncode ? encodeURIComponent(value) : value;
@@ -199,7 +199,7 @@ export class BitgetApi implements ExchangeApi {
     return Object.keys(request).map(key => {
       const value = request[key];
       if (strictValidation && (value === null || value === undefined || isNaN(value))) {
-        throw new Error('Failed to sign API request due to undefined parameter');
+        throw { code: 500, message: `Failed to sign API request due to undefined parameter` };
       }
       const encodedValue = value ? (encodeValues ? encodeURIComponent(value) : value) : null;
       return `${key}=${encodedValue}`;
@@ -504,7 +504,7 @@ export class BitgetApi implements ExchangeApi {
   async getAccountInfo(): Promise<AccountInfo> {
     // ApiKey Info
     /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-apikey-info Get ApiKey Info} */
-    const error = { code: 500, message: `No s'han pogut obtenir la informació ApiKey a Bitget.` };
+    const error = { code: 500, message: `No s'ha pogut obtenir la informació del compte a Bitget.` };
     const InfoApiKey = await this.get(`api/spot/v1/account/getInfo`, { error });
     this.user_id = InfoApiKey?.data?.user_id;
     const canWithdraw = InfoApiKey?.data?.authorities?.some((a: any) => a === 'withdraw');
