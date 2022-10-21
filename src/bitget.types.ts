@@ -66,6 +66,9 @@ export type accountType =
   'USDT_MIX' //	USDT Future Account
   ;
 
+export type BitgetStopType = 
+  'normal_plan' | 'profit_plan' | 'loss_plan'
+
 // ---------------------------------------------------------------------------------------------------
 //  Websocket
 // ---------------------------------------------------------------------------------------------------

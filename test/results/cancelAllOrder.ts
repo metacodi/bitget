@@ -55,3 +55,36 @@ const postOrder_futures = {
  "stopPrice": 18960
 };
 
+const postOrder_futures = {
+ "id": "1-1-20",
+ "side": "buy",
+ "type": "market",
+ "stop": "normal",
+ "trade": "long",
+ "symbol": {
+  "quoteAsset": "USDT",
+  "baseAsset": "BTC"
+ },
+ "quantity": 0.05,
+ "price": 18850,
+ "stopPrice": 18860,
+ "status": "post",
+ "exchangeId": "967297625241489408"
+};
+
+const postOrder_futures = {
+ "id": "1-1-20",
+ "side": "buy",
+ "type": "market",
+ "stop": "normal",
+ "trade": "long",
+ "symbol": {
+  "quoteAsset": "USDT",
+  "baseAsset": "BTC"
+ },
+ "quantity": 0.05,
+ "stopPrice": 18820,
+ "status": "post",
+ "exchangeId": "967297822956789760"
+};
+
