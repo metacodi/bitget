@@ -3,9 +3,13 @@ import { createHmac } from 'crypto';
 import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from "@metacodi/node-utils";
-import { ExchangeApi, CoinType, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo, ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode, LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit, calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
-import { BitgetOrderSide, BitgetOrderType, BitgetOrderStatus, BitgetPlanStatus, BitgetOrderTradeSide } from './bitget.types';
-import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, formatOrderSide, formatOrderType, formatOrderTradeSide, parsetOrderSideFutures, parseOrderTypeFutures } from './bitget-parsers';
+import { ExchangeApi, CoinType, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo } from '@metacodi/abstract-exchange';
+import { ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode } from '@metacodi/abstract-exchange';
+import { LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit } from '@metacodi/abstract-exchange';
+import { calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
+
+import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, parsetOrderSideFutures, parseOrderTypeFutures } from './bitget-parsers';
+import { formatOrderSide, formatOrderType, formatOrderTradeSide } from './bitget-parsers';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
@@ -571,12 +575,12 @@ export class BitgetApi implements ExchangeApi {
     }
   }
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-single-account Get Single Account} */
   async getLeverage(symbol: SymbolType, mode?: MarginMode): Promise<LeverageInfo> {
     const { baseAsset, quoteAsset } = symbol;
     const bitgetSymbol = this.getSymbolProduct(symbol);
     const error = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     const params = { symbol: bitgetSymbol, marginCoin: quoteAsset };
+    /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-single-account Get Single Account} */
     const response = await this.get(`api/mix/v1/account/account`, { params, error });
     return Promise.resolve<LeverageInfo>({
       symbol,
@@ -586,24 +590,25 @@ export class BitgetApi implements ExchangeApi {
     });
   }
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-leverage Change Leverage} */
   async setLeverage(request: SetLeverage): Promise<void> {
     const { baseAsset, quoteAsset } = request.symbol;
     const symbol = this.getSymbolProduct(request.symbol);
-    const dataMarginMode = { symbol, marginCoin: quoteAsset, marginMode: request.mode === 'cross' ? 'crossed' : 'fixed' };
     const errorMarginMode = { code: 500, message: `No s'ha pogut establir el mode a ${request.mode} del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-    await this.post(`api/mix/v1/account/setMarginMode`, { params: dataMarginMode, error: errorMarginMode });
+    const paramsMarginMode = { symbol, marginCoin: quoteAsset, marginMode: request.mode === 'cross' ? 'crossed' : 'fixed' };
+    /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-margin-mode Change Margin Mode} */
+    await this.post(`api/mix/v1/account/setMarginMode`, { params: paramsMarginMode, error: errorMarginMode });
+    const errorLeverage = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     if (request.mode === 'cross') {
-      const dataCross = { symbol, marginCoin: quoteAsset, leverage: request.longLeverage };
-      const errorCross = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-      await this.post(`api/mix/v1/account/setLeverage`, { params: dataCross, error: errorCross });
+      const paramsCross = { symbol, marginCoin: quoteAsset, leverage: request.longLeverage };
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-leverage Change Leverage} */
+      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsCross, error: errorLeverage });
     } else {
-      const dataLong = { symbol, marginCoin: quoteAsset, leverage: request.longLeverage, holdSide: 'long' };
-      const errorLong = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-      await this.post(`api/mix/v1/account/setLeverage`, { params: dataLong, error: errorLong });
-      const dataShort = { symbol, marginCoin: quoteAsset, leverage: request.shortLeverage, holdSide: 'short' };
-      const errorShort = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-      await this.post(`api/mix/v1/account/setLeverage`, { params: dataShort, error: errorShort });
+      const paramsLong = { symbol, marginCoin: quoteAsset, leverage: request.longLeverage, holdSide: 'long' };
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-leverage Change Leverage} */
+      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsLong, error: errorLeverage });
+      const paramsShort = { symbol, marginCoin: quoteAsset, leverage: request.shortLeverage, holdSide: 'short' };
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-leverage Change Leverage} */
+      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsShort, error: errorLeverage });
     }
     return Promise.resolve();
   }
@@ -625,6 +630,7 @@ export class BitgetApi implements ExchangeApi {
     const results: Partial<Order>[] = [];
     if (this.market === 'spot') {
       const params = { symbol: this.getSymbolProduct(symbol) };
+      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List} */
       const response = await this.post(`api/spot/v1/trade/open-orders`, { params, error });
       results.push(...(response.data as any[]).map(o => {
         // return o as any;
@@ -642,6 +648,7 @@ export class BitgetApi implements ExchangeApi {
       }));
     } else {
       const params = { productType: this.getProductType(symbol), marginCoin: quoteAsset };
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order} */
       const response = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params, error });
       results.push(...(response.data as any[]).map(o => {
         // return o as any;
@@ -659,6 +666,7 @@ export class BitgetApi implements ExchangeApi {
         };
       }));
       const paramsPlan = { symbol: this.getSymbolProduct(symbol), productType: this.getProductType(symbol), marginCoin: quoteAsset };
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List} */
       const responsePlan = await this.get(`api/mix/v1/plan/currentPlan`, { params: paramsPlan, error });
       results.push(...(responsePlan.data as any[]).map(o => {
         // return o as any;
@@ -690,10 +698,12 @@ export class BitgetApi implements ExchangeApi {
     const params = { symbol, marginCoin: quoteAsset };
     const error = { code: 500, message: `No s'ha pogut obtenir l'ordre ${request.id} en ${this.market} a Bitget.` };
     if (this.market === 'spot') {
+      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-details Get order details} */
       const response = await this.get(`api/spot/v1/trade/orderInfo`, { params, error });  
       return response;
       
     } else {
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-order-details Get order details} */
       const response = await this.get(`api/mix/v1/order/detail`, { params, error });
       return response;
     }
@@ -757,7 +767,7 @@ export class BitgetApi implements ExchangeApi {
         side: formatOrderTradeSide(request.side, request.trade),
         timeInForceValue: 'normal',
       };
-      if (request.type === 'limit' || request.type === 'market') {
+      if (!request.stop) {
         const price = request.type === 'limit' ? { price: request.price } : undefined;
         const orderType = formatOrderType(request.type);
         const params = { ...baseParams, orderType, ...price };          
@@ -766,11 +776,10 @@ export class BitgetApi implements ExchangeApi {
         return order;
 
       } else {
-        // stop | stop_market | stop_loss_limit
         const executePrice = +request.price;
         const triggerPrice = +request.stopPrice;
-        const orderType = request.type === 'stop_market' ? 'market' : 'limit';
-        const triggerType = request.type === 'stop_market' ? 'market_price' : 'fill_price';
+        const orderType = request.type;
+        const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
         const params = { ...baseParams, executePrice, triggerPrice, orderType, triggerType };
         const response = await this.post(`api/mix/v1/plan/placePlan`, { params, error });
         const order: Order = { ...request, status: 'post', exchangeId: response.data.orderId };
