@@ -97,15 +97,15 @@ const testApi = async () => {
     // const postOrder_stop = await api.postOrder({
     //   id: `1-1-${id}`,
     //   side: 'buy',
-    //   type: 'stop_market',
+    //   type: 'market',
+    //   stop: 'normal',
     //   trade: 'long',
     //   symbol: {
     //     quoteAsset: 'USDT',
     //     baseAsset: 'BTC'
     //   },
     //   quantity: 0.05,
-    //   price: 18950,
-    //   stopPrice: 18960
+    //   stopPrice: 18820
     // });
 
     // console.log('postOrder() =>', postOrder_stop);

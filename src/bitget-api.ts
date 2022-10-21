@@ -8,7 +8,7 @@ import { ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Bala
 import { LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit } from '@metacodi/abstract-exchange';
 import { calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
 
-import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, parsetOrderSideFutures, parseOrderTypeFutures } from './bitget-parsers';
+import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, parsetOrderSideFutures, parseStopType } from './bitget-parsers';
 import { formatOrderSide, formatOrderType, formatOrderTradeSide } from './bitget-parsers';
 
 
@@ -675,7 +675,8 @@ export class BitgetApi implements ExchangeApi {
           exchangeId: o.orderId,
           side: parsetOrderSideFutures(o.side),
           trade: parsetOrderTradeSide(o.side),
-          type: parseOrderTypeFutures(o.orderType),
+          type: parseOrderType(o.orderType),
+          stop: parseStopType(o.planType),
           status: parsePlanStatus(o.status),
           symbol: this.parseSymbolProduct(o.symbol),
           baseQuantity: +o.size,

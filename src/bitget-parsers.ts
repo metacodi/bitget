@@ -1,9 +1,9 @@
 import moment, { unitOfTime } from 'moment';
 
 import { timestamp } from '@metacodi/node-utils';
-import { SymbolType, MarketType, MarketPrice, KlineIntervalType, Order, OrderSide, OrderType, OrderStatus, TradeSide } from '@metacodi/abstract-exchange';
+import { SymbolType, MarketType, MarketPrice, KlineIntervalType, Order, OrderSide, OrderType, OrderStatus, TradeSide, StopType } from '@metacodi/abstract-exchange';
 
-import { BitgetOrderSide, BitgetOrderStatus, BitgetOrderTradeSide, BitgetOrderType, BitgetPlanStatus } from './bitget.types';
+import { BitgetOrderSide, BitgetOrderStatus, BitgetOrderTradeSide, BitgetOrderType, BitgetPlanStatus, BitgetStopType } from './bitget.types';
 
 
 export const parseOrderSide = (market: BitgetOrderSide): OrderSide => {
@@ -61,19 +61,30 @@ export const parseOrderType = (market: BitgetOrderType, ): OrderType => {
     default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${market}'` });
   }
 }
-export const parseOrderTypeFutures = (market: BitgetOrderType): OrderType => {
-  switch (market) {
-    case 'market': return 'market';
-    case 'limit': return 'limit';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${market}'` });
-  }
-}
 
 export const formatOrderType = (market: OrderType): BitgetOrderType => {
   switch (market) {
     case 'market': return 'market';
     case 'limit': return 'limit';
     default: throw ({ message: `No s'ha implementat el format Bitget pel OrderSide type '${market}'` });
+  }
+}
+
+export const parseStopType = (market: BitgetStopType): StopType => {
+  switch (market) {
+    case 'normal_plan': return 'normal';
+    case 'profit_plan': return 'profit';
+    case 'loss_plan': return 'loss';
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel StopType type '${market}'` });
+  }
+}
+
+export const formatStopType = (market: StopType): BitgetStopType => {
+  switch (market) {
+    case 'normal': return 'normal_plan';
+    case 'profit': return 'profit_plan';
+    case 'loss': return 'loss_plan';
+    default: throw ({ message: `No s'ha implementat el format Bitget pel StopSide type '${market}'` });
   }
 }
 
