@@ -63,8 +63,8 @@ const testMarketWs = async () => {
     // setTimeout(() => { console.log('Test => Unsubscribe accountUpdate'); accountUpdate.unsubscribe(); }, 3000);
     // setTimeout(() => { console.log('Test => Unsubscribe orderUpdate'); orderUpdate.unsubscribe(); }, 3000);
     
-    ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-02-${market}.ts`));
-    ws.orderUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-02-${market}.ts`));
+    ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-04-${market}.ts`));
+    ws.orderUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-04-${market}.ts`));
 
   } catch (error) {
     Terminal.error(error, false);
