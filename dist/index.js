@@ -15,6 +15,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./bitget-api"), exports);
+__exportStar(require("./bitget-websocket"), exports);
 __exportStar(require("./bitget.types"), exports);
 __exportStar(require("./bitget-parsers"), exports);
 //# sourceMappingURL=index.js.map
