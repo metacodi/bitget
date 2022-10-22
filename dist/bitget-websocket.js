@@ -18,8 +18,8 @@ const events_1 = __importDefault(require("events"));
 const rxjs_1 = require("rxjs");
 const crypto_1 = require("crypto");
 const moment_1 = __importDefault(require("moment"));
-const node_utils_1 = require("@metacodi/node-utils");
 const abstract_exchange_1 = require("@metacodi/abstract-exchange");
+const abstract_exchange_2 = require("@metacodi/abstract-exchange");
 const bitget_api_1 = require("./bitget-api");
 class BitgetWebsocket extends events_1.default {
     constructor(options) {
@@ -318,7 +318,7 @@ class BitgetWebsocket extends events_1.default {
             args = [args];
         }
         ;
-        const channelKey = args.map(arg => (0, abstract_exchange_1.buildChannelKey)(arg)).join(';');
+        const channelKey = args.map(arg => (0, abstract_exchange_2.buildChannelKey)(arg)).join(';');
         const emitter = this.emitters[channelKey];
         if (emitter) {
             return emitter;
@@ -335,7 +335,7 @@ class BitgetWebsocket extends events_1.default {
         const topics = [];
         Object.keys(this.emitters).map(channelKey => {
             const stored = this.emitters[channelKey];
-            const hasSubscriptions = !(0, abstract_exchange_1.isSubjectUnobserved)(stored);
+            const hasSubscriptions = !(0, abstract_exchange_2.isSubjectUnobserved)(stored);
             if (hasSubscriptions) {
                 const args = this.subArguments[channelKey];
                 args.map(a => this.subscribeChannel(a));
@@ -351,12 +351,12 @@ class BitgetWebsocket extends events_1.default {
     }
     emitChannelEvent(ev) {
         delete ev.arg.uid;
-        const channelKey = Object.keys(this.subArguments).find(key => !!this.subArguments[key].find(arg => (0, abstract_exchange_1.matchChannelKey)(arg, ev.arg)));
+        const channelKey = Object.keys(this.subArguments).find(key => !!this.subArguments[key].find(arg => (0, abstract_exchange_2.matchChannelKey)(arg, ev.arg)));
         const emitter = this.emitters[channelKey];
         if (!emitter) {
             return;
         }
-        const hasSubscriptions = !(0, abstract_exchange_1.isSubjectUnobserved)(emitter);
+        const hasSubscriptions = !(0, abstract_exchange_2.isSubjectUnobserved)(emitter);
         if (hasSubscriptions) {
             const parser = this.getChannelParser(ev.arg);
             const value = parser ? parser.call(this, ev) : ev;
@@ -399,7 +399,7 @@ class BitgetWebsocket extends events_1.default {
             symbol,
             price: +data.last,
             baseVolume, quoteVolume,
-            timestamp: (0, node_utils_1.timestamp)((0, moment_1.default)(ts)),
+            timestamp: (0, abstract_exchange_1.timestamp)((0, moment_1.default)(ts)),
         };
     }
     parseKlineTickerEvent(ev) {
@@ -408,8 +408,8 @@ class BitgetWebsocket extends events_1.default {
         const unit = candle.charAt(candle.length - 1);
         const interval = (['H', 'D', 'W', 'Y'].includes(unit) ? candle.toLocaleLowerCase() : candle);
         const data = ev.data[ev.data.length - 1];
-        const openTime = (0, node_utils_1.timestamp)((0, moment_1.default)(+data[0]));
-        const closeTime = (0, abstract_exchange_1.calculateCloseTime)(openTime, interval);
+        const openTime = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data[0]));
+        const closeTime = (0, abstract_exchange_2.calculateCloseTime)(openTime, interval);
         const baseVolume = +data[5];
         const quoteVolume = +data[5] * +data[4];
         return {

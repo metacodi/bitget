@@ -16,8 +16,8 @@ exports.BitgetApi = void 0;
 const axios_1 = __importDefault(require("axios"));
 const crypto_1 = require("crypto");
 const moment_1 = __importDefault(require("moment"));
-const node_utils_1 = require("@metacodi/node-utils");
 const abstract_exchange_1 = require("@metacodi/abstract-exchange");
+const abstract_exchange_2 = require("@metacodi/abstract-exchange");
 const bitget_parsers_1 = require("./bitget-parsers");
 const bitget_parsers_2 = require("./bitget-parsers");
 class BitgetApi {
@@ -344,7 +344,7 @@ class BitgetApi {
                     return {
                         symbol,
                         price: +data.close,
-                        timestamp: (0, node_utils_1.timestamp)(data.ts),
+                        timestamp: (0, abstract_exchange_1.timestamp)(data.ts),
                         baseVolume: +data.baseVol,
                         quoteVolume: +data.quoteVol,
                     };
@@ -353,7 +353,7 @@ class BitgetApi {
                     return {
                         symbol,
                         price: +data.markPrice,
-                        timestamp: (0, node_utils_1.timestamp)(+data.timestamp),
+                        timestamp: (0, abstract_exchange_1.timestamp)(+data.timestamp),
                         baseVolume: undefined,
                         quoteVolume: undefined,
                     };
@@ -382,8 +382,8 @@ class BitgetApi {
                         return {
                             symbol: request.symbol,
                             interval: request.interval,
-                            openTime: (0, node_utils_1.timestamp)(+data.ts),
-                            closeTime: (0, abstract_exchange_1.calculateCloseTime)((0, node_utils_1.timestamp)(+data.ts), request.interval),
+                            openTime: (0, abstract_exchange_1.timestamp)(+data.ts),
+                            closeTime: (0, abstract_exchange_2.calculateCloseTime)((0, abstract_exchange_1.timestamp)(+data.ts), request.interval),
                             open: +data.open,
                             high: +data.high,
                             low: +data.low,
@@ -396,8 +396,8 @@ class BitgetApi {
                         return {
                             symbol: request.symbol,
                             interval: request.interval,
-                            openTime: (0, node_utils_1.timestamp)(+data[0]),
-                            closeTime: (0, abstract_exchange_1.calculateCloseTime)((0, node_utils_1.timestamp)(+data[0]), request.interval),
+                            openTime: (0, abstract_exchange_1.timestamp)(+data[0]),
+                            closeTime: (0, abstract_exchange_2.calculateCloseTime)((0, abstract_exchange_1.timestamp)(+data[0]), request.interval),
                             open: +data[1],
                             high: +data[2],
                             low: +data[3],

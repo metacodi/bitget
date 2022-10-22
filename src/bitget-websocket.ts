@@ -4,7 +4,7 @@ import { Subject, interval, timer, Subscription } from 'rxjs';
 import { createHmac } from 'crypto';
 import moment from 'moment';
 
-import { timestamp } from '@metacodi/node-utils';
+import { timestamp } from '@metacodi/abstract-exchange';
 import { MarketType, SymbolType, MarketPrice, MarketKline, KlineIntervalType, Order, CoinType, isSubjectUnobserved, matchChannelKey, buildChannelKey, calculateCloseTime, ApiOptions } from '@metacodi/abstract-exchange';
 import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, WsAccountUpdate } from '@metacodi/abstract-exchange';
 

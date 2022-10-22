@@ -1,6 +1,5 @@
 import moment from 'moment';
 
-import { timestamp } from '@metacodi/node-utils';
 import { ApiOptions, MarketType, SymbolType, MarketPrice, WsStreamType, KlineIntervalType, CoinType } from '@metacodi/abstract-exchange';
 
 
