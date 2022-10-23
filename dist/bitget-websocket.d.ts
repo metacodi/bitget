@@ -39,7 +39,7 @@ export declare class BitgetWebsocket extends EventEmitter implements ExchangeWeb
     initialize(): Promise<void>;
     connect(): Promise<void>;
     signMessage(message: string, secret: string): Promise<string>;
-    reconnect(): void;
+    reconnect(): Promise<void>;
     close(): Promise<void>;
     destroy(): void;
     protected onWsOpen(event: WebSocket.Event): Promise<void>;

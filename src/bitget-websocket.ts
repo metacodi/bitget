@@ -96,7 +96,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     // Instanciem un client per l'API.
     this.api = this.getApiClient();
     // Iniciem la connexió amb l'stream de l'exchange.
-    await this.connect();
+    return await this.connect();
   }
 
 
@@ -138,7 +138,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     // Not sure these work in the browser, the traditional event listeners are required for ping/pong frames in node.
     (this.ws as any).onping = (event: WebSocket.Event) => this.onWsPing(event);
     (this.ws as any).onpong = (event: WebSocket.Event) => this.onWsPong(event);
-
+    return Promise.resolve();
   }
 
   async signMessage(message: string, secret: string): Promise<string> {
@@ -157,11 +157,12 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     return Buffer.from(signature).toString('base64');
   };
 
-  reconnect() {
+  async reconnect() {
     if (this.status === 'reconnecting') { return; }
     this.status = 'reconnecting';
-    this.close();
+    await this.close();
     setTimeout(() => this.connect(), this.reconnectPeriod);
+    return Promise.resolve();
   }
 
   async close() {
@@ -173,9 +174,11 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       this.ws.close();
       // #168: ws.terminate() undefined in browsers.
       if (typeof this.ws.terminate === 'function') { this.ws.terminate(); }
-
+      return Promise.resolve();
+      
     } catch (error) {
       console.error(error);
+      return Promise.reject(error);
     }
   }
 

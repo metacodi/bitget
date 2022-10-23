@@ -55,7 +55,7 @@ class BitgetWebsocket extends events_1.default {
     initialize() {
         return __awaiter(this, void 0, void 0, function* () {
             this.api = this.getApiClient();
-            yield this.connect();
+            return yield this.connect();
         });
     }
     connect() {
@@ -81,6 +81,7 @@ class BitgetWebsocket extends events_1.default {
             }
             this.ws.onping = (event) => this.onWsPing(event);
             this.ws.onpong = (event) => this.onWsPong(event);
+            return Promise.resolve();
         });
     }
     signMessage(message, secret) {
@@ -100,12 +101,15 @@ class BitgetWebsocket extends events_1.default {
     }
     ;
     reconnect() {
-        if (this.status === 'reconnecting') {
-            return;
-        }
-        this.status = 'reconnecting';
-        this.close();
-        setTimeout(() => this.connect(), this.reconnectPeriod);
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.status === 'reconnecting') {
+                return;
+            }
+            this.status = 'reconnecting';
+            yield this.close();
+            setTimeout(() => this.connect(), this.reconnectPeriod);
+            return Promise.resolve();
+        });
     }
     close() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -123,9 +127,11 @@ class BitgetWebsocket extends events_1.default {
                 if (typeof this.ws.terminate === 'function') {
                     this.ws.terminate();
                 }
+                return Promise.resolve();
             }
             catch (error) {
                 console.error(error);
+                return Promise.reject(error);
             }
         });
     }
