@@ -63,6 +63,7 @@ export declare class BitgetWebsocket extends EventEmitter implements ExchangeWeb
     protected getChannelParser(arg: BitgetWsSubscriptionArguments): Function;
     protected subscribeChannel(arg: BitgetWsSubscriptionArguments): void;
     protected unsubscribeChannel(arg: BitgetWsSubscriptionArguments): void;
+    protected unsubscribeAllChannels(): void;
     parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice;
     parseKlineTickerEvent(ev: BitgetWsChannelEvent): MarketKline;
     protected get wsId(): string;

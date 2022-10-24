@@ -114,6 +114,7 @@ class BitgetWebsocket extends events_1.default {
     close() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                this.unsubscribeAllChannels();
                 if (this.status !== 'reconnecting') {
                     this.status = 'closing';
                 }
@@ -394,6 +395,15 @@ class BitgetWebsocket extends events_1.default {
         console.log(this.wsId, '=> unsubscribing...', arg);
         const data = { op: "unsubscribe", args: [arg] };
         this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error) : undefined);
+    }
+    unsubscribeAllChannels() {
+        Object.keys(this.emitters).map(channelKey => {
+            const emitter = this.emitters[channelKey];
+            if (emitter) {
+                const args = this.subArguments[channelKey];
+                args.map(a => this.unsubscribeChannel(a));
+            }
+        });
     }
     parsePriceTickerEvent(ev) {
         const data = ev.data[0];

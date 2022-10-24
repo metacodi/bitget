@@ -167,6 +167,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
 
   async close() {
     try {
+      this.unsubscribeAllChannels();
       if (this.status !== 'reconnecting') { this.status = 'closing'; }
       if (this.pingTimer) { this.pingTimer.unsubscribe(); }
       if (this.pongTimer) { this.pongTimer.unsubscribe(); }
@@ -503,6 +504,16 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     console.log(this.wsId, '=> unsubscribing...', arg);
     const data: BitgetWsSubscriptionRequest = { op: "unsubscribe", args: [arg] };
     this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error as any) : undefined);
+  }
+
+  protected unsubscribeAllChannels() {
+    Object.keys(this.emitters).map(channelKey => {
+      const emitter = this.emitters[channelKey];
+      if (emitter) {
+        const args = this.subArguments[channelKey];
+        args.map(a => this.unsubscribeChannel(a));
+      }
+    });
   }
 
 

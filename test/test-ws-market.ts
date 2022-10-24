@@ -49,11 +49,11 @@ const testMarketWs = async () => {
     //  PUBLIC
     // ---------------------------------------------------------------------------------------------------
 
-    // const ticker = ws.priceTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }).subscribe(data => console.log('priceTicker =>', data));
-    // setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 10000);
+    const ticker = ws.priceTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }).subscribe(data => console.log('priceTicker =>', data));
+    setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 5000);
 
-    const klines = ws.klineTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }, '1m').subscribe(data => console.log('klines =>', data));    
-    setTimeout(() => { console.log('Test => Unsubscribe klines'); klines.unsubscribe(); }, 5000);
+    // const klines = ws.klineTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }, '1m').subscribe(data => console.log('klines =>', data));    
+    // setTimeout(() => { console.log('Test => Unsubscribe klines'); klines.unsubscribe(); }, 5000);
     
     // setTimeout(() => { console.log('Reconnecting...'); ws.reconnect(); }, 52000);
     
