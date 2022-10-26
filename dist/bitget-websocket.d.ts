@@ -9,12 +9,11 @@ import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments } from './bitget.types';
 export declare class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     status: WsConnectionState;
-    protected api: BitgetApi;
+    api: BitgetApi;
     protected options: WebsocketOptions;
     protected ws: WebSocket;
     protected pingTimer?: Subscription;
     protected pongTimer?: Subscription;
-    protected connectId?: string;
     protected emitters: {
         [channelKey: string]: Subject<any>;
     };
@@ -22,7 +21,6 @@ export declare class BitgetWebsocket extends EventEmitter implements ExchangeWeb
     protected subArguments: {
         [key: string]: BitgetWsSubscriptionArguments[];
     };
-    protected userId?: string;
     constructor(options: WebsocketOptions);
     get instType(): BitgetInstrumentType;
     get market(): MarketType;

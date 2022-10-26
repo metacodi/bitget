@@ -26,6 +26,7 @@ export class BitgetApi implements ExchangeApi {
 
   options: ApiOptions;
   user_id: String;
+  limits: any[] = [];
   currencies: any[] = [];
   symbols: any[] = [];
 
@@ -256,13 +257,13 @@ export class BitgetApi implements ExchangeApi {
    */
   async getExchangeInfo(): Promise<ExchangeInfo> {
     // Obtenim els límits.
-    const limits: Limit[] = [];
+    this.limits = [];
     if (this.market === 'spot') {
-      limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
-      limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
+      this.limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
+      this.limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
     } else if (this.market === 'futures') {
-      limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
-      limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
+      this.limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
+      this.limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
     }
 
     // Obtenim les monedes.
@@ -280,7 +281,7 @@ export class BitgetApi implements ExchangeApi {
       const error = { code: 500, message: `No s'han pogut obtenir els símbols d'spot a Bitget.` };
       const response = await this.get(url, { isPublic: true, error });
       this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType: 'spbl' })));
-      return Promise.resolve({ limits });
+      return Promise.resolve({ limits: this.limits });
     } else {
       await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
         // throw { code: 500, message: 'Excepció provocada!' };
@@ -290,7 +291,7 @@ export class BitgetApi implements ExchangeApi {
         const response = await this.get(url, { params: { productType }, isPublic: true, error });
         this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType, symbolName: `${symbol.baseCoin}${symbol.quoteCoin}` })));
       }));
-      return Promise.resolve({ limits });
+      return Promise.resolve({ limits: this.limits });
     }
   }
 

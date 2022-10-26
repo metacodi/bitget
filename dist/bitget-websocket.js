@@ -63,9 +63,6 @@ class BitgetWebsocket extends events_1.default {
             const { market } = this;
             const { pingInterval, pongTimeout, isTest } = this.options;
             yield this.api.getExchangeInfo();
-            if (this.streamType === 'user') {
-                yield this.api.getAccountInfo();
-            }
             const url = market === 'spot' ? `wss://ws.bitget.com/spot/v1/stream` : `wss://ws.bitget.com/mix/v1/stream`;
             this.options.pingInterval = pingInterval || this.defaultOptions.pingInterval;
             this.options.pongTimeout = pongTimeout || this.defaultOptions.pongTimeout;

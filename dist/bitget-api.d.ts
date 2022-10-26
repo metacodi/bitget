@@ -7,6 +7,7 @@ export declare class BitgetApi implements ExchangeApi {
     baseUrl(): string;
     options: ApiOptions;
     user_id: String;
+    limits: any[];
     currencies: any[];
     symbols: any[];
     constructor(options?: ApiOptions);

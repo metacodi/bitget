@@ -20,7 +20,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   /** Estat de la connexió. */
   status: WsConnectionState = 'initial';
   /** Referència a la instància del client API. */
-  protected api: BitgetApi;
+  api: BitgetApi;
   /** Opcions de configuració. */
   protected options: WebsocketOptions;
   /** Referència a la instància del websocket subjacent. */
@@ -29,16 +29,16 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   protected pingTimer?: Subscription;
   /** Subscriptor al timer que controla la resposta del servidor. */
   protected pongTimer?: Subscription;
-  /** Identificador de connexió rebut del servidor websocket. */
-  protected connectId?: string;
   /** Emisors de missatges. */
   protected emitters: { [channelKey: string]: Subject<any> } = {};
   /** Identificador de login del servidor websocket. */
   protected loggedIn: boolean;
   /** Arguments per tornar a subscriure's al canal (respawn). */
   protected subArguments: { [key: string]: BitgetWsSubscriptionArguments[] } = {};
-  /** Identificador de connexió rebut del servidor websocket. */
-  protected userId?: string;
+  // /** Identificador de connexió rebut del servidor websocket. */
+  // protected connectId?: string;
+  // /** Identificador de connexió rebut del servidor websocket. */
+  // protected userId?: string;
 
   constructor(
     options: WebsocketOptions,
@@ -113,8 +113,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const { pingInterval, pongTimeout, isTest } = this.options;
     // Obtenim la info de l'exchange.
     await this.api.getExchangeInfo();
-    // Obtenim una clau per l'stream d'usuari.
-    if (this.streamType === 'user') { await this.api.getAccountInfo(); }
+    // // Obtenim una clau per l'stream d'usuari.
+    // if (this.streamType === 'user') { await this.api.getAccountInfo(); }
 
     const url = market === 'spot' ? `wss://ws.bitget.com/spot/v1/stream` : `wss://ws.bitget.com/mix/v1/stream`;
 

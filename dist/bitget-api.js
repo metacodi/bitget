@@ -22,6 +22,7 @@ const bitget_parsers_1 = require("./bitget-parsers");
 const bitget_parsers_2 = require("./bitget-parsers");
 class BitgetApi {
     constructor(options) {
+        this.limits = [];
         this.currencies = [];
         this.symbols = [];
         this.options = Object.assign(Object.assign({}, this.defaultOptions), options);
@@ -195,14 +196,14 @@ class BitgetApi {
     }
     getExchangeInfo() {
         return __awaiter(this, void 0, void 0, function* () {
-            const limits = [];
+            this.limits = [];
             if (this.market === 'spot') {
-                limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
-                limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
+                this.limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
+                this.limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
             }
             else if (this.market === 'futures') {
-                limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
-                limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
+                this.limits.push({ type: 'request', maxQuantity: 20, period: 1, unitOfTime: 'second' });
+                this.limits.push({ type: 'trade', maxQuantity: 10, period: 1, unitOfTime: 'second' });
             }
             this.currencies = [];
             const error = { code: 500, message: `No s'han pogut obtenir les monedes a Bitget.` };
@@ -214,7 +215,7 @@ class BitgetApi {
                 const error = { code: 500, message: `No s'han pogut obtenir els símbols d'spot a Bitget.` };
                 const response = yield this.get(url, { isPublic: true, error });
                 this.symbols.push(...response.data.map(symbol => (Object.assign(Object.assign({}, symbol), { productType: 'spbl' }))));
-                return Promise.resolve({ limits });
+                return Promise.resolve({ limits: this.limits });
             }
             else {
                 yield Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map((productType) => __awaiter(this, void 0, void 0, function* () {
@@ -225,7 +226,7 @@ class BitgetApi {
                     const response = yield this.get(url, { params: { productType }, isPublic: true, error });
                     this.symbols.push(...response.data.map(symbol => (Object.assign(Object.assign({}, symbol), { productType, symbolName: `${symbol.baseCoin}${symbol.quoteCoin}` }))));
                 })));
-                return Promise.resolve({ limits });
+                return Promise.resolve({ limits: this.limits });
             }
         });
     }
