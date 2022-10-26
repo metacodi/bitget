@@ -227,23 +227,16 @@ export class BitgetApi implements ExchangeApi {
     const { response, request, message } = e;
     // Si no hem rebut una resposta...
     if (!response) { throw request ? e : message; }
-    if (response?.data?.code === 429) {
-      throw {
-        code: 429,
-
-      };
-    } else {
-      throw {
-        ...error,
-        requestCode: response.data?.code,
-        requestMessage: response.data?.msg,
-        body: response.data,
-        headers: response.headers,
-        requestUrl: url,
-        requestBody: request.body,
-        options: { ...this.options },
-      };
-    }
+    throw {
+      ...error,
+      requestCode: response.status,
+      requestMessage: response.statusText,
+      body: response.data,
+      headers: response.headers,
+      requestUrl: url,
+      requestBody: request.body,
+      options: { ...this.options },
+    };
   }
 
 

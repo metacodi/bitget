@@ -32,7 +32,7 @@ const testApi = async () => {
 
     console.log('---------------- API TEST ----------------------');
 
-    const isTest = true;
+    const isTest = false;
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
@@ -45,9 +45,9 @@ const testApi = async () => {
 
     console.log('getExchangeInfo() =>', await api.getExchangeInfo());
 
-    const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
-    console.log('getOpenOrders() =>', getOpenOrders );
-    writeLog(`getOpenOrders_${options.market}`, getOpenOrders, 'results/getOpenOrders.ts');
+    // const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
+    // console.log('getOpenOrders() =>', getOpenOrders );
+    // writeLog(`getOpenOrders_${options.market}`, getOpenOrders, 'results/getOpenOrders.ts');
 
     let id = 20;
     // // Post Order (market) buy

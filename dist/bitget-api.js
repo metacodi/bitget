@@ -180,19 +180,11 @@ class BitgetApi {
     }
     ;
     parseException(e, url, error) {
-        var _a, _b, _c;
         const { response, request, message } = e;
         if (!response) {
             throw request ? e : message;
         }
-        if (((_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.code) === 429) {
-            throw {
-                code: 429,
-            };
-        }
-        else {
-            throw Object.assign(Object.assign({}, error), { requestCode: (_b = response.data) === null || _b === void 0 ? void 0 : _b.code, requestMessage: (_c = response.data) === null || _c === void 0 ? void 0 : _c.msg, body: response.data, headers: response.headers, requestUrl: url, requestBody: request.body, options: Object.assign({}, this.options) });
-        }
+        throw Object.assign(Object.assign({}, error), { requestCode: response.status, requestMessage: response.statusText, body: response.data, headers: response.headers, requestUrl: url, requestBody: request.body, options: Object.assign({}, this.options) });
     }
     getExchangeInfo() {
         return __awaiter(this, void 0, void 0, function* () {
