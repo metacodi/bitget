@@ -252,7 +252,6 @@ class BitgetWebsocket extends events_1.default {
                 this.emitChannelEvent(obj);
                 break;
             case 'error':
-                throw { code: data.code, message: `WEBSOCKET-ERROR: ${data.msg}` };
             default:
                 console.log('onWsMessage =>', data);
         }
