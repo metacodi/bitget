@@ -437,7 +437,6 @@ class BitgetWebsocket extends events_1.default {
         };
     }
     parseAccountUpdateEvent(ev) {
-        const symbol = this.api.parseInstrumentId(ev.arg.instId);
         if (ev.arg.channel === 'account') {
             if (this.market === 'spot') {
                 return {

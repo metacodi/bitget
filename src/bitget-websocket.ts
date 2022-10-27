@@ -570,7 +570,6 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#positions-channel Positions Channel}
    */
   parseAccountUpdateEvent(ev: BitgetWsChannelEvent): AccountInfo {
-    const symbol = this.api.parseInstrumentId(ev.arg.instId);
     if (ev.arg.channel === 'account') {
       if (this.market === 'spot') {
         return {
