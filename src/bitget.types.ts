@@ -49,6 +49,7 @@ export type BitgetOrderTradeSide =
 'offset_close_long' |
 'offset_close_short' 
 ;
+export type BitgetPostOrderSide = 'long' | 'short';
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#ordertype } */
 export type BitgetOrderType =

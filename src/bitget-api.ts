@@ -293,7 +293,7 @@ export class BitgetApi implements ExchangeApi {
   async getMarketSymbol(symbol: SymbolType): Promise<MarketSymbol> {
     const { baseAsset, quoteAsset } = symbol;
     const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    if (!found) { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    if (!found) { throw { code: 500, message: `getMarketSymbol: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
     if (this.market === 'spot') {
       return Promise.resolve<MarketSymbol>({
         symbol,
@@ -344,34 +344,34 @@ export class BitgetApi implements ExchangeApi {
     const baseAsset = this.isTest ? `S${symbol.baseAsset}` : symbol.baseAsset;
     const quoteAsset = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
     const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    if (found) { return found.symbol; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    if (found) { return found.symbol; } else { throw { code: 500, message: `getSymbolProduct: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
   }
 
   getProductType(symbol: SymbolType): string {
     const baseAsset = this.isTest ? `S${symbol.baseAsset}` : symbol.baseAsset;
     const quoteAsset = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
     const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    if (found) { return found.productType; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    if (found) { return found.productType; } else { throw { code: 500, message: `getProductType: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
   }
 
   getInstrumentId(symbol: SymbolType): string {
     const { baseAsset, quoteAsset } = symbol;
     const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    if (found) { return found.symbolName; } else { throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+    if (found) { return found.symbolName; } else { throw { code: 500, message: `getInstrumentId: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
   }
 
   parseInstrumentId(instId: string): SymbolType {
     const found = this.symbols.find(s => s.symbolName === instId);
     if (found) {
       return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
-    } else { throw { code: 500, message: `No s'ha trobat el símbol ${instId} a Bitget.` }; }
+    } else { throw { code: 500, message: `parseInstrumentId: No s'ha trobat el símbol ${instId} a Bitget.` }; }
   }
 
   parseSymbolProduct(symbol: string): SymbolType {
     const found = this.symbols.find(s => s.symbol === symbol);
     if (found) {
       return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
-    } else { throw { code: 500, message: `No s'ha trobat el símbol ${symbol} a Bitget.` }; }
+    } else { throw { code: 500, message: `parseSymbolProduct: No s'ha trobat el símbol ${symbol} a Bitget.` }; }
   }
 
   /**

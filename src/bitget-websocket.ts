@@ -10,6 +10,7 @@ import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, W
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
+import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus } from './bitget-parsers';
 
 
 /**
@@ -509,8 +510,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       case 'klines': return this.parseKlineTickerEvent;
       case 'account': return this.parseAccountUpdateEvent;
       case 'positions': return this.parseAccountUpdateEvent;
-      // case 'orders': return parseOrderUpdateEvent;
-      // case 'orders-algo': return parseOrderUpdateEvent;
+      case 'orders': return this.parseOrderUpdateEvent;
+      // case 'ordersAlgo': return this.parseOrderUpdateEvent;
       default: return undefined;
     }
   }
@@ -608,6 +609,43 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     }
   }
 
+  parseOrderUpdateEvent(ev: BitgetWsChannelEvent): Order {
+    const data = ev.data[0];
+    if (this.market === 'spot') {
+      return {} as any;
+    } else {
+      const symbol = this.api.parseInstrumentId(data.instId);
+      const baseVolume = +data.baseVolume;
+      const quoteVolume = +data.quoteVolume;
+      const side = parseOrderSide(data.side);
+      const status = parseOrderStatus(data.status);
+      return {
+        id: data.clOrdId,
+        exchangeId: data.ordId,     // orderId propi de l'exchange
+        side,
+        type: parseOrderType(data.ordType),
+        // stop?: StopType;
+        trade: parsetOrderTradeSide(data.posSide),
+        status,
+        symbol: symbol,
+        baseQuantity: status === 'filled' || status === 'partial' ? +data.fillSz: +data.sz,   // quantitat satifeta baseAsset
+        quoteQuantity: status === 'filled' || status === 'partial' ? +data.fillNotionalUsd : +data.notionalUsd,  // quantitat satifeta quoteAsset
+        // price?: number;           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
+        // stopPrice?: number;       // preu per avtivar l'stop.
+        // rejectReason?: string;
+        // isOco?: boolean;
+        created: timestamp(moment(+data.cTime)),       // timestamp: moment de creació per part de la nostra app.
+        // posted?: string;        // timestamp: moment de creació a l'exchange (Binance, Kucoin, ...)
+        executed: timestamp(moment(status === 'filled' || status === 'partial' ? +data.fillTime : +data.uTime)),      // timestamp: moment en que s'ha filled o canceled.
+        // syncronized?: boolean;
+        // idOrderBuyed?: string;
+        profit: status === 'filled' || status === 'partial' ? data?.pnl : 0,        // Futures only
+        commission: status === 'filled' || status === 'partial' ? data?.fillFee : 0,
+        commissionAsset: status === 'filled' || status === 'partial' ? symbol.quoteAsset : '',
+        fillPrice: status === 'filled' || status === 'partial' ? +data.fillPx : 0,
+      } as any;
+    }
+  }
 
   // ---------------------------------------------------------------------------------------------------
   //  log
