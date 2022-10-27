@@ -427,6 +427,27 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     }
   }
 
+  allUpdate(symbol?: SymbolType): Subject<Order> {
+    if (this.market === 'spot') {
+      const instId = symbol ? { instId: this.api.getSymbolProduct(symbol) } : 'default';
+      // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
+      return this.registerChannelSubscription([
+        { channel: 'account', instType: 'spbl', instId: 'default' },
+        { channel: 'orders', instType: 'spbl', instId }
+      ]);
+    } else {
+      const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
+      const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
+      // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
+      // NOTA: el canal `ordersAlgo` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
+      return this.registerChannelSubscription([
+        { channel: 'account', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, 
+        { channel: 'positions', instType: this.isTest ? 's'+instType : instType, instId },
+        { channel: 'orders', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, 
+        { channel: 'ordersAlgo', instType: this.isTest ? 's'+instType : instType, instId }
+      ]);
+    }
+  }
 
   // ---------------------------------------------------------------------------------------------------
   //  Channel subscriptions

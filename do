@@ -22,3 +22,13 @@ then
   npx ts-node test/test-api.ts
 fi
 
+if [ $FIRST_ARGUMENT == "wsu" ] 
+then
+  npx ts-node test/test-ws-user.ts
+fi
+
+if [ $FIRST_ARGUMENT == "wsm" ] 
+then
+  npx ts-node test/test-ws-market.ts
+fi
+

@@ -36,7 +36,7 @@ const testMarketWs = async () => {
     // const market: MarketType = 'spot';
     const market: MarketType = 'futures';
 
-    const isTest = false;
+    const isTest = true;
 
     const options: WebsocketOptions = {
       streamType: 'user',
@@ -52,7 +52,7 @@ const testMarketWs = async () => {
     
     const symbol: SymbolType = { baseAsset: 'BTC', quoteAsset: 'USDT' };
 
-    const accountUpdate = ws.accountUpdate().subscribe(data => console.log('accountUpdate =>', data));
+    // const accountUpdate = ws.accountUpdate().subscribe(data => console.log('accountUpdate =>', data));
     // const accountUpdate = ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/raw_accountUpdate-${market}.ts`));
     // const accountUpdate = ws.accountUpdate(symbol).subscribe(data => console.log('accountUpdate =>', data));
 
@@ -65,6 +65,9 @@ const testMarketWs = async () => {
     
     // ws.accountUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-04-${market}.ts`));
     // ws.orderUpdate().subscribe((data: any) => writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-04-${market}.ts`));
+
+    const allUpdate = ws.allUpdate().subscribe(data => console.log('allUpdate =>', data));
+
 
   } catch (error) {
     Terminal.error(error, false);
