@@ -3,6 +3,7 @@
 import WebSocket from 'isomorphic-ws';
 import EventEmitter from 'events';
 import { Subject, Subscription } from 'rxjs';
+import { AccountInfo } from '@metacodi/abstract-exchange';
 import { MarketType, SymbolType, MarketPrice, MarketKline, KlineIntervalType, Order } from '@metacodi/abstract-exchange';
 import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, WsAccountUpdate } from '@metacodi/abstract-exchange';
 import { BitgetApi } from './bitget-api';
@@ -64,6 +65,7 @@ export declare class BitgetWebsocket extends EventEmitter implements ExchangeWeb
     protected unsubscribeAllChannels(): void;
     parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice;
     parseKlineTickerEvent(ev: BitgetWsChannelEvent): MarketKline;
+    parseAccountUpdateEvent(ev: BitgetWsChannelEvent): AccountInfo;
     protected get wsId(): string;
 }
 //# sourceMappingURL=bitget-websocket.d.ts.map

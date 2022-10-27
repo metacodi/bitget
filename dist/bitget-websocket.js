@@ -380,6 +380,8 @@ class BitgetWebsocket extends events_1.default {
         switch (channel) {
             case 'ticker': return this.parsePriceTickerEvent;
             case 'klines': return this.parseKlineTickerEvent;
+            case 'account': return this.parseAccountUpdateEvent;
+            case 'positions': return this.parseAccountUpdateEvent;
             default: return undefined;
         }
     }
@@ -433,6 +435,16 @@ class BitgetWebsocket extends events_1.default {
             close: +data[4],
             baseVolume, quoteVolume,
         };
+    }
+    parseAccountUpdateEvent(ev) {
+        const symbol = this.api.parseInstrumentId(ev.arg.instId);
+        if (ev.arg.channel === 'account') {
+            return {
+                balances: ev.data.map(b => ({ asset: b.coinName, available: b.available })),
+            };
+        }
+        else if (ev.arg.channel === 'positions') {
+        }
     }
     get wsId() { return `${this.market}-${this.streamType}-ws`; }
 }

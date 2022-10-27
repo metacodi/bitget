@@ -4,7 +4,7 @@ import { Subject, interval, timer, Subscription } from 'rxjs';
 import { createHmac } from 'crypto';
 import moment from 'moment';
 
-import { timestamp } from '@metacodi/abstract-exchange';
+import { AccountInfo, timestamp } from '@metacodi/abstract-exchange';
 import { MarketType, SymbolType, MarketPrice, MarketKline, KlineIntervalType, Order, CoinType, isSubjectUnobserved, matchChannelKey, buildChannelKey, calculateCloseTime, ApiOptions } from '@metacodi/abstract-exchange';
 import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, WsAccountUpdate } from '@metacodi/abstract-exchange';
 
@@ -486,8 +486,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     switch (channel) {
       case 'ticker': return this.parsePriceTickerEvent;
       case 'klines': return this.parseKlineTickerEvent;
-      // case 'account': return parseAccountUpdateEvent;
-      // case 'balance_and_position': return parseBalancePositionUpdateEvent;
+      case 'account': return this.parseAccountUpdateEvent;
+      case 'positions': return this.parseAccountUpdateEvent;
       // case 'orders': return parseOrderUpdateEvent;
       // case 'orders-algo': return parseOrderUpdateEvent;
       default: return undefined;
@@ -561,6 +561,21 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       low: +data[3],
       close: +data[4],
       baseVolume, quoteVolume,
+    }
+  }
+
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#account-channel Account Channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#account-channel Account Channel}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#positions-channel Positions Channel}
+   */
+  parseAccountUpdateEvent(ev: BitgetWsChannelEvent): AccountInfo {
+    const symbol = this.api.parseInstrumentId(ev.arg.instId);
+    if (ev.arg.channel === 'account') {
+      return {
+        balances: ev.data.map(b => ({ asset: b.coinName, available: b.available })),
+      };
+    } else if (ev.arg.channel === 'positions') {
     }
   }
 
