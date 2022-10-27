@@ -572,10 +572,17 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   parseAccountUpdateEvent(ev: BitgetWsChannelEvent): AccountInfo {
     const symbol = this.api.parseInstrumentId(ev.arg.instId);
     if (ev.arg.channel === 'account') {
-      return {
-        balances: ev.data.map(b => ({ asset: b.coinName, available: b.available })),
-      };
+      if (this.market === 'spot') {
+        return {
+          balances: ev.data.map(b => ({ asset: b.coinName, available: b.available })),
+        };
+      } else if (this.market === 'futures') {
+        return {
+          balances: ev.data.map(b => ({ asset: b.coinName, available: b.available, locked: b.locked })),
+        };
+      }
     } else if (ev.arg.channel === 'positions') {
+      return {} as any;
     }
   }
 
