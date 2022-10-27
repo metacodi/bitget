@@ -317,6 +317,25 @@ class BitgetWebsocket extends events_1.default {
             return this.registerChannelSubscription([{ channel: 'orders', instType: this.isTest ? 's' + instType : instType, instId: 'default' }, { channel: 'ordersAlgo', instType: this.isTest ? 's' + instType : instType, instId }]);
         }
     }
+    allUpdate(symbol) {
+        if (this.market === 'spot') {
+            const instId = symbol ? { instId: this.api.getSymbolProduct(symbol) } : 'default';
+            return this.registerChannelSubscription([
+                { channel: 'account', instType: 'spbl', instId: 'default' },
+                { channel: 'orders', instType: 'spbl', instId }
+            ]);
+        }
+        else {
+            const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
+            const instType = symbol === undefined || (symbol === null || symbol === void 0 ? void 0 : symbol.quoteAsset) === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
+            return this.registerChannelSubscription([
+                { channel: 'account', instType: this.isTest ? 's' + instType : instType, instId: 'default' },
+                { channel: 'positions', instType: this.isTest ? 's' + instType : instType, instId },
+                { channel: 'orders', instType: this.isTest ? 's' + instType : instType, instId: 'default' },
+                { channel: 'ordersAlgo', instType: this.isTest ? 's' + instType : instType, instId }
+            ]);
+        }
+    }
     registerChannelSubscription(args) {
         if (!Array.isArray(args)) {
             args = [args];

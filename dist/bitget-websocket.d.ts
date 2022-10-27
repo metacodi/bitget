@@ -56,6 +56,7 @@ export declare class BitgetWebsocket extends EventEmitter implements ExchangeWeb
     klineTicker(symbol: SymbolType, interval: KlineIntervalType): Subject<MarketKline>;
     accountUpdate(symbol?: SymbolType): Subject<WsAccountUpdate>;
     orderUpdate(symbol?: SymbolType): Subject<Order>;
+    allUpdate(symbol?: SymbolType): Subject<Order>;
     protected registerChannelSubscription(args: BitgetWsSubscriptionArguments | BitgetWsSubscriptionArguments[]): Subject<any>;
     protected respawnChannelSubscriptions(): void;
     protected emitChannelEvent(ev: BitgetWsChannelEvent): void;
