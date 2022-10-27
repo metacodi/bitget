@@ -1,10 +1,10 @@
 import { OrderSide, OrderType, OrderStatus, TradeSide, StopType } from '@metacodi/abstract-exchange';
-import { BitgetOrderSide, BitgetOrderStatus, BitgetOrderTradeSide, BitgetOrderType, BitgetPlanStatus, BitgetStopType } from './bitget.types';
-export declare const parseOrderSide: (market: BitgetOrderSide) => OrderSide;
-export declare const formatOrderSide: (market: OrderSide) => BitgetOrderSide;
-export declare const parsetOrderSideFutures: (market: BitgetOrderTradeSide) => OrderSide;
+import { BitgetOrderSide, BitgetOrderStatus, BitgetOrderTradeSide, BitgetOrderType, BitgetPlanStatus, BitgetPostOrderSide, BitgetStopType } from './bitget.types';
+export declare const parseOrderSide: (side: BitgetOrderSide) => OrderSide;
+export declare const formatOrderSide: (side: OrderSide) => BitgetOrderSide;
+export declare const parsetOrderSideFutures: (trade: BitgetOrderTradeSide) => OrderSide;
 export declare const formatOrderTradeSide: (side: OrderSide, tradeSide: TradeSide) => BitgetOrderTradeSide;
-export declare const parsetOrderTradeSide: (market: BitgetOrderTradeSide) => TradeSide;
+export declare const parsetOrderTradeSide: (tradeSide: BitgetPostOrderSide) => TradeSide;
 export declare const parseOrderType: (market: BitgetOrderType) => OrderType;
 export declare const formatOrderType: (market: OrderType) => BitgetOrderType;
 export declare const parseStopType: (market: BitgetStopType) => StopType;

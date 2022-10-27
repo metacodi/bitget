@@ -302,8 +302,10 @@ export class BitgetApi implements ExchangeApi {
         basePrecision: +found.priceScale,
         quantityPrecision: +found.quantityScale,
         pricePrecision: +found.priceScale,
+        tradeCommission: 'quote',
         minTradeAmount: +found.minTradeAmount,
         maxTradeAmount: +found.maxTradeAmount,
+        assetCommission: 'base',
         makerCommission: +found.makerFeeRate,
         takerCommission: +found.takerFeeRate,
       });

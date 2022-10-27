@@ -21,6 +21,7 @@ const moment_1 = __importDefault(require("moment"));
 const abstract_exchange_1 = require("@metacodi/abstract-exchange");
 const abstract_exchange_2 = require("@metacodi/abstract-exchange");
 const bitget_api_1 = require("./bitget-api");
+const bitget_parsers_1 = require("./bitget-parsers");
 class BitgetWebsocket extends events_1.default {
     constructor(options) {
         super();
@@ -401,6 +402,7 @@ class BitgetWebsocket extends events_1.default {
             case 'klines': return this.parseKlineTickerEvent;
             case 'account': return this.parseAccountUpdateEvent;
             case 'positions': return this.parseAccountUpdateEvent;
+            case 'orders': return this.parseOrderUpdateEvent;
             default: return undefined;
         }
     }
@@ -473,6 +475,36 @@ class BitgetWebsocket extends events_1.default {
         }
         else if (ev.arg.channel === 'positions') {
             return {};
+        }
+    }
+    parseOrderUpdateEvent(ev) {
+        const data = ev.data[0];
+        if (this.market === 'spot') {
+            return {};
+        }
+        else {
+            const symbol = this.api.parseInstrumentId(data.instId);
+            const baseVolume = +data.baseVolume;
+            const quoteVolume = +data.quoteVolume;
+            const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
+            const status = (0, bitget_parsers_1.parseOrderStatus)(data.status);
+            return {
+                id: data.clOrdId,
+                exchangeId: data.ordId,
+                side,
+                type: (0, bitget_parsers_1.parseOrderType)(data.ordType),
+                trade: (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide),
+                status,
+                symbol: symbol,
+                baseQuantity: status === 'filled' || status === 'partial' ? +data.fillSz : +data.sz,
+                quoteQuantity: status === 'filled' || status === 'partial' ? +data.fillNotionalUsd : +data.notionalUsd,
+                created: (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime)),
+                executed: (0, abstract_exchange_1.timestamp)((0, moment_1.default)(status === 'filled' || status === 'partial' ? +data.fillTime : +data.uTime)),
+                profit: status === 'filled' || status === 'partial' ? data === null || data === void 0 ? void 0 : data.pnl : 0,
+                commission: status === 'filled' || status === 'partial' ? data === null || data === void 0 ? void 0 : data.fillFee : 0,
+                commissionAsset: status === 'filled' || status === 'partial' ? symbol.quoteAsset : '',
+                fillPrice: status === 'filled' || status === 'partial' ? +data.fillPx : 0,
+            };
         }
     }
     get wsId() { return `${this.market}-${this.streamType}-ws`; }

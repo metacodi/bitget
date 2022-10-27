@@ -231,7 +231,7 @@ class BitgetApi {
             const { baseAsset, quoteAsset } = symbol;
             const found = this.symbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
             if (!found) {
-                throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+                throw { code: 500, message: `getMarketSymbol: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
             }
             if (this.market === 'spot') {
                 return Promise.resolve({
@@ -241,8 +241,10 @@ class BitgetApi {
                     basePrecision: +found.priceScale,
                     quantityPrecision: +found.quantityScale,
                     pricePrecision: +found.priceScale,
+                    tradeCommission: 'quote',
                     minTradeAmount: +found.minTradeAmount,
                     maxTradeAmount: +found.maxTradeAmount,
+                    assetCommission: 'base',
                     makerCommission: +found.makerFeeRate,
                     takerCommission: +found.takerFeeRate,
                 });
@@ -286,7 +288,7 @@ class BitgetApi {
             return found.symbol;
         }
         else {
-            throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+            throw { code: 500, message: `getSymbolProduct: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
         }
     }
     getProductType(symbol) {
@@ -297,7 +299,7 @@ class BitgetApi {
             return found.productType;
         }
         else {
-            throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+            throw { code: 500, message: `getProductType: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
         }
     }
     getInstrumentId(symbol) {
@@ -307,7 +309,7 @@ class BitgetApi {
             return found.symbolName;
         }
         else {
-            throw { code: 500, message: `No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+            throw { code: 500, message: `getInstrumentId: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
         }
     }
     parseInstrumentId(instId) {
@@ -316,7 +318,7 @@ class BitgetApi {
             return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
         }
         else {
-            throw { code: 500, message: `No s'ha trobat el símbol ${instId} a Bitget.` };
+            throw { code: 500, message: `parseInstrumentId: No s'ha trobat el símbol ${instId} a Bitget.` };
         }
     }
     parseSymbolProduct(symbol) {
@@ -325,7 +327,7 @@ class BitgetApi {
             return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
         }
         else {
-            throw { code: 500, message: `No s'ha trobat el símbol ${symbol} a Bitget.` };
+            throw { code: 500, message: `parseSymbolProduct: No s'ha trobat el símbol ${symbol} a Bitget.` };
         }
     }
     getPriceTicker(symbol) {

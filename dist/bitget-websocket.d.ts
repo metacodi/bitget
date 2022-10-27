@@ -67,6 +67,7 @@ export declare class BitgetWebsocket extends EventEmitter implements ExchangeWeb
     parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice;
     parseKlineTickerEvent(ev: BitgetWsChannelEvent): MarketKline;
     parseAccountUpdateEvent(ev: BitgetWsChannelEvent): AccountInfo;
+    parseOrderUpdateEvent(ev: BitgetWsChannelEvent): Order;
     protected get wsId(): string;
 }
 //# sourceMappingURL=bitget-websocket.d.ts.map
