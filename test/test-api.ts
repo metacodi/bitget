@@ -43,7 +43,8 @@ const testApi = async () => {
 
     const api = new BitgetApi(options);
 
-    console.log('getExchangeInfo() =>', await api.getExchangeInfo());
+    // console.log('getExchangeInfo() =>', await api.getExchangeInfo());
+    console.log('getAccountInfo() =>', await api.getAccountInfo());
 
     // const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
     // console.log('getOpenOrders() =>', getOpenOrders );

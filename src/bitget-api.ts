@@ -227,6 +227,8 @@ export class BitgetApi implements ExchangeApi {
     const { response, request, message } = e;
     // Si no hem rebut una resposta...
     if (!response) { throw request ? e : message; }
+    const data: any = response.data;
+    if (data?.msg) { error.message = `${error.message} ${data.msg}${data.msg.endsWith('.') ? '' : '.'}`; }
     throw {
       ...error,
       requestCode: response.status,
