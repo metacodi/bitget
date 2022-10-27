@@ -106,6 +106,7 @@ export const formatOrderStatus = (market: OrderStatus): BitgetOrderStatus => {
 export const parsePlanStatus = (market: BitgetPlanStatus): OrderStatus => {
   switch (market) {
     case 'not_trigger': return 'new';
+    case 'executing': return 'new'; // Que fem amb aquest estat ????????? 
     case 'triggered': return 'filled';
     case 'fail_trigger': return 'rejected';
     case 'cancel': return 'canceled';

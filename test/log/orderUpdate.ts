@@ -92,7 +92,7 @@ const order_update_limit_canceled_futures = {
   uTime: 1666874727776
 };
 
-const order_update_limit_filled_futures ={
+const order_update_limit_filled_futures = {
   accFillSz: '0.005',
   avgPx: '20694',
   cTime: 1666875202075,
@@ -121,4 +121,93 @@ const order_update_limit_filled_futures ={
   tgtCcy: 'SUSDT',
   tradeId: '969510355690270721',
   uTime: 1666875202104
+}
+
+const order_update_post_limit_stop_futures = {
+  actualPx: '18700.000000000',
+  actualSz: '0.000000000',
+  cOid: '1-1-1027180405',
+  cTime: '1666886645441',
+  id: '969558352522186752',
+  instId: 'BTCUSDT_UMCBL',
+  key: '969558352522186752',
+  ordPx: '18800.000000000',
+  ordType: 'limit',
+  posSide: 'long',
+  side: 'buy',
+  state: 'not_trigger',
+  sz: '0.005000000',
+  tgtCcy: 'USDT',
+  triggerPx: '18800.000000000',
+  triggerPxType: 'last',
+  triggerTime: '1666886645441',
+  userId: '5842873878',
+  version: 969558352513798100
+}
+
+const order_update_cancel_limit_stop_futures = {
+  actualPx: '18700.000000000',
+  actualSz: '0.000000000',
+  cOid: '1-1-1027180405',
+  cTime: '1666886645441',
+  id: '969558352522186752',
+  instId: 'BTCUSDT_UMCBL',
+  key: '969558352522186752',
+  ordPx: '18800.000000000',
+  ordType: 'limit',
+  posSide: 'long',
+  side: 'buy',
+  state: 'cancel',
+  sz: '0.005000000',
+  tgtCcy: 'USDT',
+  triggerPx: '18800.000000000',
+  triggerPxType: 'last',
+  triggerTime: '1666886698418',
+  userId: '5842873878',
+  version: 969558574712725500
+}
+
+const order_update_executing_limit_stop_futures = {
+  actualPx: '18700.000000000',
+  actualSz: '0.000000000',
+  cOid: '1-1-1027184313',
+  cTime: '1666888993874',
+  id: '969568202564116480',
+  instId: 'BTCUSDT_UMCBL',
+  key: '969568202564116480',
+  ordPx: '20559.500000000',
+  ordType: 'limit',
+  posSide: 'long',
+  side: 'buy',
+  state: 'executing',
+  sz: '0.005000000',
+  tgtCcy: 'USDT',
+  triggerPx: '20559.500000000',
+  triggerPxType: 'last',
+  triggerTime: '1666888994897',
+  userId: '5842873878',
+  version: 969568206850740200
+}
+
+const order_update_triggered_limit_stop_futures = {
+  actualPx: '18700.000000000',
+  actualSz: '0.005000000',
+  cOid: '1-1-1027184313',
+  cTime: '1666888993874',
+  id: '969568202564116480',
+  instId: 'BTCUSDT_UMCBL',
+  key: '969568202564116480',
+  ordId: '969568206890622978',
+  ordPx: '20559.500000000',
+  ordType: 'limit',
+  posSide: 'long',
+  side: 'buy',
+  state: 'triggered',
+  sz: '0.005000000',
+  tgtCcy: 'USDT',
+  triggerPx: '20559.500000000',
+  triggerPxType: 'last',
+  triggerTime: '1666888994925',
+  userId: '5842873878',
+  version: 969568206871711700
 }

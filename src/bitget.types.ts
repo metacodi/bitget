@@ -30,6 +30,7 @@ export type BitgetOrderStatus =
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#planstatus } */
 export type BitgetPlanStatus =
   'not_trigger' |
+  'executing' |
   'triggered' |
   'fail_trigger' |
   'cancel'

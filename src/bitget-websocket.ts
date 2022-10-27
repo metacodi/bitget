@@ -10,7 +10,7 @@ import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, W
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
-import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus } from './bitget-parsers';
+import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus } from './bitget-parsers';
 
 
 /**
@@ -82,7 +82,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     }
   }
 
-  
+
   // ---------------------------------------------------------------------------------------------------
   //  api
   // ---------------------------------------------------------------------------------------------------
@@ -177,7 +177,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       // #168: ws.terminate() undefined in browsers.
       if (typeof this.ws.terminate === 'function') { this.ws.terminate(); }
       return Promise.resolve();
-      
+
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
@@ -329,7 +329,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         console.error(`onWsMessage error: ${data.msg}`);
       default:
         console.log('onWsMessage =>', data);
-        // console.log(JSON.stringify(data));
+      // console.log(JSON.stringify(data));
     }
   }
 
@@ -407,7 +407,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
       // NOTA: el canal `account` no accepta monedes per `instId`, només 'default'.
       // NOTA: el canal `positions` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
-      return this.registerChannelSubscription([{ channel: 'account', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, { channel: 'positions', instType: this.isTest ? 's'+instType : instType, instId }]);
+      return this.registerChannelSubscription([{ channel: 'account', instType: this.isTest ? 's' + instType : instType, instId: 'default' }, { channel: 'positions', instType: this.isTest ? 's' + instType : instType, instId }]);
     }
   }
 
@@ -426,7 +426,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
       // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
       // NOTA: el canal `ordersAlgo` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
-      return this.registerChannelSubscription([{ channel: 'orders', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, { channel: 'ordersAlgo', instType: this.isTest ? 's'+instType : instType, instId }]);
+      return this.registerChannelSubscription([{ channel: 'orders', instType: this.isTest ? 's' + instType : instType, instId: 'default' }, { channel: 'ordersAlgo', instType: this.isTest ? 's' + instType : instType, instId }]);
     }
   }
 
@@ -529,13 +529,13 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
    * {@link https://bitgetlimited.github.io/apidoc/en/spot/#tickers-channel Tickers channel}
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#tickers-channel Tickers channel}
    */
-   parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice {
+  parsePriceTickerEvent(ev: BitgetWsChannelEvent): MarketPrice {
     const data = ev.data[0];
     const symbol = this.api.parseInstrumentId(ev.arg.instId);
     const baseVolume = +data.baseVolume;
     const quoteVolume = +data.quoteVolume;
     const ts = +data[this.market === 'spot' ? 'ts' : 'systemTime'];
-    return { 
+    return {
       symbol,
       price: +data.last,
       baseVolume, quoteVolume,
@@ -592,18 +592,19 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   /**
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#order-channel Order Channel - FUTURES}
    */
-  
+
   parseOrderUpdateEvent(ev: BitgetWsChannelEvent): Order {
     const data = ev.data[0];
+    const channel = ev.arg.channel;
     if (this.market === 'spot') {
       return {} as any;
     } else {
       const symbol = this.api.parseSymbolProduct(data.instId);
       const side = parseOrderSide(data.side);
-      const status = parseOrderStatus(data.status);
+      const status = channel === 'orders' ? parseOrderStatus(data.status) : parsePlanStatus(data.state);
       return {
-        id: data.clOrdId,
-        exchangeId: data.ordId,     // orderId propi de l'exchange
+        id: channel === 'orders' ? data.clOrdId : data.cOid,
+        exchangeId: channel === 'orders' ? data.ordId : data.id,
         side,
         type: parseOrderType(data.ordType),
         // stop?: StopType;
@@ -611,19 +612,19 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         status,
         symbol: symbol,
         baseQuantity: status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillSz : +data.accFillSz) : +data.sz,   // quantitat satifeta baseAsset
-        quoteQuantity: status === 'filled' || status === 'partial' ? +data.fillNotionalUsd : +data.notionalUsd,  // quantitat satifeta quoteAsset
-        price: status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillPx : +data.avgPx) : +data.px,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
-        // stopPrice?: number;       // preu per avtivar l'stop.
+        quoteQuantity: status === 'filled' || status === 'partial' ? +data.fillNotionalUsd : (channel === 'orders' ? +data.notionalUsd : 0.0),  // quantitat satifeta quoteAsset
+        price: status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillPx : +data.avgPx) :  (channel === 'orders' ? +data.px : +data.actualPx),           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
+        stopPrice: channel === 'orders' ? 0.0 : +data.triggerPx,       // preu per avtivar l'stop.
         // rejectReason?: string;
         // isOco?: boolean;
-        created: timestamp(moment()),       // timestamp: moment de creació per part de la nostra app.
+        created: status === 'post' ? timestamp(moment()) : timestamp(moment(+data.cTime)),       // timestamp: moment de creació per part de la nostra app.
         posted: timestamp(moment(+data.cTime)),        // timestamp: moment de creació a l'exchange (Binance, Kucoin, ...)
         executed: timestamp(moment(status === 'filled' || status === 'partial' ? +data.fillTime : +data.uTime)),      // timestamp: moment en que s'ha filled o canceled.
         // syncronized?: boolean;
         // idOrderBuyed?: string;
-        profit: status === 'filled' || status === 'partial' ? data?.pnl : 0,        // Futures only
-        commission: status === 'filled' || status === 'partial' ? data?.fillFee : 0,
-        commissionAsset: status === 'filled' || status === 'partial' ? symbol.quoteAsset : undefined,
+        profit: status === 'filled' || status === 'partial' ? data?.pnl : 0.0,        // Futures only
+        commission: status === 'filled' || status === 'partial' ? data?.fillFee : 0.0,
+        commissionAsset: status === 'filled' || status === 'partial' ? symbol.quoteAsset : 0.0,
       } as any;
     }
   }

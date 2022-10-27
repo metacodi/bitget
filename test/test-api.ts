@@ -32,7 +32,7 @@ const testApi = async () => {
 
     console.log('---------------- API TEST ----------------------');
 
-    const isTest = true;
+    const isTest = false;
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
@@ -118,8 +118,8 @@ const testApi = async () => {
         baseAsset: 'BTC'
       },
       quantity: 0.005,
-      price: 20673,
-      stopPrice: 20675
+      price: 18700,
+      stopPrice: 20559.5
     });
 
     // console.log('postOrder() =>', postOrder_stop);
