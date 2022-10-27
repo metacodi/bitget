@@ -428,28 +428,6 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     }
   }
 
-  allUpdate(symbol?: SymbolType): Subject<Order> {
-    if (this.market === 'spot') {
-      const instId = symbol ? { instId: this.api.getSymbolProduct(symbol) } : 'default';
-      // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
-      return this.registerChannelSubscription([
-        { channel: 'account', instType: 'spbl', instId: 'default' },
-        { channel: 'orders', instType: 'spbl', instId }
-      ]);
-    } else {
-      const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
-      const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
-      // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
-      // NOTA: el canal `ordersAlgo` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
-      return this.registerChannelSubscription([
-        { channel: 'account', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, 
-        { channel: 'positions', instType: this.isTest ? 's'+instType : instType, instId },
-        { channel: 'orders', instType: this.isTest ? 's'+instType : instType, instId: 'default' }, 
-        { channel: 'ordersAlgo', instType: this.isTest ? 's'+instType : instType, instId }
-      ]);
-    }
-  }
-
   // ---------------------------------------------------------------------------------------------------
   //  Channel subscriptions
   // ---------------------------------------------------------------------------------------------------
@@ -511,7 +489,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       case 'account': return this.parseAccountUpdateEvent;
       case 'positions': return this.parseAccountUpdateEvent;
       case 'orders': return this.parseOrderUpdateEvent;
-      // case 'ordersAlgo': return this.parseOrderUpdateEvent;
+      case 'ordersAlgo': return this.parseOrderUpdateEvent;
       default: return undefined;
     }
   }
@@ -609,14 +587,16 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     }
   }
 
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#order-channel Order Channel - FUTURES}
+   */
+  
   parseOrderUpdateEvent(ev: BitgetWsChannelEvent): Order {
     const data = ev.data[0];
     if (this.market === 'spot') {
       return {} as any;
     } else {
-      const symbol = this.api.parseInstrumentId(data.instId);
-      const baseVolume = +data.baseVolume;
-      const quoteVolume = +data.quoteVolume;
+      const symbol = this.api.parseSymbolProduct(data.instId);
       const side = parseOrderSide(data.side);
       const status = parseOrderStatus(data.status);
       return {
@@ -628,21 +608,20 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         trade: parsetOrderTradeSide(data.posSide),
         status,
         symbol: symbol,
-        baseQuantity: status === 'filled' || status === 'partial' ? +data.fillSz: +data.sz,   // quantitat satifeta baseAsset
+        baseQuantity: status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillSz : +data.accFillSz) : +data.sz,   // quantitat satifeta baseAsset
         quoteQuantity: status === 'filled' || status === 'partial' ? +data.fillNotionalUsd : +data.notionalUsd,  // quantitat satifeta quoteAsset
-        // price?: number;           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
+        price: status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillPx : +data.avgPx) : +data.px,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
         // stopPrice?: number;       // preu per avtivar l'stop.
         // rejectReason?: string;
         // isOco?: boolean;
-        created: timestamp(moment(+data.cTime)),       // timestamp: moment de creació per part de la nostra app.
-        // posted?: string;        // timestamp: moment de creació a l'exchange (Binance, Kucoin, ...)
+        created: timestamp(moment()),       // timestamp: moment de creació per part de la nostra app.
+        posted: timestamp(moment(+data.cTime)),        // timestamp: moment de creació a l'exchange (Binance, Kucoin, ...)
         executed: timestamp(moment(status === 'filled' || status === 'partial' ? +data.fillTime : +data.uTime)),      // timestamp: moment en que s'ha filled o canceled.
         // syncronized?: boolean;
         // idOrderBuyed?: string;
         profit: status === 'filled' || status === 'partial' ? data?.pnl : 0,        // Futures only
         commission: status === 'filled' || status === 'partial' ? data?.fillFee : 0,
-        commissionAsset: status === 'filled' || status === 'partial' ? symbol.quoteAsset : '',
-        fillPrice: status === 'filled' || status === 'partial' ? +data.fillPx : 0,
+        commissionAsset: status === 'filled' || status === 'partial' ? symbol.quoteAsset : undefined,
       } as any;
     }
   }

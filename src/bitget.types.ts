@@ -22,8 +22,8 @@ export type BitgetOrderForceType =
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#status } */
 export type BitgetOrderStatus =
   'new' | //	Unfilled
-  'partial_fill' | //	Partially filled
-  'full_fill' | //	Fully filled
+  'partial-fill' | //	Partially filled
+  'full-fill' | //	Fully filled
   'cancelled' //	Cancelled
   ;
 

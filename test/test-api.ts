@@ -50,24 +50,37 @@ const testApi = async () => {
     // console.log('getOpenOrders() =>', getOpenOrders );
     // writeLog(`getOpenOrders_${options.market}`, getOpenOrders, 'results/getOpenOrders.ts');
 
-    let id = moment().format("MMDDHHmmss");
+    // let id = moment().format("MMDDHHmmss");
     // Post Order (market) buy
-    const postOrder_buy = await api.postOrder({
-      id: `1-1-${id}`,
-      side: 'buy',
-      type: 'market',
-      trade: 'long',
-      symbol: {
-        quoteAsset: 'USDT',
-        baseAsset: 'BTC'
-      },
-      quantity: 0.005
-    });
+    // const postOrder_buy = await api.postOrder({
+    //   id: `1-1-${id}`,
+    //   side: 'buy',
+    //   type: 'market',
+    //   trade: 'long',
+    //   symbol: {
+    //     quoteAsset: 'USDT',
+    //     baseAsset: 'BTC'
+    //   },
+    //   quantity: 0.005
+    // });
+
+    // const postOrder_buy_limit = await api.postOrder({
+    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
+    //   side: 'buy',
+    //   type: 'limit',
+    //   price: 20710.5,
+    //   trade: 'long',
+    //   symbol: {
+    //     quoteAsset: 'USDT',
+    //     baseAsset: 'BTC'
+    //   },
+    //   quantity: 0.005
+    // });
 
     // id++;
     // // Post Order (market) sell
     // const postOrder_sell = await api.postOrder({
-    //   id: `1-1-${id}`,
+    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
     //   side: 'sell',
     //   type: 'market',
     //   trade: 'short',
@@ -81,7 +94,7 @@ const testApi = async () => {
     // id++;
     // // Post Order (limit) buy
     // const postOrder_limit = await api.postOrder({
-    //   id: `1-1-${id}`,
+    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
     //   side: 'buy',
     //   type: 'limit',
     //   trade: 'long',
@@ -93,21 +106,21 @@ const testApi = async () => {
     //   price: 18950
     // });
 
-    // id++;
-    // // Post Order (stop_market) buy
-    // const postOrder_stop = await api.postOrder({
-    //   id: `1-1-${id}`,
-    //   side: 'buy',
-    //   type: 'market',
-    //   stop: 'normal',
-    //   trade: 'long',
-    //   symbol: {
-    //     quoteAsset: 'USDT',
-    //     baseAsset: 'BTC'
-    //   },
-    //   quantity: 0.05,
-    //   stopPrice: 18820
-    // });
+    // Post Order (stop_market) buy
+    const postOrder_stop = await api.postOrder({
+      id: `1-1-${moment().format("MMDDHHmmss")}`,
+      side: 'buy',
+      type: 'limit',
+      stop: 'normal',
+      trade: 'long',
+      symbol: {
+        quoteAsset: 'USDT',
+        baseAsset: 'BTC'
+      },
+      quantity: 0.005,
+      price: 20673,
+      stopPrice: 20675
+    });
 
     // console.log('postOrder() =>', postOrder_stop);
     // writeLog(`postOrder_${options.market}`, postOrder_stop);

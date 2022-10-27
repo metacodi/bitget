@@ -86,8 +86,8 @@ export const formatStopType = (market: StopType): BitgetStopType => {
 export const parseOrderStatus = (market: BitgetOrderStatus): OrderStatus => {
   switch (market) {
     case 'new': return 'new';
-    case 'full_fill': return 'filled';
-    case 'partial_fill': return 'partial';
+    case 'full-fill': return 'filled';
+    case 'partial-fill': return 'partial';
     case 'cancelled': return 'canceled';
     default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderStatus type '${market}'` });
   }
@@ -96,8 +96,8 @@ export const parseOrderStatus = (market: BitgetOrderStatus): OrderStatus => {
 export const formatOrderStatus = (market: OrderStatus): BitgetOrderStatus => {
   switch (market) {
     case 'new': return 'new';
-    case 'filled': return 'full_fill';
-    case 'partial': return 'partial_fill';
+    case 'filled': return 'full-fill';
+    case 'partial': return 'partial-fill';
     case 'canceled': return 'cancelled';
     default: throw ({ message: `No s'ha implementat el format Bitget pel OrderStatus type '${market}'` });
   }

@@ -367,14 +367,18 @@ export class BitgetApi implements ExchangeApi {
   parseInstrumentId(instId: string): SymbolType {
     const found = this.symbols.find(s => s.symbolName === instId);
     if (found) {
-      return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
+      const baseAsset = this.isTest ? String(found.baseCoin).slice(1) : found.baseCoin;
+      const quoteAsset = this.isTest ? String(found.quoteCoin).slice(1) : found.quoteCoin;
+      return { baseAsset, quoteAsset };
     } else { throw { code: 500, message: `parseInstrumentId: No s'ha trobat el símbol ${instId} a Bitget.` }; }
   }
 
   parseSymbolProduct(symbol: string): SymbolType {
     const found = this.symbols.find(s => s.symbol === symbol);
     if (found) {
-      return { baseAsset: found.baseCoin, quoteAsset: found.quoteCoin };
+      const baseAsset = this.isTest ? String(found.baseCoin).slice(1) : found.baseCoin;
+      const quoteAsset = this.isTest ? String(found.quoteCoin).slice(1) : found.quoteCoin;
+      return { baseAsset, quoteAsset };
     } else { throw { code: 500, message: `parseSymbolProduct: No s'ha trobat el símbol ${symbol} a Bitget.` }; }
   }
 
