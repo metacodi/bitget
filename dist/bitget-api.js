@@ -186,7 +186,7 @@ class BitgetApi {
         }
         const data = response.data;
         if (data === null || data === void 0 ? void 0 : data.msg) {
-            error.message = `${error.message} ${data.msg}${data.msg.endsWith('.') ? '' : '.'}`;
+            error.message = `${error.message} ${data.code}: ${data.msg}${data.msg.endsWith('.') ? '' : '.'}`;
         }
         throw Object.assign(Object.assign({}, error), { requestCode: response.status, requestMessage: response.statusText, body: response.data, headers: response.headers, requestUrl: url, requestBody: request.body, options: Object.assign({}, this.options) });
     }
