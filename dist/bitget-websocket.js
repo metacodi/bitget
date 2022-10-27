@@ -393,7 +393,10 @@ class BitgetWebsocket extends events_1.default {
     unsubscribeChannel(arg) {
         console.log(this.wsId, '=> unsubscribing...', arg);
         const data = { op: "unsubscribe", args: [arg] };
-        this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error) : undefined);
+        const WS_STATE_OPEN = 1;
+        if (this.ws.readyState === WS_STATE_OPEN) {
+            this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error) : undefined);
+        }
     }
     unsubscribeAllChannels() {
         Object.keys(this.emitters).map(channelKey => {

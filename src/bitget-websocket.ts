@@ -503,7 +503,9 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   protected unsubscribeChannel(arg: BitgetWsSubscriptionArguments) {
     console.log(this.wsId, '=> unsubscribing...', arg);
     const data: BitgetWsSubscriptionRequest = { op: "unsubscribe", args: [arg] };
-    this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error as any) : undefined);
+    /** {@link https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState } */
+    const WS_STATE_OPEN = 1;
+    if (this.ws.readyState === WS_STATE_OPEN) { this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error as any) : undefined); }
   }
 
   protected unsubscribeAllChannels() {
