@@ -11,6 +11,7 @@ import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, W
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
 import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode } from './bitget-parsers';
+import { Position } from '../../abstract-exchange/dist/abstract/types';
 
 
 /**
@@ -585,8 +586,10 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         };
       }
     } else if (ev.arg.channel === 'positions') {
-      const data = ev.data[0];
-      if (ev.data.length > 0) {
+      const positions: Position[] = [];
+      const dataPositions = ev.data;
+
+      dataPositions.map(data => {
         const symbol = this.api.parseSymbolProduct(data.instId);
         const positionSide = parsetOrderTradeSide(data.holdSide);
         const marginAsset = symbol.quoteAsset;
@@ -595,16 +598,9 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         const unrealisedPnl = +data.upl;
         const marginType = parsetMarginMode(data.marginMode);
         const liquidationPrice = +data.liqPx;
-
-        return {
-          positions: [
-            { symbol, positionSide, marginAsset, positionAmount, entryPrice, unrealisedPnl, marginType, liquidationPrice }
-          ]
-        };
-      } else {
-        return { positions: [] };
-      }
-
+        positions.push({ symbol, positionSide, marginAsset, positionAmount, entryPrice, unrealisedPnl, marginType, liquidationPrice });
+      });
+      return { positions };
     }
   }
 

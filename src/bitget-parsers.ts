@@ -49,68 +49,68 @@ export const parsetOrderTradeSide = (tradeSide: BitgetPostOrderSide): TradeSide 
   }
 }
 
-export const parseOrderType = (market: BitgetOrderType, ): OrderType => {
-  switch (market) {
+export const parseOrderType = (orrderType: BitgetOrderType, ): OrderType => {
+  switch (orrderType) {
     case 'market': return 'market';
     case 'limit': return 'limit';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${orrderType}'` });
   }
 }
 
-export const formatOrderType = (market: OrderType): BitgetOrderType => {
-  switch (market) {
+export const formatOrderType = (orrderType: OrderType): BitgetOrderType => {
+  switch (orrderType) {
     case 'market': return 'market';
     case 'limit': return 'limit';
-    default: throw ({ message: `No s'ha implementat el format Bitget pel OrderSide type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el format Bitget pel OrderType type '${orrderType}'` });
   }
 }
 
-export const parseStopType = (market: BitgetStopType): StopType => {
-  switch (market) {
+export const parseStopType = (type: BitgetStopType): StopType => {
+  switch (type) {
     case 'normal_plan': return 'normal';
     case 'profit_plan': return 'profit';
     case 'loss_plan': return 'loss';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel StopType type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel StopType type '${type}'` });
   }
 }
 
-export const formatStopType = (market: StopType): BitgetStopType => {
-  switch (market) {
+export const formatStopType = (type: StopType): BitgetStopType => {
+  switch (type) {
     case 'normal': return 'normal_plan';
     case 'profit': return 'profit_plan';
     case 'loss': return 'loss_plan';
-    default: throw ({ message: `No s'ha implementat el format Bitget pel StopSide type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el format Bitget pel StopSide type '${type}'` });
   }
 }
 
-export const parseOrderStatus = (market: BitgetOrderStatus): OrderStatus => {
-  switch (market) {
+export const parseOrderStatus = (status: BitgetOrderStatus): OrderStatus => {
+  switch (status) {
     case 'new': return 'new';
     case 'full-fill': return 'filled';
     case 'partial-fill': return 'partial';
     case 'cancelled': return 'canceled';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderStatus type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderStatus type '${status}'` });
   }
 }
 
-export const formatOrderStatus = (market: OrderStatus): BitgetOrderStatus => {
-  switch (market) {
+export const formatOrderStatus = (status: OrderStatus): BitgetOrderStatus => {
+  switch (status) {
     case 'new': return 'new';
     case 'filled': return 'full-fill';
     case 'partial': return 'partial-fill';
     case 'canceled': return 'cancelled';
-    default: throw ({ message: `No s'ha implementat el format Bitget pel OrderStatus type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el format Bitget pel OrderStatus type '${status}'` });
   }
 }
 
-export const parsePlanStatus = (market: BitgetPlanStatus): OrderStatus => {
-  switch (market) {
+export const parsePlanStatus = (status: BitgetPlanStatus): OrderStatus => {
+  switch (status) {
     case 'not_trigger': return 'new';
     case 'executing': return 'new'; // Que fem amb aquest estat ????????? 
     case 'triggered': return 'filled';
     case 'fail_trigger': return 'rejected';
     case 'cancel': return 'canceled';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel parsePlanStatus type '${market}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel parsePlanStatus type '${status}'` });
   }
 }
 
@@ -120,25 +120,15 @@ export const parsetPositionTradeSide = (tradeSide: BitgetPostOrderSide): Positio
   switch (tradeSide) {
     case 'long': return 'long';
     case 'short': return 'short';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel TradeSide type '${tradeSide}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel PositionTradeSide type '${tradeSide}'` });
   }
 }
-
 
 export const parsetMarginMode = (tradeSide: BitgetMarginMode): MarginMode => {
   switch (tradeSide) {
     case 'crossed': return 'cross';
     case 'fixed': return 'isolated';
     default: throw ({ message: `No s'ha implementat el parser Bitget pel MarginMode type '${tradeSide}'` });
-  }
-}
-
-export const parsetStopMode = (tradeSide: BitgetStopType): StopType => {
-  switch (tradeSide) {
-    case 'normal_plan': return 'normal';
-    case 'profit_plan': return 'profit';
-    case 'loss_plan': return 'loss';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel StopType type '${tradeSide}'` });
   }
 }
 
