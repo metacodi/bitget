@@ -119,7 +119,7 @@ const testApi = async () => {
       },
       quantity: 0.005,
       price: 18700,
-      stopPrice: 20559.5
+      stopPrice: 20485.5
     });
 
     // console.log('postOrder() =>', postOrder_stop);

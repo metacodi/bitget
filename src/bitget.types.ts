@@ -11,6 +11,9 @@ export type BitgetInstrumentType = 'sp' | 'mc';
 
 export type BitgetUrlMarketType = 'spot' | 'mix';
 
+export type BitgetMarginMode = 'fixed' | 'crossed';
+
+
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#ordertypeforce } */
 export type BitgetOrderForceType =
   'normal' | //	Good till cancel
@@ -51,6 +54,7 @@ export type BitgetOrderTradeSide =
 'offset_close_short' 
 ;
 export type BitgetPostOrderSide = 'long' | 'short';
+export type BitgetPostPosiSide = 'long' | 'short';
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#ordertype } */
 export type BitgetOrderType =

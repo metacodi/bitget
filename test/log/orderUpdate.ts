@@ -211,3 +211,25 @@ const order_update_triggered_limit_stop_futures = {
   userId: '5842873878',
   version: 969568206871711700
 }
+
+const order_stpo_filed_triggered =  {
+  actualPx: '18700.000000000',
+  actualSz: '0.000000000',
+  cOid: '1-1-1028171445',
+  cTime: '1666970085462',
+  id: '969908325336031232',
+  instId: 'BTCUSDT_UMCBL',
+  key: '969908325336031232',
+  ordPx: '20480.000000000',
+  ordType: 'limit',
+  posSide: 'long',
+  side: 'buy',
+  state: 'fail_trigger',
+  sz: '0.005000000',
+  tgtCcy: 'USDT',
+  triggerPx: '20480.000000000',
+  triggerPxType: 'last',
+  triggerTime: '1666970144981',
+  userId: '5842873878',
+  version: 969908574926524400
+}
