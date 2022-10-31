@@ -36,8 +36,8 @@ const testApi = async () => {
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
-      // market: 'spot',
-      market: 'futures',
+      market: 'spot',
+      // market: 'futures',
       isTest,
     } as any;
 

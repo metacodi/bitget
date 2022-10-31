@@ -612,7 +612,39 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const data = ev.data[0];
     const channel = ev.arg.channel;
     if (this.market === 'spot') {
-      return {} as any;
+      const id = data.clOrdId;
+      const exchangeId = data.ordId;
+      const symbol = this.api.parseSymbolProduct(data.instId);
+      const side = parseOrderSide(data.side);
+      const type = parseOrderType(data.ordType);
+      const status = parseOrderStatus(data.status);
+      const baseQuantity = status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillSz : +data.accFillSz) : +data.sz ? +data.sz : 0.0;
+      const price = status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillPx : +data.avgPx) : +data.px ? +data.px : 0.0;
+      const quoteQuantity = +data.notional ? +data.notional : baseQuantity * price;
+
+      const created = status === 'post' ? timestamp(moment()) : timestamp(moment(+data.cTime));
+      const posted = timestamp(moment(+data.cTime));
+      const executed = timestamp(moment(+data?.uTime ? +data.uTime : moment()));
+
+      const commission = status === 'filled' || status === 'partial' ? data?.fillFee ? data?.fillFee : 0.0 : 0.0;
+      const commissionAsset: CoinType = status === 'filled' || status === 'partial' ? symbol.quoteAsset : 'USDT';
+      return {
+        id, exchangeId, side, type, stop: 'normal', status, symbol,
+        baseQuantity,   // quantitat satifeta baseAsset
+        quoteQuantity,  // quantitat satifeta quoteAsset
+        price,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
+        // stopPrice, Bitget no diu res de les ordres Algoritmiques 
+        // rejectReason?: string;
+        // isOco?: boolean;
+        created,       // timestamp: moment de creació per part de la nostra app.
+        posted,        // timestamp: moment de creació a l'exchange (Binance, Kucoin, ...)
+        executed,      // timestamp: moment en que s'ha filled o canceled.
+        // syncronized?: boolean;
+        // idOrderBuyed?: string;
+        commission,
+        commissionAsset,
+      } ;
+
     } else {
       const id = channel === 'orders' ? data.clOrdId : data.cOid;
       const exchangeId = channel === 'orders' ? data.ordId : data.id;
@@ -630,10 +662,10 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const executed = timestamp(moment(status === 'filled' || status === 'partial' ? (channel === 'orders' ? +data.fillTime : +data.triggerTime) : channel === 'orders' ? +data.uTime : moment()));
       const profit = status === 'filled' || status === 'partial' ? data?.pnl : 0.0;
       const commission = status === 'filled' || status === 'partial' ? data?.fillFee : 0.0;
-      const commissionAsset = status === 'filled' || status === 'partial' ? symbol.quoteAsset : 0.0;
+      const commissionAsset: CoinType = status === 'filled' || status === 'partial' ? symbol.quoteAsset : 'USDT';
 
       return {
-        id, exchangeId, side, type, stop: 'normal', trade, status, symbol, 
+        id, exchangeId, side, type, stop: 'normal', trade, status, symbol,
         baseQuantity,   // quantitat satifeta baseAsset
         quoteQuantity,  // quantitat satifeta quoteAsset
         price,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
@@ -648,7 +680,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         profit,
         commission,
         commissionAsset,
-      } as any;
+      };
     }
   }
 
