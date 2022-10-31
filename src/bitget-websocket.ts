@@ -605,7 +605,9 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   }
 
   /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#order-channel Order Channel - SPOT}
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#order-channel Order Channel - FUTURES}
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#plan-order-channel Plan Order Channel - FUTURES}
    */
 
   parseOrderUpdateEvent(ev: BitgetWsChannelEvent): Order {
