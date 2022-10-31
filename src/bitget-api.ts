@@ -800,33 +800,26 @@ export class BitgetApi implements ExchangeApi {
     const symbol = this.getSymbolProduct(request.symbol);
     const error = { code: 500, message: `No s'ha pogut cancel·lar l'ordre ${request.id} en ${this.market} a Bitget.` };
     if (this.market === 'spot') {
-      
       const params = {
         symbol,
         orderId: request.exchangeId
       };
-      
       const response = await this.post(`api/spot/v1/trade/cancel-order`, { params, error });
       const order: any = { status: 'new', id: response.data.clientOid, ...request };
       return order;
     } else {
       const { baseAsset, quoteAsset } = this.resolveAssets(request.symbol);
-      let params: any = {
+      const isStop = request.type.includes('stop');
+      const planType = request.type.includes('stop') ? { planType: 'normal_plan' } : undefined;
+      const params = {
         symbol,
         marginCoin: quoteAsset,
-        orderId: request.exchangeId
+        orderId: request.exchangeId,
+        ...planType,
       };
-      const isStop = request.type.includes('stop');
-      if (request.type.includes('stop')) { params = { ...params, planType: 'normal_plan' }; }
       const response = await this.post(isStop ? `api/mix/v1/plan/cancelPlan` : `api/mix/v1/order/cancel-order`, { params, error });
-      // if (response.message === 'success') {
-      //   const order: Order = { status: 'cancel', id: response.data.clientOid, ...request };
-      //   return order;
-      // } else {
-      //   const order: any = { status: 'rejected', id: response.data.clientOid, ...request };
-      //   return order;
-
-      // }
+      const order: any = { status: 'cancel', id: response.data.clientOid, ...request };
+      return order;
     }
   }
   
