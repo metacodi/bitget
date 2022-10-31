@@ -107,20 +107,20 @@ const testApi = async () => {
     // });
 
     // Post Order (stop_market) buy
-    const postOrder_stop = await api.postOrder({
-      id: `1-1-${moment().format("MMDDHHmmss")}`,
-      side: 'buy',
-      type: 'limit',
-      stop: 'normal',
-      trade: 'long',
-      symbol: {
-        quoteAsset: 'USDT',
-        baseAsset: 'BTC'
-      },
-      quantity: 0.005,
-      price: 18700,
-      stopPrice: 20485.5
-    });
+    // const postOrder_stop = await api.postOrder({
+    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
+    //   side: 'buy',
+    //   type: 'limit',
+    //   stop: 'normal',
+    //   trade: 'long',
+    //   symbol: {
+    //     quoteAsset: 'USDT',
+    //     baseAsset: 'BTC'
+    //   },
+    //   quantity: 0.005,
+    //   price: 18700,
+    //   stopPrice: 20485.5
+    // });
 
     // console.log('postOrder() =>', postOrder_stop);
     // writeLog(`postOrder_${options.market}`, postOrder_stop);
@@ -141,6 +141,9 @@ const testApi = async () => {
     // console.log('setLeverage() =>', await api.setLeverage({ symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, coin: 'USDT', longLeverage: 75, shortLeverage: 75, mode: 'cross'} ));
     // api.getExchangeInfo().then(async response => {
     // })
+
+    // Get Order SPOT
+    console.log('getLeverage() =>', await api.getLeverage({ quoteAsset: 'USDT', baseAsset: 'BTC'}, 'isolated'));
 
   } catch (error) {
     Terminal.error(error, false);
