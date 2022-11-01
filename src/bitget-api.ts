@@ -7,23 +7,14 @@ import { ExchangeApi, CoinType, MarketType, HttpMethod, ApiOptions, ApiRequestOp
 import { ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode } from '@metacodi/abstract-exchange';
 import { LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit } from '@metacodi/abstract-exchange';
 import { calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
+import { ApiClient } from '@metacodi/node-api-client';
 
 import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, parsetOrderSideFutures, parseStopType } from './bitget-parsers';
 import { formatOrderSide, formatOrderType, formatOrderTradeSide } from './bitget-parsers';
-import { map } from 'rxjs/operators';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
-export class BitgetApi implements ExchangeApi {
-
-  /** Retorna la url base sense el protocol.
-   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#restapi Rest Api}
-   * 
-   *  Bitget account can be used for login on Demo Trading. If you already have an Bitget account, you can log in directly.
-   *  Start API Demo Trading by the following steps:
-   *  Login Bitget —> Assets —> Start Demo Trading —> Personal Center —> Demo Trading API -> Create Demo Trading V5 APIKey —> Start your Demo Trading
-   */
-  baseUrl(): string { return `api.bitget.com` };
+export class BitgetApi extends ApiClient implements ExchangeApi {
 
   options: ApiOptions;
   user_id: String;
@@ -34,218 +25,47 @@ export class BitgetApi implements ExchangeApi {
   constructor(
     options?: ApiOptions,
   ) {
-    this.options = { ...this.defaultOptions, ...options };
+    super(options);
   }
 
 
   // ---------------------------------------------------------------------------------------------------
-  //  options
+  //  ApiClient implementation
   // ---------------------------------------------------------------------------------------------------
 
-  get market(): MarketType { return this.options?.market; }
-
-  /** {@link https://www.bitget.com/en/account/newapi API Management} */
-  get apiKey(): string { return this.options?.apiKey; }
-
-  get apiSecret(): string { return this.options?.apiSecret; }
-
-  get apiPassphrase(): string { return this.options?.apiPassphrase; }
-
-  get isTest(): boolean { return !!this.options?.isTest; }
-
-  get defaultOptions(): Partial<ApiOptions> {
-    return {
-      isTest: false,
-      // recvWindow: 5000,
-    }
-  }
-
-  public setCredentials(data: { apiKey: string; apiSecret: string; apiPassphrase: string }): void {
-    this.options.apiKey = data.apiKey;
-    this.options.apiSecret = data.apiSecret;
-    this.options.apiPassphrase = data.apiPassphrase;
-  }
-
-
-  // ---------------------------------------------------------------------------------------------------
-  //  request helpers
-  // ---------------------------------------------------------------------------------------------------
-
-  public get(endpoint: string, options?: ApiRequestOptions): Promise<any> { return this.request('GET', endpoint, options); }
-
-  public post(endpoint: string, options?: ApiRequestOptions): Promise<any> { return this.request('POST', endpoint, options); }
-
-  public put(endpoint: string, options?: ApiRequestOptions): Promise<any> { return this.request('PUT', endpoint, options); }
-
-  public delete(endpoint: string, options?: ApiRequestOptions): Promise<any> { return this.request('DELETE', endpoint, options); }
-
-
-  // ---------------------------------------------------------------------------------------------------
-  //  request
-  // ---------------------------------------------------------------------------------------------------
+  /** Retorna la url base sense el protocol.
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#restapi Rest Api}
+   * 
+   *  Bitget account can be used for login on Demo Trading. If you already have an Bitget account, you can log in directly.
+   *  Start API Demo Trading by the following steps:
+   *  Login Bitget —> Assets —> Start Demo Trading —> Personal Center —> Demo Trading API -> Create Demo Trading V5 APIKey —> Start your Demo Trading
+   */
+   baseUrl(): string { return `api.bitget.com` };
 
   async request(method: HttpMethod, endpoint: string, options?: ApiRequestOptions): Promise<any> {
     if (!options) { options = {}; }
-    const isPublic = options.isPublic === undefined ? false : options.isPublic;
-    const headers = options.headers === undefined ? undefined : options.headers;
-    const params = options.params === undefined ? undefined : options.params;
-
-    const baseUrl = this.baseUrl();
-    const [uri, _query = ''] = endpoint.split('?');
-
-    const config: AxiosRequestConfig<any> = {
-      method,
-      // url: 'https://' + [baseUrl, endpoint].join('/'),
-      headers: { ...headers as any },
-      // timeout: 1000 * 60 * 5, // 5 min.
-    };
-
-    const { body, query } = this.resolveData(method, params || {});
-
-    if (query) {
-      const concat = endpoint.includes('?') ? (endpoint.endsWith('?') ? '' : '&') : '?';
-      endpoint += concat + query;
-    }
-
-    //** Per a totes les consultes */
-    config.headers['Content-Type'] = 'application/json';
-    config.headers['Locale'] = 'en-US';
-
-    if (method === 'POST' || method === 'PUT') {
-      config.data = body;
-    } 1
-
-    if (!isPublic) {
-      const authHeaders = await this.getAuthHeaders(method, '/' + endpoint, body);
-      config.headers = { ...config.headers, ...authHeaders } as any;
-    }
-
-    config.url = 'https://' + [baseUrl, endpoint].join('/');
-
-    console.log(config);
-
-    return axios(config).then(response => {
-      // console.log(config.url, response);
-      if (response.status !== 200) { throw response; }
-      return response.data;
-    }).catch(e => this.parseException(e, config.url, options.error));
-  }
-
-  protected resolveData(method: HttpMethod, data: { [key: string]: any } = {}, options?: { encodeValues?: boolean, strictValidation?: boolean }) {
-    if (!options) { options = {}; }
-    const strictValidation = options.strictValidation === undefined ? false : options.strictValidation;
-    const encodeValues = options.encodeValues === undefined ? true : options.encodeValues;
-    const d: { [key: string]: any } = {};
-    Object.keys(data).map(key => {
-      const value = data[key];
-      if (strictValidation && value === undefined) {
-        throw { code: 500, message: `Failed to sign API request due to undefined data parameter` };
-      }
-      const canEncode = method === 'GET' || method === 'DELETE';
-      const encodedValue = encodeValues && canEncode ? encodeURIComponent(value) : value;
-      d[key] = encodedValue;
-    });
-
-    if (method === 'GET' || method === 'DELETE') {
-      return {
-        query: Object.keys(d).map(v => `${v}=${d[v]}`).join('&'),
-        body: undefined,
-      }
-    } else {
-      return {
-        query: '',
-        body: JSON.stringify(d),
-      }
-    }
+    options.headers = options.headers || {};
+    options.headers['Content-Type'] = 'application/json';
+    options.headers['Locale'] = 'en-US';
+    return super.request(method, endpoint, options);
   }
 
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#api-verification API Verificatio} */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#signature Signature} */
-  protected async getAuthHeaders(method: string, endpoint: string, params: any) {
-    const { apiKey, apiSecret, apiPassphrase } = this;
-
-    const timestamp = Date.now();
-    const mParams = String(JSON.stringify(params)).slice(1, -1);
-    const formatedParams = String(mParams).replace(/\\/g, '');
-    const data = (method === 'GET' || method === 'DELETE') ? this.formatQuery(params) : formatedParams;
-    const message = timestamp + method + endpoint + data;
-    // console.log('message =>', message);
-    const signature = await this.signMessage(message, apiSecret);
+  protected async getAuthHeaders(method: HttpMethod, endpoint: string, params: any) {
     const locale = 'en-US';
-    const headers: { [header: string]: number | string } = {
-      'ACCESS-SIGN': signature,
-      'ACCESS-TIMESTAMP': timestamp,
-      'ACCESS-KEY': apiKey,
-      'ACCESS-PASSPHRASE': apiPassphrase,
-      'Content-Type': 'application/json',
-      Cookie: 'locale=' + locale,
-      locale,
-    };
+    const headers = await super.getAuthHeaders(method, endpoint, params);
+    headers.Cookie = `locale=${locale}`;
+    headers[locale];
     return headers;
-  }
-
-
-  protected formatQuery(params: any) {
-    if (!!params && JSON.stringify(params).length !== 2) {
-      const serialisedParams = this.serialiseParams(params, { encodeValues: true });
-      return '?' + serialisedParams;
-    } else {
-      return '';
-    }
-  }
-
-  protected serialiseParams(request: { [key: string]: any } = {}, options?: { encodeValues?: boolean, strictValidation?: boolean }): string {
-    if (!options) { options = {}; }
-    const strictValidation = options.strictValidation === undefined ? false : options.strictValidation;
-    const encodeValues = options.encodeValues === undefined ? true : options.encodeValues;
-    return Object.keys(request).map(key => {
-      const value = request[key];
-      if (strictValidation && (value === null || value === undefined || isNaN(value))) {
-        throw { code: 500, message: `Failed to sign API request due to undefined parameter` };
-      }
-      const encodedValue = value ? (encodeValues ? encodeURIComponent(value) : value) : null;
-      return `${key}=${encodedValue}`;
-    }).join('&');
-  };
-
-  async signMessage(message: string, secret: string): Promise<string> {
-    // Si és possible, fem servir la funció de crypto.
-    if (typeof createHmac === 'function') {
-      return createHmac('sha256', secret).update(message).digest('base64');
-    }
-    // Si no s'ha pogut importar la funció en entorn browser, li donem suport.
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(secret);
-    const algorithm = { name: 'HMAC', hash: { name: 'SHA-256' } };
-    const extractable = false;
-    const keyUsages: KeyUsage[] = ['sign'];
-    const key = await window.crypto.subtle.importKey('raw', keyData, algorithm, extractable, keyUsages);
-    const signature = await window.crypto.subtle.sign('HMAC', key, encoder.encode(message));
-    return Buffer.from(signature).toString('base64');
-  };
-
-  protected parseException(e: AxiosError, url: string, error: ApiRequestOptions['error']): any {
-    const { response, request, message } = e;
-    // Si no hem rebut una resposta...
-    if (!response) { throw request ? e : message; }
-    const data: any = response.data;
-    if (data?.msg) { error.message = `${error.message} ${data.code}: ${data.msg}${data.msg.endsWith('.') ? '' : '.'}`; }
-    throw {
-      ...error,
-      requestCode: response.status,
-      requestMessage: response.statusText,
-      body: response.data,
-      headers: response.headers,
-      requestUrl: url,
-      requestBody: request.body,
-      options: { ...this.options },
-    };
   }
 
 
   // ---------------------------------------------------------------------------------------------------
   //  Market
   // ---------------------------------------------------------------------------------------------------
+
+  get market(): MarketType { return this.options?.market; }
 
   /**
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Symbols - Spot}
@@ -265,8 +85,8 @@ export class BitgetApi implements ExchangeApi {
     // Obtenim les monedes.
     this.currencies = [];
     /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-coin-list Get Coin List} */
-    const error = { code: 500, message: `No s'han pogut obtenir les monedes a Bitget.` };
-    const response = await this.get(`api/spot/v1/public/currencies`, { isPublic: true, error });
+    const errorMessage = { code: 500, message: `No s'han pogut obtenir les monedes a Bitget.` };
+    const response = await this.get(`api/spot/v1/public/currencies`, { isPublic: true, errorMessage });
     this.currencies.push(...response.data);
 
     // Obtenim els símbols.
@@ -274,8 +94,8 @@ export class BitgetApi implements ExchangeApi {
     const url = this.market === 'spot' ? `api/spot/v1/public/products` : `api/mix/v1/market/contracts`;
     if (this.market === 'spot') {
       /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-symbols Get Symbols} */
-      const error = { code: 500, message: `No s'han pogut obtenir els símbols d'spot a Bitget.` };
-      const response = await this.get(url, { isPublic: true, error });
+      const errorMessage = { code: 500, message: `No s'han pogut obtenir els símbols d'spot a Bitget.` };
+      const response = await this.get(url, { isPublic: true, errorMessage });
       this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType: 'spbl' })));
       return Promise.resolve({ limits: this.limits });
     } else {
@@ -283,8 +103,8 @@ export class BitgetApi implements ExchangeApi {
         // throw { code: 500, message: 'Excepció provocada!' };
         if (this.isTest) { productType = `s${productType}`; }
         /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols} */
-        const error = { code: 500, message: `No s'han pogut obtenir els símbols pel producte '${productType}' de futurs a Bitget.` };
-        const response = await this.get(url, { params: { productType }, isPublic: true, error });
+        const errorMessage = { code: 500, message: `No s'han pogut obtenir els símbols pel producte '${productType}' de futurs a Bitget.` };
+        const response = await this.get(url, { params: { productType }, isPublic: true, errorMessage });
         this.symbols.push(...(response.data as any[]).map(symbol => ({ ...symbol, productType, symbolName: `${symbol.baseCoin}${symbol.quoteCoin}` })));
       }));
       return Promise.resolve({ limits: this.limits });
@@ -313,9 +133,9 @@ export class BitgetApi implements ExchangeApi {
     } else {
       if (found.minLeverage === undefined) {
         /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-symbol-leverage Get Symbol Leverage} */
-        const error = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+        const errorMessage = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
         const params = { symbol: found.symbol };
-        const response = await this.get(`api/mix/v1/market/symbol-leverage`, { params, isPublic: true, error });
+        const response = await this.get(`api/mix/v1/market/symbol-leverage`, { params, isPublic: true, errorMessage });
         found.minLeverage = +response.data.minLeverage;
         found.maxLeverage = +response.data.maxLeverage;
       }
@@ -391,9 +211,9 @@ export class BitgetApi implements ExchangeApi {
     const { baseAsset, quoteAsset } = this.resolveAssets(symbol);
     const url = this.market === 'spot' ? `api/spot/v1/market/ticker` : `api/mix/v1/market/mark-price`;
     const bitgetSymbol = this.getSymbolProduct(symbol);
-    const error = { code: 500, message: `No s'han pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.` };
+    const errorMessage = { code: 500, message: `No s'han pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.` };
     const params = { symbol: bitgetSymbol };
-    return this.get(url, { params, isPublic: true, error }).then(response => {
+    return this.get(url, { params, isPublic: true, errorMessage }).then(response => {
       const data = response.data[0];
       if (this.market === 'spot') {
         return {
@@ -433,8 +253,8 @@ export class BitgetApi implements ExchangeApi {
     const endField = this.market === 'spot' ? 'before' : 'endTime';
     const toUnix = (time: string | moment.MomentInput): string => { return moment(time).unix().toString() + '000'; }
     // Ex: ?symbol=BTCUSDT_UMCBL&granularity=300&startTime=1659406928000&endTime=1659410528000
-    const error = { code: 500, message: `No s'han pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.` };
-    const requestKlines = (query: string): Promise<MarketKline[]> => this.get(`${url}${query}`, { isPublic: true, error }).then(response => {
+    const errorMessage = { code: 500, message: `No s'han pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.` };
+    const requestKlines = (query: string): Promise<MarketKline[]> => this.get(`${url}${query}`, { isPublic: true, errorMessage }).then(response => {
       return (response.data as any[]).map(data => {
         if (this.market === 'spot') {
           return {
@@ -508,8 +328,8 @@ export class BitgetApi implements ExchangeApi {
   async getAccountInfo(): Promise<AccountInfo> {
     // ApiKey Info
     /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-apikey-info Get ApiKey Info} */
-    const error = { code: 500, message: `No s'ha pogut obtenir la informació del compte a Bitget.` };
-    const InfoApiKey = await this.get(`api/spot/v1/account/getInfo`, { error });
+    const errorMessage = { code: 500, message: `No s'ha pogut obtenir la informació del compte a Bitget.` };
+    const InfoApiKey = await this.get(`api/spot/v1/account/getInfo`, { errorMessage });
     this.user_id = InfoApiKey?.data?.user_id;
     const canWithdraw = InfoApiKey?.data?.authorities?.some((a: any) => a === 'withdraw');
     const canTrade = InfoApiKey?.data?.authorities?.some((a: any) => a === 'trade');
@@ -519,8 +339,8 @@ export class BitgetApi implements ExchangeApi {
     if (this.market === 'spot') {
       // Balances
       /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-account Get Account List Spot} */
-      const error = { code: 500, message: `No s'han pogut obtenir els balances per ${this.market} a Bitget.` };
-      const response = await this.get(`api/spot/v1/account/assets`, { error });
+      const errorMessage = { code: 500, message: `No s'han pogut obtenir els balances per ${this.market} a Bitget.` };
+      const response = await this.get(`api/spot/v1/account/assets`, { errorMessage });
       accountInfo.balances.push(...(response.data as any[]).map(b => {
         const balance: Balance = {
           asset: b.coinName,
@@ -539,9 +359,9 @@ export class BitgetApi implements ExchangeApi {
       await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
         if (this.isTest) { productType = `s${productType}`; }
         /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List} */
-        const error = { code: 500, message: `No s'han pogut obtenir els balances per ${this.market} a Bitget.` };
+        const errorMessage = { code: 500, message: `No s'han pogut obtenir els balances per ${this.market} a Bitget.` };
         const params = { productType };
-        const response = await this.get(`api/mix/v1/account/accounts`, { params, error });
+        const response = await this.get(`api/mix/v1/account/accounts`, { params, errorMessage });
         accountInfo.balances.push(...(response.data as any[]).map(b => {
           const balance: Balance = {
             asset: b.marginCoin,
@@ -558,9 +378,9 @@ export class BitgetApi implements ExchangeApi {
       await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
         if (this.isTest) { productType = `s${productType}`; }
         /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-position Get All Position} */
-        const error = { code: 500, message: `No s'han pogut obtenir les posicions per ${this.market} a Bitget.` };
+        const errorMessage = { code: 500, message: `No s'han pogut obtenir les posicions per ${this.market} a Bitget.` };
         const params = { productType };
-        const response = await this.get(`api/mix/v1/position/allPosition`, { params, error });
+        const response = await this.get(`api/mix/v1/position/allPosition`, { params, errorMessage });
         accountInfo.positions.push(...(response.data as any[]).map(p => {
           const symbol = this.parseSymbolProduct(p.symbol);
           const position: Position = {
@@ -582,10 +402,10 @@ export class BitgetApi implements ExchangeApi {
   async getLeverage(symbol: SymbolType, mode?: MarginMode): Promise<LeverageInfo> {
     const { baseAsset, quoteAsset } = symbol;
     const bitgetSymbol = this.getSymbolProduct(symbol);
-    const error = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+    const errorMessage = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     const params = { symbol: bitgetSymbol, marginCoin: quoteAsset };
     /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-single-account Get Single Account} */
-    const response = await this.get(`api/mix/v1/account/account`, { params, error });
+    const response = await this.get(`api/mix/v1/account/account`, { params, errorMessage });
     return Promise.resolve<LeverageInfo>({
       symbol,
       longLeverage: +response.data.fixedLongLeverage,
@@ -600,19 +420,19 @@ export class BitgetApi implements ExchangeApi {
     const errorMarginMode = { code: 500, message: `No s'ha pogut establir el mode a ${request.mode} del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     const paramsMarginMode = { symbol, marginCoin: quoteAsset, marginMode: request.mode === 'cross' ? 'crossed' : 'fixed' };
     /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-margin-mode Change Margin Mode} */
-    await this.post(`api/mix/v1/account/setMarginMode`, { params: paramsMarginMode, error: errorMarginMode });
+    await this.post(`api/mix/v1/account/setMarginMode`, { params: paramsMarginMode, errorMessage: errorMarginMode });
     const errorLeverage = { code: 500, message: `No s'ha pogut establir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     if (request.mode === 'cross') {
       const paramsCross = { symbol, marginCoin: quoteAsset, leverage: request.longLeverage };
       /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-leverage Change Leverage} */
-      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsCross, error: errorLeverage });
+      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsCross, errorMessage: errorLeverage });
     } else {
       const paramsLong = { symbol, marginCoin: quoteAsset, leverage: request.longLeverage, holdSide: 'long' };
       /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-leverage Change Leverage} */
-      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsLong, error: errorLeverage });
+      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsLong, errorMessage: errorLeverage });
       const paramsShort = { symbol, marginCoin: quoteAsset, leverage: request.shortLeverage, holdSide: 'short' };
       /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#change-leverage Change Leverage} */
-      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsShort, error: errorLeverage });
+      await this.post(`api/mix/v1/account/setLeverage`, { params: paramsShort, errorMessage: errorLeverage });
     }
     return Promise.resolve();
   }
@@ -630,12 +450,12 @@ export class BitgetApi implements ExchangeApi {
   async getOpenOrders(symbol: SymbolType): Promise<Partial<Order>[]> {
     const baseAsset = this.isTest ? `S${symbol.baseAsset}` : symbol.baseAsset;
     const quoteAsset = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
-    const error = { code: 500, message: `No s'ha pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+    const errorMessage = { code: 500, message: `No s'ha pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     const results: Partial<Order>[] = [];
     if (this.market === 'spot') {
       const params = { symbol: this.getSymbolProduct(symbol) };
       /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List} */
-      const response = await this.post(`api/spot/v1/trade/open-orders`, { params, error });
+      const response = await this.post(`api/spot/v1/trade/open-orders`, { params, errorMessage });
       results.push(...(response.data as any[]).map(o => {
         // return o as any;
         return {
@@ -653,7 +473,7 @@ export class BitgetApi implements ExchangeApi {
     } else {
       const params = { productType: this.getProductType(symbol), marginCoin: quoteAsset };
       /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order} */
-      const response = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params, error });
+      const response = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params, errorMessage });
       results.push(...(response.data as any[]).map(o => {
         // return o as any;
         return {
@@ -671,7 +491,7 @@ export class BitgetApi implements ExchangeApi {
       }));
       const paramsPlan = { symbol: this.getSymbolProduct(symbol), productType: this.getProductType(symbol), marginCoin: quoteAsset };
       /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List} */
-      const responsePlan = await this.get(`api/mix/v1/plan/currentPlan`, { params: paramsPlan, error });
+      const responsePlan = await this.get(`api/mix/v1/plan/currentPlan`, { params: paramsPlan, errorMessage });
       results.push(...(responsePlan.data as any[]).map(o => {
         // return o as any;
         return {
@@ -704,11 +524,11 @@ export class BitgetApi implements ExchangeApi {
     let params: any = { symbol, marginCoin: quoteAsset };
     if (request.exchangeId) { params = { ...params, orderId: request.exchangeId }; }
     if (request.id) { params = { ...params, clientOid: request.id }; }
-    const error = { code: 500, message: `No s'ha pogut obtenir l'ordre ${request.id} en ${this.market} a Bitget.` };
+    const errorMessage = { code: 500, message: `No s'ha pogut obtenir l'ordre ${request.id} en ${this.market} a Bitget.` };
     if (this.market === 'spot') {
       if (!params.orderId) { return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} en ${this.market} a Bitget. l'identificador de l'exchange per SPOT es obligatori`); }
       /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-details Get order details} */
-      const response = await this.get(`api/spot/v1/trade/orderInfo`, { params, error });
+      const response = await this.get(`api/spot/v1/trade/orderInfo`, { params, errorMessage });
       response.data.map((o: any) => {
         return Promise.resolve({
           id: o.clientOrderId,
@@ -727,7 +547,7 @@ export class BitgetApi implements ExchangeApi {
 
     } else {
       /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-order-details Get order details} */
-      const response = await this.get(`api/mix/v1/order/detail`, { params, error });
+      const response = await this.get(`api/mix/v1/order/detail`, { params, errorMessage });
       let o: Order = undefined;
       response.data.map((o: any) => {
         return Promise.resolve({
@@ -743,7 +563,7 @@ export class BitgetApi implements ExchangeApi {
         });
       });
       if (!o) {
-        const response = await this.get(`/api/mix/v1/plan/currentPlan`, { params, error });
+        const response = await this.get(`/api/mix/v1/plan/currentPlan`, { params, errorMessage });
         let o: Order = undefined;
         response.data.map((o: any) => {
           if (o.orderId === params.orderId) {
@@ -778,7 +598,7 @@ export class BitgetApi implements ExchangeApi {
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-stop-order Place Stop Order - Futures } */
   async postOrder(request: PostOrderRequest): Promise<Order> {
     const symbol = this.getSymbolProduct(request.symbol);
-    const error = { code: 500, message: `No s'ha pogut enviar l'ordre ${request.id} en ${this.market} a Bitget.` };
+    const errorMessage = { code: 500, message: `No s'ha pogut enviar l'ordre ${request.id} en ${this.market} a Bitget.` };
     if (this.market === 'spot') {
       const params = {
         symbol,
@@ -789,7 +609,7 @@ export class BitgetApi implements ExchangeApi {
         quantity: +request.quantity,
         clientOrderId: request.id
       };
-      const response = await this.post(`api/spot/v1/trade/orders`, { params, error });
+      const response = await this.post(`api/spot/v1/trade/orders`, { params, errorMessage });
       const order: Order = { ...request, status: 'post', exchangeId: response.data.orderId };
       return order;
 
@@ -807,7 +627,7 @@ export class BitgetApi implements ExchangeApi {
         const price = request.type === 'limit' ? { price: request.price } : undefined;
         const orderType = formatOrderType(request.type);
         const params = { ...baseParams, orderType, ...price };
-        const response = await this.post(`api/mix/v1/order/placeOrder`, { params, error });
+        const response = await this.post(`api/mix/v1/order/placeOrder`, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: response.data.orderId };
         return order;
 
@@ -817,7 +637,7 @@ export class BitgetApi implements ExchangeApi {
         const orderType = request.type;
         const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
         const params = { ...baseParams, executePrice, triggerPrice, orderType, triggerType };
-        const response = await this.post(`api/mix/v1/plan/placePlan`, { params, error });
+        const response = await this.post(`api/mix/v1/plan/placePlan`, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: response.data.orderId };
         return order;
       }
@@ -830,14 +650,14 @@ export class BitgetApi implements ExchangeApi {
   async cancelOrder(request: CancelOrderRequest): Promise<any> {
     const { baseAsset, quoteAsset } = this.resolveAssets(request.symbol);
     const symbol = this.getSymbolProduct(request.symbol);
-    const error = { code: 500, message: `No s'ha pogut cancel·lar l'ordre ${request.id} en ${this.market} a Bitget.` };
+    const errorMessage = { code: 500, message: `No s'ha pogut cancel·lar l'ordre ${request.id} en ${this.market} a Bitget.` };
     if (this.market === 'spot') {
       const params = {
         symbol,
         orderId: request.exchangeId
       };
-      const response = await this.post(`api/spot/v1/trade/cancel-order`, { params, error });
-      const order: any = { status: 'new', id: response.data.clientOid, ...request };
+      const response = await this.post(`api/spot/v1/trade/cancel-order`, { params, errorMessage });
+      const order: any = { status: 'cancel', id: response.data.clientOid, ...request };
       return order;
     } else {
       const { baseAsset, quoteAsset } = this.resolveAssets(request.symbol);
@@ -849,7 +669,7 @@ export class BitgetApi implements ExchangeApi {
         orderId: request.exchangeId,
         ...planType,
       };
-      const response = await this.post(isStop ? `api/mix/v1/plan/cancelPlan` : `api/mix/v1/order/cancel-order`, { params, error });
+      const response = await this.post(isStop ? `api/mix/v1/plan/cancelPlan` : `api/mix/v1/order/cancel-order`, { params, errorMessage });
       const order: any = { status: 'cancel', id: response.data.clientOid, ...request };
       return order;
     }

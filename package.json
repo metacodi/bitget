@@ -32,6 +32,7 @@
   "license": "ISC",
   "peerDependencies": {
     "@metacodi/abstract-exchange": "^1.0.58",
+    "@metacodi/node-api-client": "^1.0.6",
     "axios": "^1.1.3",
     "isomorphic-ws": "^4.0.1",
     "rxjs": "~6.6.0",

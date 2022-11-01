@@ -44,7 +44,7 @@ const testApi = async () => {
     const api = new BitgetApi(options);
 
     console.log('getExchangeInfo() =>', await api.getExchangeInfo());
-    // console.log('getAccountInfo() =>', await api.getAccountInfo());
+    console.log('getAccountInfo() =>', await api.getAccountInfo());
 
     // const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
     // console.log('getOpenOrders() =>', getOpenOrders );
@@ -142,8 +142,8 @@ const testApi = async () => {
     // api.getExchangeInfo().then(async response => {
     // })
 
-    // Get Order SPOT
-    console.log('getLeverage() =>', await api.getLeverage({ quoteAsset: 'USDT', baseAsset: 'BTC'}, 'isolated'));
+    // // Get Order SPOT
+    // console.log('getLeverage() =>', await api.getLeverage({ quoteAsset: 'USDT', baseAsset: 'BTC'}, 'isolated'));
 
   } catch (error) {
     Terminal.error(error, false);
