@@ -387,7 +387,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
             symbol,
             marginAsset: p.marginCoin,
             positionAmount: +p.available,
-            entryPrice: +p.averageOpenPrice,
+            price: +p.averageOpenPrice,
             unrealisedPnl: +p.unrealizedPL,
             marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
             positionSide: p.holdSide,

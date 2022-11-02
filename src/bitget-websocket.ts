@@ -594,11 +594,11 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         const positionSide = parsetOrderTradeSide(data.holdSide);
         const marginAsset = symbol.quoteAsset;
         const positionAmount = +data.total;
-        const entryPrice = +data.averageOpenPrice;
+        const price = +data.averageOpenPrice;
         const unrealisedPnl = +data.upl;
         const marginType = parsetMarginMode(data.marginMode);
         const liquidationPrice = +data.liqPx;
-        positions.push({ symbol, positionSide, marginAsset, positionAmount, entryPrice, unrealisedPnl, marginType, liquidationPrice });
+        positions.push({ symbol, positionSide, marginAsset, positionAmount, price, unrealisedPnl, marginType, liquidationPrice });
       });
       return { positions };
     }
@@ -620,21 +620,21 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const side = parseOrderSide(data.side);
       const type = parseOrderType(data.ordType);
       const status = parseOrderStatus(data.status);
-      const baseQuantity = status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillSz : +data.accFillSz) : +data.sz ? +data.sz : 0.0;
-      const price = status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillPx : +data.avgPx) : +data.px ? +data.px : 0.0;
-      const quoteQuantity = +data.notional ? +data.notional : baseQuantity * price;
+      const baseQuantity = status === 'filled' || status === 'partial' ? { baseQuantity: (status === 'partial' ? +data.fillSz : +data.accFillSz) } : +data.sz ? { baseQuantity: +data.sz } : undefined;
+      const price = status === 'filled' || status === 'partial' ? { price: (status === 'partial' ? +data.fillPx : +data.avgPx) } : +data.px ? { price: +data.px } : undefined;
+      const quoteQuantity = +data.notional ? { quoteQuantity: +data.notional } : !!price && !!baseQuantity ? { quoteQuantity: baseQuantity.baseQuantity * price.price } : undefined;
 
       const created = status === 'post' ? timestamp(moment()) : timestamp(moment(+data.cTime));
       const posted = timestamp(moment(+data.cTime));
       const executed = timestamp(moment(+data?.uTime ? +data.uTime : moment()));
 
-      const commission = status === 'filled' || status === 'partial' ? data?.fillFee ? data?.fillFee : 0.0 : 0.0;
-      const commissionAsset: CoinType = status === 'filled' || status === 'partial' ? symbol.quoteAsset : 'USDT';
+      const commission = status === 'filled' || status === 'partial' ? data?.fillFee ? { commission: data?.fillFee } : undefined : undefined;
+      const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
       return {
         id, exchangeId, side, type, stop: 'normal', status, symbol,
-        baseQuantity,   // quantitat satifeta baseAsset
-        quoteQuantity,  // quantitat satifeta quoteAsset
-        price,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
+        ...baseQuantity,   // quantitat satifeta baseAsset
+        ...quoteQuantity,  // quantitat satifeta quoteAsset
+        ...price,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
         // stopPrice, Bitget no diu res de les ordres Algoritmiques 
         // rejectReason?: string;
         // isOco?: boolean;
@@ -643,9 +643,9 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         executed,      // timestamp: moment en que s'ha filled o canceled.
         // syncronized?: boolean;
         // idOrderBuyed?: string;
-        commission,
-        commissionAsset,
-      } ;
+        ...commission,
+        ...commissionAsset,
+      };
 
     } else {
       const id = channel === 'orders' ? data.clOrdId : data.cOid;
@@ -658,20 +658,21 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const baseQuantity = status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillSz : channel === 'orders' ? +data.accFillSz : +data.sz) : +data.sz;
       const price = status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillPx : (channel === 'orders' ? +data.avgPx : +data.actualPx)) : (channel === 'orders' ? +data.px : +data.actualPx);
       const quoteQuantity = status === 'filled' || status === 'partial' ? (channel === 'orders' ? +data.fillNotionalUsd : (price * baseQuantity)) : (channel === 'orders' ? +data.notionalUsd : price * baseQuantity);
-      const stopPrice = channel === 'orders' ? 0.0 : +data.triggerPx;
+      const stopPrice = channel === 'orders' ? undefined : { stopPrice: +data.triggerPx };
       const created = status === 'post' ? timestamp(moment()) : timestamp(moment(+data.cTime));
       const posted = timestamp(moment(+data.cTime));
       const executed = timestamp(moment(status === 'filled' || status === 'partial' ? (channel === 'orders' ? +data.fillTime : +data.triggerTime) : channel === 'orders' ? +data.uTime : moment()));
-      const profit = status === 'filled' || status === 'partial' ? data?.pnl : 0.0;
-      const commission = status === 'filled' || status === 'partial' ? data?.fillFee : 0.0;
-      const commissionAsset: CoinType = status === 'filled' || status === 'partial' ? symbol.quoteAsset : 'USDT';
+      const profit = status === 'filled' || status === 'partial' ? { profit: data?.pnl } : undefined;
+      const commission = status === 'filled' || status === 'partial' ? { commission: data?.fillFee } : undefined;
+      const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
+      const leverage = status === 'filled' || status === 'partial' ? { leverage: data?.lever } : undefined;
 
       return {
         id, exchangeId, side, type, stop: 'normal', trade, status, symbol,
         baseQuantity,   // quantitat satifeta baseAsset
         quoteQuantity,  // quantitat satifeta quoteAsset
         price,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
-        stopPrice,
+        ...stopPrice,
         // rejectReason?: string;
         // isOco?: boolean;
         created,       // timestamp: moment de creació per part de la nostra app.
@@ -679,9 +680,10 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         executed,      // timestamp: moment en que s'ha filled o canceled.
         // syncronized?: boolean;
         // idOrderBuyed?: string;
-        profit,
-        commission,
-        commissionAsset,
+        ...profit,
+        ...commission,
+        ...commissionAsset,
+        ...leverage,
       };
     }
   }
