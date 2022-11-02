@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parsePlanStatus = exports.formatOrderStatus = exports.parseOrderStatus = exports.formatStopType = exports.parseStopType = exports.formatOrderType = exports.parseOrderType = exports.parsetOrderTradeSide = exports.formatOrderTradeSide = exports.parsetOrderSideFutures = exports.formatOrderSide = exports.parseOrderSide = void 0;
+exports.parsetMarginMode = exports.parsetPositionTradeSide = exports.parsePlanStatus = exports.formatOrderStatus = exports.parseOrderStatus = exports.formatStopType = exports.parseStopType = exports.formatOrderType = exports.parseOrderType = exports.parsetOrderTradeSide = exports.formatOrderTradeSide = exports.parsetOrderSideFutures = exports.formatOrderSide = exports.parseOrderSide = void 0;
 const parseOrderSide = (side) => {
     switch (side) {
         case 'buy': return 'buy';
@@ -39,74 +39,95 @@ const formatOrderTradeSide = (side, tradeSide) => {
 exports.formatOrderTradeSide = formatOrderTradeSide;
 const parsetOrderTradeSide = (tradeSide) => {
     switch (tradeSide) {
-        case 'long': return 'long';
-        case 'short': return 'short';
+        case 'open_long':
+        case 'close_long':
+            return 'long';
+        case 'open_short':
+        case 'close_short':
+            return 'short';
         default: throw ({ message: `No s'ha implementat el parser Bitget pel TradeSide type '${tradeSide}'` });
     }
 };
 exports.parsetOrderTradeSide = parsetOrderTradeSide;
-const parseOrderType = (market) => {
-    switch (market) {
+const parseOrderType = (orrderType) => {
+    switch (orrderType) {
         case 'market': return 'market';
         case 'limit': return 'limit';
-        default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${market}'` });
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderType type '${orrderType}'` });
     }
 };
 exports.parseOrderType = parseOrderType;
-const formatOrderType = (market) => {
-    switch (market) {
+const formatOrderType = (orrderType) => {
+    switch (orrderType) {
         case 'market': return 'market';
         case 'limit': return 'limit';
-        default: throw ({ message: `No s'ha implementat el format Bitget pel OrderSide type '${market}'` });
+        default: throw ({ message: `No s'ha implementat el format Bitget pel OrderType type '${orrderType}'` });
     }
 };
 exports.formatOrderType = formatOrderType;
-const parseStopType = (market) => {
-    switch (market) {
+const parseStopType = (type) => {
+    switch (type) {
         case 'normal_plan': return 'normal';
         case 'profit_plan': return 'profit';
         case 'loss_plan': return 'loss';
-        default: throw ({ message: `No s'ha implementat el parser Bitget pel StopType type '${market}'` });
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel StopType type '${type}'` });
     }
 };
 exports.parseStopType = parseStopType;
-const formatStopType = (market) => {
-    switch (market) {
+const formatStopType = (type) => {
+    switch (type) {
         case 'normal': return 'normal_plan';
         case 'profit': return 'profit_plan';
         case 'loss': return 'loss_plan';
-        default: throw ({ message: `No s'ha implementat el format Bitget pel StopSide type '${market}'` });
+        default: throw ({ message: `No s'ha implementat el format Bitget pel StopSide type '${type}'` });
     }
 };
 exports.formatStopType = formatStopType;
-const parseOrderStatus = (market) => {
-    switch (market) {
+const parseOrderStatus = (status) => {
+    switch (status) {
         case 'new': return 'new';
-        case 'full_fill': return 'filled';
-        case 'partial_fill': return 'partial';
+        case 'full-fill': return 'filled';
+        case 'partial-fill': return 'partial';
         case 'cancelled': return 'canceled';
-        default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderStatus type '${market}'` });
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderStatus type '${status}'` });
     }
 };
 exports.parseOrderStatus = parseOrderStatus;
-const formatOrderStatus = (market) => {
-    switch (market) {
+const formatOrderStatus = (status) => {
+    switch (status) {
         case 'new': return 'new';
-        case 'filled': return 'full_fill';
-        case 'partial': return 'partial_fill';
+        case 'filled': return 'full-fill';
+        case 'partial': return 'partial-fill';
         case 'canceled': return 'cancelled';
-        default: throw ({ message: `No s'ha implementat el format Bitget pel OrderStatus type '${market}'` });
+        default: throw ({ message: `No s'ha implementat el format Bitget pel OrderStatus type '${status}'` });
     }
 };
 exports.formatOrderStatus = formatOrderStatus;
-const parsePlanStatus = (market) => {
-    switch (market) {
+const parsePlanStatus = (status) => {
+    switch (status) {
         case 'not_trigger': return 'new';
+        case 'executing': return 'new';
         case 'triggered': return 'filled';
         case 'fail_trigger': return 'rejected';
         case 'cancel': return 'canceled';
-        default: throw ({ message: `No s'ha implementat el parser Bitget pel parsePlanStatus type '${market}'` });
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel parsePlanStatus type '${status}'` });
     }
 };
 exports.parsePlanStatus = parsePlanStatus;
+const parsetPositionTradeSide = (tradeSide) => {
+    switch (tradeSide) {
+        case 'long': return 'long';
+        case 'short': return 'short';
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel PositionTradeSide type '${tradeSide}'` });
+    }
+};
+exports.parsetPositionTradeSide = parsetPositionTradeSide;
+const parsetMarginMode = (tradeSide) => {
+    switch (tradeSide) {
+        case 'crossed': return 'cross';
+        case 'fixed': return 'isolated';
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel MarginMode type '${tradeSide}'` });
+    }
+};
+exports.parsetMarginMode = parsetMarginMode;
 //# sourceMappingURL=bitget-parsers.js.map
