@@ -10,7 +10,7 @@ import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, W
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
-import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode, parsetPositionTradeSide } from './bitget-parsers';
+import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode, parsetPositionTradeSide, parsetOrderAlgoTradeSide } from './bitget-parsers';
 import { Position } from '../../abstract-exchange/dist/abstract/types';
 
 
@@ -650,7 +650,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     } else {
       const id = channel === 'orders' ? data.clOrdId : data.cOid;
       const exchangeId = channel === 'orders' ? data.ordId : data.id;
-      const trade = parsetOrderTradeSide(data.posSide);
+      const trade = channel === 'orders' ? parsetOrderTradeSide(data.posSide) : parsetOrderAlgoTradeSide(data.posSide);
       const symbol = this.api.parseSymbolProduct(data.instId);
       const side = parseOrderSide(data.side);
       const type = parseOrderType(data.ordType);

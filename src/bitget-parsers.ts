@@ -29,7 +29,7 @@ export const parsetOrderSideFutures = (trade: BitgetOrderTradeSide): OrderSide =
     case 'close_long': 
     case 'close_short': 
       return 'sell';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderSideFutures type '${trade}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderSideFutures type '${trade}'` });
   }
 }
 
@@ -41,7 +41,15 @@ export const formatOrderTradeSide = (side: OrderSide, tradeSide: TradeSide): Bit
   }
 }
 
-export const parsetOrderTradeSide = (tradeSide: BitgetOrderTradeSide): TradeSide => {
+export const parsetOrderTradeSide = (tradeSide: BitgetPostOrderSide): TradeSide => {
+  switch (tradeSide) {
+    case 'long': return 'long';
+    case 'short':  return 'short';
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderTradeSide type '${tradeSide}'` });
+  }
+}
+
+export const parsetOrderAlgoTradeSide = (tradeSide: BitgetOrderTradeSide): TradeSide => {
   switch (tradeSide) {
     case 'open_long': 
     case 'close_long': 
@@ -49,7 +57,7 @@ export const parsetOrderTradeSide = (tradeSide: BitgetOrderTradeSide): TradeSide
       case 'open_short': 
       case 'close_short': 
        return 'short';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel TradeSide type '${tradeSide}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderAlgoTradeSide type '${tradeSide}'` });
   }
 }
 

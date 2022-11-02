@@ -92,19 +92,19 @@ const testApi = async () => {
     // });
 
     // id++;
-    // // Post Order (limit) buy
-    // const postOrder_limit = await api.postOrder({
-    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
-    //   side: 'buy',
-    //   type: 'limit',
-    //   trade: 'long',
-    //   symbol: {
-    //     quoteAsset: 'USDT',
-    //     baseAsset: 'BTC'
-    //   },
-    //   quantity: 0.05,
-    //   price: 18950
-    // });
+    // Post Order (limit) buy
+    const postOrder_limit = await api.postOrder({
+      id: `1-1-${moment().format("MMDDHHmmss")}`,
+      side: 'buy',
+      type: 'limit',
+      trade: 'long',
+      symbol: {
+        quoteAsset: 'USDT',
+        baseAsset: 'BTC'
+      },
+      quantity: 0.05,
+      price: 18950
+    });
 
     // Post Order (stop_limit) buy
     // const postOrder_stop = await api.postOrder({
@@ -122,20 +122,20 @@ const testApi = async () => {
     //   stopPrice: 20485.5
     // });
 
-    // // Post Order (stop_market) buy
-    // const postOrder_stop = await api.postOrder({
-    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
-    //   side: 'buy',
-    //   type: 'market',
-    //   stop: 'normal',
-    //   trade: 'long',
-    //   symbol: {
-    //     quoteAsset: 'USDT',
-    //     baseAsset: 'BTC'
-    //   },
-    //   quantity: 0.005,
-    //   stopPrice: 20585.5
-    // });
+    // Post Order (stop_market) buy
+    const postOrder_stop = await api.postOrder({
+      id: `1-1-${moment().format("MMDDHHmmss")}`,
+      side: 'buy',
+      type: 'market',
+      stop: 'normal',
+      trade: 'long',
+      symbol: {
+        quoteAsset: 'USDT',
+        baseAsset: 'BTC'
+      },
+      quantity: 0.005,
+      stopPrice: 20585.5
+    });
 
     // console.log('postOrder() =>', postOrder_stop);
     // writeLog(`postOrder_${options.market}`, postOrder_stop);
