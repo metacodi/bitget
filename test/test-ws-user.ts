@@ -36,7 +36,7 @@ const testMarketWs = async () => {
     // const market: MarketType = 'spot';
     const market: MarketType = 'futures';
 
-    const isTest = false;
+    const isTest = true;
 
     const options: WebsocketOptions = {
       streamType: 'user',

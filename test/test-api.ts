@@ -32,7 +32,7 @@ const testApi = async () => {
 
     console.log('---------------- API TEST ----------------------');
 
-    const isTest = false;
+    const isTest = true;
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
@@ -47,7 +47,7 @@ const testApi = async () => {
     console.log('getAccountInfo() =>', await api.getAccountInfo());
 
     const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
-    // console.log('getOpenOrders() =>', getOpenOrders );
+    console.log('getOpenOrders() =>', getOpenOrders );
     // writeLog(`getOpenOrders_${options.market}`, getOpenOrders, 'results/getOpenOrders.ts');
 
     // let id = moment().format("MMDDHHmmss");
@@ -106,7 +106,7 @@ const testApi = async () => {
     //   price: 18950
     // });
 
-    // Post Order (stop_market) buy
+    // Post Order (stop_limit) buy
     // const postOrder_stop = await api.postOrder({
     //   id: `1-1-${moment().format("MMDDHHmmss")}`,
     //   side: 'buy',
@@ -120,6 +120,21 @@ const testApi = async () => {
     //   quantity: 0.005,
     //   price: 18700,
     //   stopPrice: 20485.5
+    // });
+
+    // // Post Order (stop_market) buy
+    // const postOrder_stop = await api.postOrder({
+    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
+    //   side: 'buy',
+    //   type: 'market',
+    //   stop: 'normal',
+    //   trade: 'long',
+    //   symbol: {
+    //     quoteAsset: 'USDT',
+    //     baseAsset: 'BTC'
+    //   },
+    //   quantity: 0.005,
+    //   stopPrice: 20585.5
     // });
 
     // console.log('postOrder() =>', postOrder_stop);

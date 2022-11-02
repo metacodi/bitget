@@ -9,7 +9,7 @@ import { LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequ
 import { calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
 import { ApiClient } from '@metacodi/node-api-client';
 
-import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, parsetOrderSideFutures, parseStopType } from './bitget-parsers';
+import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, parsetOrderSideFutures, parseStopType, parsetPositionTradeSide } from './bitget-parsers';
 import { formatOrderSide, formatOrderType, formatOrderTradeSide } from './bitget-parsers';
 
 
@@ -390,7 +390,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
             price: +p.averageOpenPrice,
             unrealisedPnl: +p.unrealizedPL,
             marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
-            positionSide: p.holdSide,
+            positionSide: parsetPositionTradeSide(p.holdSide),
           };
           return position;
         }));
