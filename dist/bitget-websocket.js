@@ -318,25 +318,6 @@ class BitgetWebsocket extends events_1.default {
             return this.registerChannelSubscription([{ channel: 'orders', instType: this.isTest ? 's' + instType : instType, instId: 'default' }, { channel: 'ordersAlgo', instType: this.isTest ? 's' + instType : instType, instId }]);
         }
     }
-    allUpdate(symbol) {
-        if (this.market === 'spot') {
-            const instId = symbol ? { instId: this.api.getSymbolProduct(symbol) } : 'default';
-            return this.registerChannelSubscription([
-                { channel: 'account', instType: 'spbl', instId: 'default' },
-                { channel: 'orders', instType: 'spbl', instId }
-            ]);
-        }
-        else {
-            const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
-            const instType = symbol === undefined || (symbol === null || symbol === void 0 ? void 0 : symbol.quoteAsset) === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
-            return this.registerChannelSubscription([
-                { channel: 'account', instType: this.isTest ? 's' + instType : instType, instId: 'default' },
-                { channel: 'positions', instType: this.isTest ? 's' + instType : instType, instId },
-                { channel: 'orders', instType: this.isTest ? 's' + instType : instType, instId: 'default' },
-                { channel: 'ordersAlgo', instType: this.isTest ? 's' + instType : instType, instId }
-            ]);
-        }
-    }
     registerChannelSubscription(args) {
         if (!Array.isArray(args)) {
             args = [args];
@@ -403,6 +384,7 @@ class BitgetWebsocket extends events_1.default {
             case 'account': return this.parseAccountUpdateEvent;
             case 'positions': return this.parseAccountUpdateEvent;
             case 'orders': return this.parseOrderUpdateEvent;
+            case 'ordersAlgo': return this.parseOrderUpdateEvent;
             default: return undefined;
         }
     }
@@ -464,47 +446,79 @@ class BitgetWebsocket extends events_1.default {
         if (ev.arg.channel === 'account') {
             if (this.market === 'spot') {
                 return {
-                    balances: ev.data.map(b => ({ asset: b.coinName, available: b.available })),
+                    balances: ev.data.map(b => ({ asset: this.isTest ? String(b.coinName).slice(1) : b.coinName, available: b.available })),
                 };
             }
             else if (this.market === 'futures') {
                 return {
-                    balances: ev.data.map(b => ({ asset: b.coinName, available: b.available, locked: b.locked })),
+                    balances: ev.data.map(b => ({ asset: this.isTest ? String(b.marginCoin).slice(1) : b.marginCoin, available: b.available, locked: b.locked })),
                 };
             }
         }
         else if (ev.arg.channel === 'positions') {
-            return {};
+            const positions = [];
+            const dataPositions = ev.data;
+            dataPositions.map(data => {
+                const symbol = this.api.parseSymbolProduct(data.instId);
+                const positionSide = (0, bitget_parsers_1.parsetPositionTradeSide)(data.holdSide);
+                const marginAsset = symbol.quoteAsset;
+                const positionAmount = +data.total;
+                const price = +data.averageOpenPrice;
+                const unrealisedPnl = +data.upl;
+                const marginType = (0, bitget_parsers_1.parsetMarginMode)(data.marginMode);
+                const liquidationPrice = +data.liqPx;
+                positions.push({ symbol, positionSide, marginAsset, positionAmount, price, unrealisedPnl, marginType, liquidationPrice });
+            });
+            return { positions };
         }
     }
     parseOrderUpdateEvent(ev) {
         const data = ev.data[0];
+        const channel = ev.arg.channel;
         if (this.market === 'spot') {
-            return {};
+            const id = data.clOrdId;
+            const exchangeId = data.ordId;
+            const symbol = this.api.parseSymbolProduct(data.instId);
+            const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
+            const type = (0, bitget_parsers_1.parseOrderType)(data.ordType);
+            const status = (0, bitget_parsers_1.parseOrderStatus)(data.status);
+            const baseQuantity = status === 'filled' || status === 'partial' ? { baseQuantity: (status === 'partial' ? +data.fillSz : +data.accFillSz) } : +data.sz ? { baseQuantity: +data.sz } : undefined;
+            const price = status === 'filled' || status === 'partial' ? { price: (status === 'partial' ? +data.fillPx : +data.avgPx) } : +data.px ? { price: +data.px } : undefined;
+            const quoteQuantity = +data.notional ? { quoteQuantity: +data.notional } : !!price && !!baseQuantity ? { quoteQuantity: baseQuantity.baseQuantity * price.price } : undefined;
+            const created = status === 'post' ? (0, abstract_exchange_1.timestamp)((0, moment_1.default)()) : (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime));
+            const posted = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime));
+            const executed = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+(data === null || data === void 0 ? void 0 : data.uTime) ? +data.uTime : (0, moment_1.default)()));
+            const commission = status === 'filled' || status === 'partial' ? (data === null || data === void 0 ? void 0 : data.fillFee) ? { commission: data === null || data === void 0 ? void 0 : data.fillFee } : undefined : undefined;
+            const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
+            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ id, exchangeId, side, type, stop: 'normal', status, symbol }, baseQuantity), quoteQuantity), price), { created,
+                posted,
+                executed }), commission), commissionAsset);
         }
         else {
-            const symbol = this.api.parseInstrumentId(data.instId);
-            const baseVolume = +data.baseVolume;
-            const quoteVolume = +data.quoteVolume;
+            const id = channel === 'orders' ? data.clOrdId : data.cOid;
+            const exchangeId = channel === 'orders' ? data.ordId : data.id;
+            const trade = (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide);
+            const symbol = this.api.parseSymbolProduct(data.instId);
             const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
-            const status = (0, bitget_parsers_1.parseOrderStatus)(data.status);
-            return {
-                id: data.clOrdId,
-                exchangeId: data.ordId,
-                side,
-                type: (0, bitget_parsers_1.parseOrderType)(data.ordType),
-                trade: (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide),
-                status,
-                symbol: symbol,
-                baseQuantity: status === 'filled' || status === 'partial' ? +data.fillSz : +data.sz,
-                quoteQuantity: status === 'filled' || status === 'partial' ? +data.fillNotionalUsd : +data.notionalUsd,
-                created: (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime)),
-                executed: (0, abstract_exchange_1.timestamp)((0, moment_1.default)(status === 'filled' || status === 'partial' ? +data.fillTime : +data.uTime)),
-                profit: status === 'filled' || status === 'partial' ? data === null || data === void 0 ? void 0 : data.pnl : 0,
-                commission: status === 'filled' || status === 'partial' ? data === null || data === void 0 ? void 0 : data.fillFee : 0,
-                commissionAsset: status === 'filled' || status === 'partial' ? symbol.quoteAsset : '',
-                fillPrice: status === 'filled' || status === 'partial' ? +data.fillPx : 0,
-            };
+            const type = (0, bitget_parsers_1.parseOrderType)(data.ordType);
+            const status = channel === 'orders' ? (0, bitget_parsers_1.parseOrderStatus)(data.status) : (0, bitget_parsers_1.parsePlanStatus)(data.state);
+            const baseQuantity = status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillSz : channel === 'orders' ? +data.accFillSz : +data.sz) : +data.sz;
+            const price = status === 'filled' || status === 'partial' ? (status === 'partial' ? +data.fillPx : (channel === 'orders' ? +data.avgPx : +data.actualPx)) : (channel === 'orders' ? +data.px : +data.actualPx);
+            const quoteQuantity = status === 'filled' || status === 'partial' ? (channel === 'orders' ? +data.fillNotionalUsd : (price * baseQuantity)) : (channel === 'orders' ? +data.notionalUsd : price * baseQuantity);
+            const stopPrice = channel === 'orders' ? undefined : { stopPrice: +data.triggerPx };
+            const created = status === 'post' ? (0, abstract_exchange_1.timestamp)((0, moment_1.default)()) : (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime));
+            const posted = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime));
+            const executed = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(status === 'filled' || status === 'partial' ? (channel === 'orders' ? +data.fillTime : +data.triggerTime) : channel === 'orders' ? +data.uTime : (0, moment_1.default)()));
+            const profit = status === 'filled' || status === 'partial' ? { profit: data === null || data === void 0 ? void 0 : data.pnl } : undefined;
+            const commission = status === 'filled' || status === 'partial' ? { commission: data === null || data === void 0 ? void 0 : data.fillFee } : undefined;
+            const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
+            const leverage = status === 'filled' || status === 'partial' ? { leverage: data === null || data === void 0 ? void 0 : data.lever } : undefined;
+            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ id, exchangeId, side, type, stop: 'normal', trade, status, symbol,
+                baseQuantity,
+                quoteQuantity,
+                price }, stopPrice), { created,
+                posted,
+                executed }), profit), commission), commissionAsset), leverage);
         }
     }
     get wsId() { return `${this.market}-${this.streamType}-ws`; }

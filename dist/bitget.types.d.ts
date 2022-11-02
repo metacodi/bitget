@@ -1,12 +1,14 @@
 import { KlineIntervalType } from '@metacodi/abstract-exchange';
 export declare type BitgetInstrumentType = 'sp' | 'mc';
 export declare type BitgetUrlMarketType = 'spot' | 'mix';
+export declare type BitgetMarginMode = 'fixed' | 'crossed';
 export declare type BitgetOrderForceType = 'normal' | 'post_only' | 'fok' | 'ioc';
-export declare type BitgetOrderStatus = 'new' | 'partial_fill' | 'full_fill' | 'cancelled';
-export declare type BitgetPlanStatus = 'not_trigger' | 'triggered' | 'fail_trigger' | 'cancel';
+export declare type BitgetOrderStatus = 'new' | 'partial-fill' | 'full-fill' | 'cancelled';
+export declare type BitgetPlanStatus = 'not_trigger' | 'executing' | 'triggered' | 'fail_trigger' | 'cancel';
 export declare type BitgetOrderSide = 'buy' | 'sell';
 export declare type BitgetOrderTradeSide = 'open_long' | 'open_short' | 'close_long' | 'close_short' | 'burst_close_long' | 'burst_close_short' | 'offset_close_long' | 'offset_close_short';
 export declare type BitgetPostOrderSide = 'long' | 'short';
+export declare type BitgetPostPosiSide = 'long' | 'short';
 export declare type BitgetOrderType = 'market' | 'limit';
 export declare type accountType = 'EXCHANGE' | 'OTC_SGD' | 'CONTRACT' | 'USD_MIX' | 'USDT_MIX';
 export declare type BitgetStopType = 'normal_plan' | 'profit_plan' | 'loss_plan';
