@@ -665,7 +665,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const profit = status === 'filled' || status === 'partial' ? { profit: data?.pnl } : undefined;
       const commission = status === 'filled' || status === 'partial' ? { commission: data?.fillFee } : undefined;
       const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
-      const leverage = status === 'filled' || status === 'partial' ? { leverage: data?.lever } : undefined;
+      const leverage = status === 'filled' || status === 'partial' ? { leverage: +data?.lever } : undefined;
 
       return {
         id, exchangeId, side, type, stop: 'normal', trade, status, symbol,
