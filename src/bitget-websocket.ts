@@ -10,7 +10,7 @@ import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, W
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
-import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode } from './bitget-parsers';
+import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode, parsetPositionTradeSide } from './bitget-parsers';
 import { Position } from '../../abstract-exchange/dist/abstract/types';
 
 
@@ -591,7 +591,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
 
       dataPositions.map(data => {
         const symbol = this.api.parseSymbolProduct(data.instId);
-        const positionSide = parsetOrderTradeSide(data.holdSide);
+        const positionSide = parsetPositionTradeSide(data.holdSide);
         const marginAsset = symbol.quoteAsset;
         const positionAmount = +data.total;
         const price = +data.averageOpenPrice;
