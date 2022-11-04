@@ -594,11 +594,12 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         const positionSide = parsetPositionTradeSide(data.holdSide);
         const marginAsset = symbol.quoteAsset;
         const positionAmount = +data.total;
+        const leverage = +data.leverage;
         const price = +data.averageOpenPrice;
         const unrealisedPnl = +data.upl;
         const marginType = parsetMarginMode(data.marginMode);
         const liquidationPrice = +data.liqPx;
-        positions.push({ symbol, positionSide, marginAsset, positionAmount, price, unrealisedPnl, marginType, liquidationPrice });
+        positions.push({ symbol, positionSide, marginAsset, positionAmount, price, leverage, unrealisedPnl, marginType, liquidationPrice });
       });
       return { positions };
     }

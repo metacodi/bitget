@@ -388,6 +388,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
             marginAsset: p.marginCoin,
             positionAmount: +p.available,
             price: +p.averageOpenPrice,
+            leverage: +p.leverage,
             unrealisedPnl: +p.unrealizedPL,
             marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
             positionSide: parsetPositionTradeSide(p.holdSide),
@@ -400,7 +401,8 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   }
 
   async getLeverage(symbol: SymbolType, mode?: MarginMode): Promise<LeverageInfo> {
-    const { baseAsset, quoteAsset } = symbol;
+    const baseAsset = this.isTest ? `S${symbol.baseAsset}` : symbol.baseAsset;
+    const quoteAsset = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
     const bitgetSymbol = this.getSymbolProduct(symbol);
     const errorMessage = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     const params = { symbol: bitgetSymbol, marginCoin: quoteAsset };
@@ -415,7 +417,8 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   }
 
   async setLeverage(request: SetLeverage): Promise<void> {
-    const { baseAsset, quoteAsset } = request.symbol;
+    const baseAsset = this.isTest ? `S${request.symbol.baseAsset}` : request.symbol.baseAsset;
+    const quoteAsset = this.isTest ? `S${request.symbol.quoteAsset}` : request.symbol.quoteAsset;
     const symbol = this.getSymbolProduct(request.symbol);
     const errorMarginMode = { code: 500, message: `No s'ha pogut establir el mode a ${request.mode} del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     const paramsMarginMode = { symbol, marginCoin: quoteAsset, marginMode: request.mode === 'cross' ? 'crossed' : 'fixed' };
