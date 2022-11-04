@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parsetMarginMode = exports.parsetPositionTradeSide = exports.parsePlanStatus = exports.formatOrderStatus = exports.parseOrderStatus = exports.formatStopType = exports.parseStopType = exports.formatOrderType = exports.parseOrderType = exports.parsetOrderTradeSide = exports.formatOrderTradeSide = exports.parsetOrderSideFutures = exports.formatOrderSide = exports.parseOrderSide = void 0;
+exports.parsetMarginMode = exports.parsetPositionTradeSide = exports.parsePlanStatus = exports.formatOrderStatus = exports.parseOrderStatus = exports.formatStopType = exports.parseStopType = exports.formatOrderType = exports.parseOrderType = exports.parsetOrderAlgoTradeSide = exports.parsetOrderTradeSide = exports.formatOrderTradeSide = exports.parsetOrderSideFutures = exports.formatOrderSide = exports.parseOrderSide = void 0;
 const parseOrderSide = (side) => {
     switch (side) {
         case 'buy': return 'buy';
@@ -25,7 +25,7 @@ const parsetOrderSideFutures = (trade) => {
         case 'close_long':
         case 'close_short':
             return 'sell';
-        default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderSideFutures type '${trade}'` });
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderSideFutures type '${trade}'` });
     }
 };
 exports.parsetOrderSideFutures = parsetOrderSideFutures;
@@ -39,16 +39,24 @@ const formatOrderTradeSide = (side, tradeSide) => {
 exports.formatOrderTradeSide = formatOrderTradeSide;
 const parsetOrderTradeSide = (tradeSide) => {
     switch (tradeSide) {
+        case 'long': return 'long';
+        case 'short': return 'short';
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderTradeSide type '${tradeSide}'` });
+    }
+};
+exports.parsetOrderTradeSide = parsetOrderTradeSide;
+const parsetOrderAlgoTradeSide = (tradeSide) => {
+    switch (tradeSide) {
         case 'open_long':
         case 'close_long':
             return 'long';
         case 'open_short':
         case 'close_short':
             return 'short';
-        default: throw ({ message: `No s'ha implementat el parser Bitget pel TradeSide type '${tradeSide}'` });
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderAlgoTradeSide type '${tradeSide}'` });
     }
 };
-exports.parsetOrderTradeSide = parsetOrderTradeSide;
+exports.parsetOrderAlgoTradeSide = parsetOrderAlgoTradeSide;
 const parseOrderType = (orrderType) => {
     switch (orrderType) {
         case 'market': return 'market';

@@ -372,6 +372,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                             marginAsset: p.marginCoin,
                             positionAmount: +p.available,
                             price: +p.averageOpenPrice,
+                            leverage: +p.leverage,
                             unrealisedPnl: +p.unrealizedPL,
                             marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
                             positionSide: (0, bitget_parsers_1.parsetPositionTradeSide)(p.holdSide),
@@ -385,7 +386,8 @@ class BitgetApi extends node_api_client_1.ApiClient {
     }
     getLeverage(symbol, mode) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { baseAsset, quoteAsset } = symbol;
+            const baseAsset = this.isTest ? `S${symbol.baseAsset}` : symbol.baseAsset;
+            const quoteAsset = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
             const bitgetSymbol = this.getSymbolProduct(symbol);
             const errorMessage = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
             const params = { symbol: bitgetSymbol, marginCoin: quoteAsset };
@@ -400,7 +402,8 @@ class BitgetApi extends node_api_client_1.ApiClient {
     }
     setLeverage(request) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { baseAsset, quoteAsset } = request.symbol;
+            const baseAsset = this.isTest ? `S${request.symbol.baseAsset}` : request.symbol.baseAsset;
+            const quoteAsset = this.isTest ? `S${request.symbol.quoteAsset}` : request.symbol.quoteAsset;
             const symbol = this.getSymbolProduct(request.symbol);
             const errorMarginMode = { code: 500, message: `No s'ha pogut establir el mode a ${request.mode} del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
             const paramsMarginMode = { symbol, marginCoin: quoteAsset, marginMode: request.mode === 'cross' ? 'crossed' : 'fixed' };

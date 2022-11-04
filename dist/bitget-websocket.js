@@ -56,7 +56,7 @@ class BitgetWebsocket extends events_1.default {
     initialize() {
         return __awaiter(this, void 0, void 0, function* () {
             this.api = this.getApiClient();
-            return yield this.connect();
+            yield this.connect();
         });
     }
     connect() {
@@ -463,11 +463,12 @@ class BitgetWebsocket extends events_1.default {
                 const positionSide = (0, bitget_parsers_1.parsetPositionTradeSide)(data.holdSide);
                 const marginAsset = symbol.quoteAsset;
                 const positionAmount = +data.total;
+                const leverage = +data.leverage;
                 const price = +data.averageOpenPrice;
                 const unrealisedPnl = +data.upl;
                 const marginType = (0, bitget_parsers_1.parsetMarginMode)(data.marginMode);
                 const liquidationPrice = +data.liqPx;
-                positions.push({ symbol, positionSide, marginAsset, positionAmount, price, unrealisedPnl, marginType, liquidationPrice });
+                positions.push({ symbol, positionSide, marginAsset, positionAmount, price, leverage, unrealisedPnl, marginType, liquidationPrice });
             });
             return { positions };
         }
@@ -497,7 +498,7 @@ class BitgetWebsocket extends events_1.default {
         else {
             const id = channel === 'orders' ? data.clOrdId : data.cOid;
             const exchangeId = channel === 'orders' ? data.ordId : data.id;
-            const trade = (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide);
+            const trade = channel === 'orders' ? (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide) : (0, bitget_parsers_1.parsetOrderAlgoTradeSide)(data.posSide);
             const symbol = this.api.parseSymbolProduct(data.instId);
             const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
             const type = (0, bitget_parsers_1.parseOrderType)(data.ordType);
@@ -512,7 +513,7 @@ class BitgetWebsocket extends events_1.default {
             const profit = status === 'filled' || status === 'partial' ? { profit: data === null || data === void 0 ? void 0 : data.pnl } : undefined;
             const commission = status === 'filled' || status === 'partial' ? { commission: data === null || data === void 0 ? void 0 : data.fillFee } : undefined;
             const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
-            const leverage = status === 'filled' || status === 'partial' ? { leverage: data === null || data === void 0 ? void 0 : data.lever } : undefined;
+            const leverage = status === 'filled' || status === 'partial' ? { leverage: +(data === null || data === void 0 ? void 0 : data.lever) } : undefined;
             return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ id, exchangeId, side, type, stop: 'normal', trade, status, symbol,
                 baseQuantity,
                 quoteQuantity,
