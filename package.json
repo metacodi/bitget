@@ -31,7 +31,7 @@
   "homepage": "https://github.com/metacodi/bitget#readme",
   "license": "ISC",
   "peerDependencies": {
-    "@metacodi/abstract-exchange": "^1.0.66",
+    "@metacodi/abstract-exchange": "^1.0.67",
     "@metacodi/node-api-client": "^1.0.6",
     "axios": "^1.1.3",
     "isomorphic-ws": "^4.0.1",
