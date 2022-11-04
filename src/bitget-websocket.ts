@@ -4,14 +4,13 @@ import { Subject, interval, timer, Subscription } from 'rxjs';
 import { createHmac } from 'crypto';
 import moment from 'moment';
 
-import { AccountInfo, timestamp } from '@metacodi/abstract-exchange';
+import { AccountInfo, Position, timestamp } from '@metacodi/abstract-exchange';
 import { MarketType, SymbolType, MarketPrice, MarketKline, KlineIntervalType, Order, CoinType, isSubjectUnobserved, matchChannelKey, buildChannelKey, calculateCloseTime, ApiOptions } from '@metacodi/abstract-exchange';
 import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, WsAccountUpdate } from '@metacodi/abstract-exchange';
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
 import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode, parsetPositionTradeSide, parsetOrderAlgoTradeSide } from './bitget-parsers';
-import { Position } from '../../abstract-exchange/dist/abstract/types';
 
 
 /**
@@ -98,7 +97,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     // Instanciem un client per l'API.
     this.api = this.getApiClient();
     // Iniciem la connexió amb l'stream de l'exchange.
-    return await this.connect();
+    await this.connect();
   }
 
 
