@@ -67,7 +67,6 @@ class BitgetWebsocket extends events_1.default {
             const url = market === 'spot' ? `wss://ws.bitget.com/spot/v1/stream` : `wss://ws.bitget.com/mix/v1/stream`;
             this.options.pingInterval = pingInterval || this.defaultOptions.pingInterval;
             this.options.pongTimeout = pongTimeout || this.defaultOptions.pongTimeout;
-            console.log(this.wsId, '=> connecting...', url);
             this.ws = new isomorphic_ws_1.default(url);
             this.ws.onopen = event => this.onWsOpen(event);
             this.ws.onerror = event => this.onWsError(event);

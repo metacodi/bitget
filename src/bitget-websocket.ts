@@ -124,7 +124,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     this.options.pongTimeout = pongTimeout || this.defaultOptions.pongTimeout;
 
     // Nova instància.
-    console.log(this.wsId, '=> connecting...', url);
+    // console.log(this.wsId, '=> connecting...', url);
     this.ws = new WebSocket(url);
     // Listeners.
     this.ws.onopen = event => this.onWsOpen(event);
