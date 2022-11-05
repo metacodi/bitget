@@ -142,11 +142,9 @@ class BitgetWebsocket extends events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             const wsType = this.streamType === 'market' ? 'public' : 'private';
             if (this.status === 'reconnecting') {
-                console.log(this.wsId, '=> reconnected!');
                 this.emit('reconnected', { event });
             }
             else {
-                console.log(this.wsId, '=> connected!');
                 this.emit('open', { event });
             }
             if (wsType === 'private') {
@@ -166,7 +164,6 @@ class BitgetWebsocket extends events_1.default {
             const message = `${timestamp}GET/user/verify`;
             const signature = yield this.signMessage(message, apiSecret);
             const data = { op: 'login', args: [{ apiKey, passphrase: apiPassphrase, timestamp, sign: signature }] };
-            console.log(`${this.wsId} =>`, data);
             this.ws.send(JSON.stringify(data));
         });
     }
@@ -179,7 +176,6 @@ class BitgetWebsocket extends events_1.default {
         this.respawnChannelSubscriptions();
     }
     onWsClose(event) {
-        console.log(this.wsId, '=> closed');
         if (this.status !== 'closing') {
             this.reconnect();
             this.emit('reconnecting', { event });
@@ -386,11 +382,9 @@ class BitgetWebsocket extends events_1.default {
     }
     subscribeChannel(arg) {
         const data = { op: "subscribe", args: [arg] };
-        console.log(this.wsId, '=> subscribing...', JSON.stringify(data));
         this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error) : undefined);
     }
     unsubscribeChannel(arg) {
-        console.log(this.wsId, '=> unsubscribing...', arg);
         const data = { op: "unsubscribe", args: [arg] };
         const WS_STATE_OPEN = 1;
         if (this.ws.readyState === WS_STATE_OPEN) {

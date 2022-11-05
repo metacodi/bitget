@@ -198,10 +198,10 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const wsType = this.streamType === 'market' ? 'public' : 'private';
 
     if (this.status === 'reconnecting') {
-      console.log(this.wsId, '=> reconnected!');
+      // console.log(this.wsId, '=> reconnected!');
       this.emit('reconnected', { event });
     } else {
-      console.log(this.wsId, '=> connected!');
+      // console.log(this.wsId, '=> connected!');
       this.emit('open', { event });
 
     }
@@ -220,7 +220,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const message = `${timestamp}GET/user/verify`;
     const signature = await this.signMessage(message, apiSecret);
     const data = { op: 'login', args: [{ apiKey, passphrase: apiPassphrase, timestamp, sign: signature }] };
-    console.log(`${this.wsId} =>`, data);
+    // console.log(`${this.wsId} =>`, data);
     this.ws.send(JSON.stringify(data));
   }
 
@@ -234,7 +234,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   }
 
   protected onWsClose(event: WebSocket.CloseEvent) {
-    console.log(this.wsId, '=> closed');
+    // console.log(this.wsId, '=> closed');
     if (this.status !== 'closing') {
       this.reconnect();
       this.emit('reconnecting', { event });
@@ -498,12 +498,12 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
 
   protected subscribeChannel(arg: BitgetWsSubscriptionArguments) {
     const data: BitgetWsSubscriptionRequest = { op: "subscribe", args: [arg] };
-    console.log(this.wsId, '=> subscribing...', JSON.stringify(data));
+    // console.log(this.wsId, '=> subscribing...', JSON.stringify(data));
     this.ws.send(JSON.stringify(data), error => error ? this.onWsError(error as any) : undefined);
   }
 
   protected unsubscribeChannel(arg: BitgetWsSubscriptionArguments) {
-    console.log(this.wsId, '=> unsubscribing...', arg);
+    // console.log(this.wsId, '=> unsubscribing...', arg);
     const data: BitgetWsSubscriptionRequest = { op: "unsubscribe", args: [arg] };
     /** {@link https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState } */
     const WS_STATE_OPEN = 1;
