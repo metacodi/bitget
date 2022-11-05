@@ -193,7 +193,6 @@ class BitgetWebsocket extends events_1.default {
         console.error(`${this.wsId} =>`, (event === null || event === void 0 ? void 0 : event.error) || event);
     }
     ping() {
-        console.log(this.wsId, `=> Sending ping...`);
         try {
             if (this.pongTimer) {
                 this.pongTimer.unsubscribe();
@@ -214,7 +213,6 @@ class BitgetWebsocket extends events_1.default {
     }
     onWsPing(event) {
         try {
-            console.log(this.wsId, '=> Received ping, sending pong');
             if (typeof this.ws.pong === 'function') {
                 this.ws.pong();
             }
@@ -222,11 +220,9 @@ class BitgetWebsocket extends events_1.default {
             }
         }
         catch (error) {
-            console.error(this.wsId, `=> Failed to send WS pong`, error);
         }
     }
     onWsPong(event) {
-        console.log(this.wsId, '=> Received pong, clearing timer');
         if (this.pongTimer) {
             this.pongTimer.unsubscribe();
         }

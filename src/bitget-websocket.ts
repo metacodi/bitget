@@ -255,7 +255,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   // ---------------------------------------------------------------------------------------------------
 
   protected ping() {
-    console.log(this.wsId, `=> Sending ping...`);
+    // console.log(this.wsId, `=> Sending ping...`);
     try {
       if (this.pongTimer) { this.pongTimer.unsubscribe(); }
 
@@ -279,7 +279,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
 
   protected onWsPing(event: any) {
     try {
-      console.log(this.wsId, '=> Received ping, sending pong');
+      // console.log(this.wsId, '=> Received ping, sending pong');
       if (typeof this.ws.pong === 'function') {
         this.ws.pong();
       } else {
@@ -287,13 +287,13 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       }
 
     } catch (error) {
-      console.error(this.wsId, `=> Failed to send WS pong`, error);
+      // console.error(this.wsId, `=> Failed to send WS pong`, error);
       // TODO: Notificar l'error.
     }
   }
 
   protected onWsPong(event: any) {
-    console.log(this.wsId, '=> Received pong, clearing timer');
+    // console.log(this.wsId, '=> Received pong, clearing timer');
     if (this.pongTimer) { this.pongTimer.unsubscribe(); }
   }
 
