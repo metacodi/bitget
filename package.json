@@ -1,6 +1,6 @@
 {
   "name": "@metacodi/bitget",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "Bitget API Client",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,8 +31,8 @@
   "homepage": "https://github.com/metacodi/bitget#readme",
   "license": "ISC",
   "peerDependencies": {
-    "@metacodi/abstract-exchange": "^1.0.67",
-    "@metacodi/node-api-client": "^1.0.6",
+    "@metacodi/abstract-exchange": "^1.0.70",
+    "@metacodi/node-api-client": "^1.0.11",
     "axios": "^1.1.3",
     "isomorphic-ws": "^4.0.1",
     "rxjs": "~6.6.0",

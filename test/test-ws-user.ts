@@ -63,18 +63,21 @@ const testMarketWs = async () => {
     // setTimeout(() => { console.log('Test => Unsubscribe accountUpdate'); accountUpdate.unsubscribe(); }, 3000);
     // setTimeout(() => { console.log('Test => Unsubscribe orderUpdate'); orderUpdate.unsubscribe(); }, 3000);
     
-    ws.accountUpdate().subscribe((data: any) => {
-      // writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-05-${market}.ts`);
-      const v = typeof data === 'object' && Object.keys(data).length > 0 ? Object.keys(data)[0] : 'v';
-      writeLog(`${v}_${unixTime()}`, data, `log/trade-05-${market}.ts`);
-    });
-    ws.orderUpdate().subscribe((data: any) => {
-      // writeLog(`${data.arg.channel}_${data.arg.instType}_${unixTime()}`, data, `log/trade-05-${market}.ts`);
-      const v = typeof data === 'object' && Object.keys(data).length > 0 ? Object.keys(data)[0] : 'v';
-      writeLog(`${v}_${unixTime()}`, data, `log/trade-05-${market}.ts`);
-    });
 
-    // const allUpdate = ws.allUpdate().subscribe(data => console.log('allUpdate =>', data));
+
+
+    const resolveConstant = (data: any): string => {
+      if (typeof data !== 'object' || Object.keys(data).length === 0) { return 'v' }
+      const props = Object.keys(data);
+      if (props.includes('trade') && props.includes('side') && props.includes('status') && props.includes('type')) {
+        return [data.trade, data.side, data.type, data.status].join('_')
+      } else {
+        return props[0];
+      }
+    }
+    const fileName = `log/trade-08-${market}.ts`;
+    ws.accountUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
+    ws.orderUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
 
 
   } catch (error) {

@@ -29,6 +29,7 @@ if (Prompt.verbose) { console.log('Arguments: ', Prompt.opts()); }
     Terminal.log(`Actualitzant dependències de ${chalk.bold(`@metacodi`)}`);
   
     await upgradeDependency(`@metacodi/abstract-exchange`, '--save-peer');
+    await upgradeDependency(`@metacodi/node-api-client`, '--save-peer');
     await upgradeDependency(`@metacodi/node-utils`, '--save-dev');
   
     Terminal.log(`Dependències actualitzades correctament!`);
