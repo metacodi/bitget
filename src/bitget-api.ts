@@ -285,33 +285,35 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         }
       });
     });
-    const results: MarketKline[] = [];
+    try {
+      const results: MarketKline[] = [];
+      let startTime: string | moment.MomentInput = start;
+      if (!endTime && !limit) {
+        const query = this.formatQuery({ symbol, [intervalField]: interval });
+        results.push(...await requestKlines(query));
+  
+      } else if (!endTime && !!limit) {
+        do {
+          const query = this.formatQuery({ symbol, [intervalField]: interval, [startField]: toUnix(startTime) });
+          const response = await requestKlines(query);
+          if (!response.length) { break; }
+          results.push(...response);
+          startTime = results[results.length - 1].openTime;
+        } while (results.length < limit);
+        if (results.length > limit) { results.splice(limit); }
+  
+      } else {
+        do {
+          const query = this.formatQuery({ symbol, [intervalField]: interval, [startField]: toUnix(startTime), [endField]: toUnix(endTime) });
+          const response = await requestKlines(query);
+          if (!response.length) { break; }
+          results.push(...response);
+          startTime = results[results.length - 1].openTime;
+        } while (moment(startTime).isAfter(moment(endTime)));
+      }
+      return Promise.resolve(results);
 
-    let startTime: string | moment.MomentInput = start;
-    if (!endTime && !limit) {
-      const query = this.formatQuery({ symbol, [intervalField]: interval });
-      results.push(...await requestKlines(query));
-
-    } else if (!endTime && !!limit) {
-      do {
-        const query = this.formatQuery({ symbol, [intervalField]: interval, [startField]: toUnix(startTime) });
-        const response = await requestKlines(query);
-        if (!response.length) { break; }
-        results.push(...response);
-        startTime = results[results.length - 1].openTime;
-      } while (results.length < limit);
-      if (results.length > limit) { results.splice(limit); }
-
-    } else {
-      do {
-        const query = this.formatQuery({ symbol, [intervalField]: interval, [startField]: toUnix(startTime), [endField]: toUnix(endTime) });
-        const response = await requestKlines(query);
-        if (!response.length) { break; }
-        results.push(...response);
-        startTime = results[results.length - 1].openTime;
-      } while (moment(startTime).isAfter(moment(endTime)));
-    }
-    return Promise.resolve(results);
+    } catch (error: any) { throw error; }
   }
 
   // getOrderBookTicker(request: OrderBookTickerRequest): Promise<OrderBookTicker | OrderBookTicker[]> { return {} as any; }

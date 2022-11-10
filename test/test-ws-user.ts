@@ -75,7 +75,7 @@ const testMarketWs = async () => {
         return props[0];
       }
     }
-    const fileName = `log/trade-08-${market}.ts`;
+    const fileName = `log/trade-09-${market}.ts`;
     ws.accountUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
     ws.orderUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
 
