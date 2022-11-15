@@ -1,4 +1,4 @@
-import { ApiOptions, MarketType, WebsocketOptions } from '@metacodi/abstract-exchange';
+import { ApiOptions, MarketType, SymbolType, WebsocketOptions } from '@metacodi/abstract-exchange';
 import * as fs from 'fs';
 
 import { Resource, Terminal } from '@metacodi/node-utils';
@@ -27,6 +27,8 @@ function writeLog(variable: string, data: any) {
 const testMarketWs = async () => {
   try {
 
+    const symbol: SymbolType = { baseAsset: 'BTC', quoteAsset: 'USDT' };
+
     console.log('---------------- Market WebSocket TEST ----------------------');
 
     // const market: MarketType = 'spot';
@@ -49,8 +51,13 @@ const testMarketWs = async () => {
     //  PUBLIC
     // ---------------------------------------------------------------------------------------------------
 
-    const ticker = ws.priceTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }).subscribe(data => console.log('priceTicker =>', data));
-    setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 5000);
+    const marketSymbol = await ws.api.getMarketSymbol(symbol);
+    console.log(marketSymbol);
+    console.log(JSON.stringify(marketSymbol, null, '  '));
+
+
+    // const ticker = ws.priceTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }).subscribe(data => console.log('priceTicker =>', data));
+    // setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 5000);
 
     // const klines = ws.klineTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }, '1m').subscribe(data => console.log('klines =>', data));    
     // setTimeout(() => { console.log('Test => Unsubscribe klines'); klines.unsubscribe(); }, 5000);

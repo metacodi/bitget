@@ -65,19 +65,19 @@ const testMarketWs = async () => {
     
 
 
-
-    const resolveConstant = (data: any): string => {
-      if (typeof data !== 'object' || Object.keys(data).length === 0) { return 'v' }
-      const props = Object.keys(data);
-      if (props.includes('trade') && props.includes('side') && props.includes('status') && props.includes('type')) {
-        return [data.trade, data.side, data.type, data.status].join('_')
-      } else {
-        return props[0];
-      }
-    }
-    const fileName = `log/trade-09-${market}.ts`;
-    ws.accountUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
-    ws.orderUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
+    console.log(await ws.api.getExchangeInfo());
+    // const resolveConstant = (data: any): string => {
+    //   if (typeof data !== 'object' || Object.keys(data).length === 0) { return 'v' }
+    //   const props = Object.keys(data);
+    //   if (props.includes('trade') && props.includes('side') && props.includes('status') && props.includes('type')) {
+    //     return [data.trade, data.side, data.type, data.status].join('_')
+    //   } else {
+    //     return props[0];
+    //   }
+    // }
+    // const fileName = `log/trade-10-${market}.ts`;
+    // ws.accountUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
+    // ws.orderUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
 
 
   } catch (error) {
