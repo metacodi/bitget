@@ -26,6 +26,7 @@ export declare class BitgetApi extends ApiClient implements ExchangeApi {
     parseSymbolProduct(symbol: string): SymbolType;
     getPriceTicker(symbol: SymbolType): Promise<MarketPrice>;
     getKlines(request: KlinesRequest): Promise<MarketKline[]>;
+    getApiKeyInfo(): Promise<AccountInfo>;
     getAccountInfo(): Promise<AccountInfo>;
     getLeverage(symbol: SymbolType, mode?: MarginMode): Promise<LeverageInfo>;
     setLeverage(request: SetLeverage): Promise<void>;

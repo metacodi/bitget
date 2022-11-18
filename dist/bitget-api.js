@@ -317,6 +317,19 @@ class BitgetApi extends node_api_client_1.ApiClient {
             }
         });
     }
+    getApiKeyInfo() {
+        var _a, _b, _c, _d, _e, _f, _g;
+        return __awaiter(this, void 0, void 0, function* () {
+            const errorMessage = { code: 500, message: `No s'ha pogut obtenir la informació del compte a Bitget.` };
+            const infoApiKey = yield this.get(`api/spot/v1/account/getInfo`, { errorMessage });
+            this.user_id = (_a = infoApiKey === null || infoApiKey === void 0 ? void 0 : infoApiKey.data) === null || _a === void 0 ? void 0 : _a.user_id;
+            const canWithdraw = (_c = (_b = infoApiKey === null || infoApiKey === void 0 ? void 0 : infoApiKey.data) === null || _b === void 0 ? void 0 : _b.authorities) === null || _c === void 0 ? void 0 : _c.some((a) => a === 'withdraw');
+            const canTrade = (_e = (_d = infoApiKey === null || infoApiKey === void 0 ? void 0 : infoApiKey.data) === null || _d === void 0 ? void 0 : _d.authorities) === null || _e === void 0 ? void 0 : _e.some((a) => a === 'trade');
+            const canDeposit = (_g = (_f = infoApiKey === null || infoApiKey === void 0 ? void 0 : infoApiKey.data) === null || _f === void 0 ? void 0 : _f.authorities) === null || _g === void 0 ? void 0 : _g.some((a) => a === 'deposit');
+            const accountInfo = { canTrade, canWithdraw, canDeposit, balances: [], positions: [] };
+            return Promise.resolve(accountInfo);
+        });
+    }
     getAccountInfo() {
         var _a, _b, _c, _d, _e, _f, _g;
         return __awaiter(this, void 0, void 0, function* () {

@@ -56,9 +56,8 @@ class BitgetWebsocket extends events_1.default {
     initialize() {
         return __awaiter(this, void 0, void 0, function* () {
             this.api = this.getApiClient();
-            yield this.api.getExchangeInfo();
             if (this.options.apiKey) {
-                yield this.api.getAccountInfo();
+                yield this.api.getApiKeyInfo();
             }
             yield this.connect();
         });

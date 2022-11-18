@@ -323,6 +323,20 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   //  Account
   // ---------------------------------------------------------------------------------------------------
 
+  /** S'utilitza només per comprovar si tenim accés amb la IP actual. */
+   async getApiKeyInfo(): Promise<AccountInfo> {
+    // ApiKey Info
+    /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-apikey-info Get ApiKey Info} */
+    const errorMessage = { code: 500, message: `No s'ha pogut obtenir la informació del compte a Bitget.` };
+    const infoApiKey: { data: any } = await this.get(`api/spot/v1/account/getInfo`, { errorMessage });
+    this.user_id = infoApiKey?.data?.user_id;
+    const canWithdraw = infoApiKey?.data?.authorities?.some((a: any) => a === 'withdraw');
+    const canTrade = infoApiKey?.data?.authorities?.some((a: any) => a === 'trade');
+    const canDeposit = infoApiKey?.data?.authorities?.some((a: any) => a === 'deposit');
+    const accountInfo: AccountInfo = { canTrade, canWithdraw, canDeposit, balances: [], positions: [] };
+    return Promise.resolve(accountInfo);
+  }
+
   /**
    * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-account Get Account List Spot}
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-account-list Get Account List Futures}
