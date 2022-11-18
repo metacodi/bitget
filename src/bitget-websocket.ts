@@ -96,13 +96,11 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   async initialize() {
     // Instanciem un client per l'API.
     this.api = this.getApiClient();
-    // Comprovem que les credencials.
-    const { apiKey } = this.options;
-    if (apiKey) {
-      // NOTA: Com que el ws es salta la restricció de la IP, fem una comprovació abans d'obrir-lo.
-      await this.api.getAccountInfo();
-    }
-    // Iniciem la connexió amb l'stream de l'exchange.
+    // 1) Obtenim la info de l'exchange per poder indicar els productes de cada símbol per futurs.
+    await this.api.getExchangeInfo();
+    // 2) NOTA: Com que el ws es salta la restricció de la IP, fem una comprovació abans de connectar-lo.
+    if (this.options.apiKey) { await this.api.getAccountInfo(); }
+    // 3) Iniciem la connexió amb l'stream de l'exchange.
     await this.connect();
   }
 
@@ -120,8 +118,6 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const { pingInterval, pongTimeout, isTest } = this.options;
     // Obtenim la info de l'exchange.
     await this.api.getExchangeInfo();
-    // // Obtenim una clau per l'stream d'usuari.
-    // if (this.streamType === 'user') { await this.api.getAccountInfo(); }
 
     const url = market === 'spot' ? `wss://ws.bitget.com/spot/v1/stream` : `wss://ws.bitget.com/mix/v1/stream`;
 
