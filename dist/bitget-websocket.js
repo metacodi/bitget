@@ -188,6 +188,12 @@ class BitgetWebsocket extends events_1.default {
         }
     }
     onWsError(event) {
+        if ((event === null || event === void 0 ? void 0 : event.code) === 'ERR_STREAM_DESTROYED') {
+            return;
+        }
+        if ((event === null || event === void 0 ? void 0 : event.type) === 'TransportError') {
+            return;
+        }
         console.error(`${this.wsId} =>`, (event === null || event === void 0 ? void 0 : event.error) || event);
     }
     ping() {

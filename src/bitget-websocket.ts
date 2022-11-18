@@ -244,7 +244,11 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     }
   }
 
-  protected onWsError(event: WebSocket.ErrorEvent) {
+  protected onWsError(event: any) {
+    // Ignore "Error: Cannot call write after a stream was destroyed"
+    if (event?.code === 'ERR_STREAM_DESTROYED') { return; }
+    // Ignore "xhr poll error"
+    if (event?.type === 'TransportError') { return; }
     // console.log(this.wsId, '=> onWsError');
     console.error(`${this.wsId} =>`, event?.error || event);
   }

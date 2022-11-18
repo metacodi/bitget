@@ -45,7 +45,7 @@ export declare class BitgetWebsocket extends EventEmitter implements ExchangeWeb
     protected login(): Promise<void>;
     protected onConnected(): void;
     protected onWsClose(event: WebSocket.CloseEvent): void;
-    protected onWsError(event: WebSocket.ErrorEvent): void;
+    protected onWsError(event: any): void;
     protected ping(): void;
     protected onWsPing(event: any): void;
     protected onWsPong(event: any): void;
