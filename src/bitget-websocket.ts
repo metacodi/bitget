@@ -96,6 +96,12 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   async initialize() {
     // Instanciem un client per l'API.
     this.api = this.getApiClient();
+    // Comprovem que les credencials.
+    const { apiKey } = this.options;
+    if (apiKey) {
+      // NOTA: Com que el ws es salta la restricció de la IP, fem una comprovació abans d'obrir-lo.
+      await this.api.getAccountInfo();
+    }
     // Iniciem la connexió amb l'stream de l'exchange.
     await this.connect();
   }
