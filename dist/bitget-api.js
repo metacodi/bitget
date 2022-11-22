@@ -586,7 +586,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                     orderType: (0, bitget_parsers_2.formatOrderType)(request.type),
                     force: 'normal',
                     price: +request.price,
-                    quantity: +request.quantity,
+                    quantity: +request.baseQuantity,
                     clientOrderId: request.id
                 };
                 const orderPlaced = yield this.post(`api/spot/v1/trade/orders`, { params, errorMessage });
@@ -598,7 +598,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                 const baseParams = {
                     symbol,
                     marginCoin: quoteAsset,
-                    size: +request.quantity,
+                    size: +request.baseQuantity,
                     clientOid: request.id,
                     side: (0, bitget_parsers_2.formatOrderTradeSide)(request.side, request.trade),
                     timeInForceValue: 'normal',

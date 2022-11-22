@@ -625,7 +625,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         orderType: formatOrderType(request.type),
         force: 'normal',
         price: +request.price,
-        quantity: +request.quantity,
+        quantity: +request.baseQuantity,
         clientOrderId: request.id
       };
       const orderPlaced: { data: any } = await this.post(`api/spot/v1/trade/orders`, { params, errorMessage });
@@ -637,7 +637,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
       const baseParams = {
         symbol,
         marginCoin: quoteAsset,
-        size: +request.quantity,
+        size: +request.baseQuantity,
         clientOid: request.id,
         side: formatOrderTradeSide(request.side, request.trade),
         timeInForceValue: 'normal',
