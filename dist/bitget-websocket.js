@@ -112,6 +112,7 @@ class BitgetWebsocket extends events_1.default {
         });
     }
     close() {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 this.unsubscribeAllChannels();
@@ -124,8 +125,10 @@ class BitgetWebsocket extends events_1.default {
                 if (this.pongTimer) {
                     this.pongTimer.unsubscribe();
                 }
-                this.ws.close();
-                if (typeof this.ws.terminate === 'function') {
+                if (typeof ((_a = this.ws) === null || _a === void 0 ? void 0 : _a.close) === 'function') {
+                    this.ws.close();
+                }
+                if (typeof ((_b = this.ws) === null || _b === void 0 ? void 0 : _b.terminate) === 'function') {
                     this.ws.terminate();
                 }
                 return Promise.resolve();

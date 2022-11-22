@@ -172,10 +172,10 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       if (this.status !== 'reconnecting') { this.status = 'closing'; }
       if (this.pingTimer) { this.pingTimer.unsubscribe(); }
       if (this.pongTimer) { this.pongTimer.unsubscribe(); }
-      // if (this.streamType === 'user') { await this.api.closeUserDataListenKey(this.listenKey); }
-      this.ws.close();
+      // NOTA: Comprovem que existeix una instància creada.
+      if (typeof this.ws?.close === 'function') { this.ws.close(); }
       // #168: ws.terminate() undefined in browsers.
-      if (typeof this.ws.terminate === 'function') { this.ws.terminate(); }
+      if (typeof this.ws?.terminate === 'function') { this.ws.terminate(); }
       return Promise.resolve();
 
     } catch (error) {
