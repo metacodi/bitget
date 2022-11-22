@@ -581,18 +581,32 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const symbol = this.getSymbolProduct(request.symbol);
             const errorMessage = { code: 500, message: `No s'ha pogut enviar l'ordre ${request.id} en ${this.market} a Bitget.` };
             if (this.market === 'spot') {
-                const params = {
+                const baseParams = {
                     symbol,
                     side: (0, bitget_parsers_2.formatOrderSide)(request.side),
                     orderType: (0, bitget_parsers_2.formatOrderType)(request.type),
-                    force: 'normal',
-                    price: +request.price,
-                    quantity: +request.baseQuantity,
-                    clientOrderId: request.id
+                    clientOrderId: request.id,
                 };
-                const orderPlaced = yield this.post(`api/spot/v1/trade/orders`, { params, errorMessage });
-                const order = Object.assign(Object.assign({}, request), { status: 'post', exchangeId: orderPlaced.data.orderId });
-                return order;
+                if (!request.stop) {
+                    const price = request.type === 'limit' ? { price: request.price } : undefined;
+                    const quantity = +request.baseQuantity;
+                    const force = 'normal';
+                    const params = Object.assign(Object.assign(Object.assign({}, baseParams), price), { quantity, force });
+                    const orderPlaced = yield this.post(`api/spot/v1/trade/orders`, { params, errorMessage });
+                    const order = Object.assign(Object.assign({}, request), { status: 'post', exchangeId: orderPlaced.data.orderId });
+                    return order;
+                }
+                else {
+                    const size = +request.baseQuantity;
+                    const executePrice = request.type === 'limit' ? { executePrice: +request.price } : undefined;
+                    const triggerPrice = +request.stopPrice;
+                    const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
+                    const timeInForceValue = 'normal';
+                    const params = Object.assign(Object.assign(Object.assign({}, baseParams), executePrice), { size, triggerPrice, triggerType, timeInForceValue });
+                    const orderPlaced = yield this.post(`api/spot/v1/plan/placePlan`, { params, errorMessage });
+                    const order = Object.assign(Object.assign({}, request), { status: 'post', exchangeId: orderPlaced.data.orderId });
+                    return order;
+                }
             }
             else {
                 const { baseAsset, quoteAsset } = this.resolveAssets(request.symbol);
@@ -613,11 +627,11 @@ class BitgetApi extends node_api_client_1.ApiClient {
                     return order;
                 }
                 else {
-                    const executePrice = +request.price;
+                    const executePrice = request.type === 'limit' ? { executePrice: +request.price } : undefined;
                     const triggerPrice = +request.stopPrice;
                     const orderType = request.type;
                     const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
-                    const params = Object.assign(Object.assign({}, baseParams), { executePrice, triggerPrice, orderType, triggerType });
+                    const params = Object.assign(Object.assign(Object.assign({}, baseParams), executePrice), { triggerPrice, orderType, triggerType });
                     const planPlaced = yield this.post(`api/mix/v1/plan/placePlan`, { params, errorMessage });
                     const order = Object.assign(Object.assign({}, request), { status: 'post', exchangeId: planPlaced.data.orderId });
                     return order;

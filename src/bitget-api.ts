@@ -614,24 +614,39 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   // ---------------------------------------------------------------------------------------------------
 
   /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#place-order Place order - SPOT } */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#place-plan-order Place plan order - SPOT } */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-order Place order - Futures } */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-stop-order Place Stop Order - Futures } */
   async postOrder(request: PostOrderRequest): Promise<Order> {
     const symbol = this.getSymbolProduct(request.symbol);
     const errorMessage = { code: 500, message: `No s'ha pogut enviar l'ordre ${request.id} en ${this.market} a Bitget.` };
     if (this.market === 'spot') {
-      const params = {
+      const baseParams = {
         symbol,
         side: formatOrderSide(request.side),
         orderType: formatOrderType(request.type),
-        force: 'normal',
-        price: +request.price,
-        quantity: +request.baseQuantity,
-        clientOrderId: request.id
+        clientOrderId: request.id,
       };
-      const orderPlaced: { data: any } = await this.post(`api/spot/v1/trade/orders`, { params, errorMessage });
-      const order: Order = { ...request, status: 'post', exchangeId: orderPlaced.data.orderId };
-      return order;
+      if (!request.stop) {
+        const price = request.type === 'limit' ? { price: request.price } : undefined;
+        const quantity = +request.baseQuantity;
+        const force = 'normal';
+        const params = { ...baseParams, ...price, quantity, force };
+        const orderPlaced: { data: any } = await this.post(`api/spot/v1/trade/orders`, { params, errorMessage });
+        const order: Order = { ...request, status: 'post', exchangeId: orderPlaced.data.orderId };
+        return order;
+
+      } else {
+        const size = +request.baseQuantity;
+        const executePrice = request.type === 'limit' ? { executePrice: +request.price } : undefined;
+        const triggerPrice = +request.stopPrice;
+        const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
+        const timeInForceValue = 'normal';
+        const params = { ...baseParams, ...executePrice, size, triggerPrice, triggerType, timeInForceValue };
+        const orderPlaced: { data: any } = await this.post(`api/spot/v1/plan/placePlan`, { params, errorMessage });
+        const order: Order = { ...request, status: 'post', exchangeId: orderPlaced.data.orderId };
+        return order;
+      }
 
     } else {
       const { baseAsset, quoteAsset } = this.resolveAssets(request.symbol);
@@ -652,11 +667,11 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         return order;
 
       } else {
-        const executePrice = +request.price;
+        const executePrice = request.type === 'limit' ? { executePrice: +request.price } : undefined;
         const triggerPrice = +request.stopPrice;
         const orderType = request.type;
         const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
-        const params = { ...baseParams, executePrice, triggerPrice, orderType, triggerType };
+        const params = { ...baseParams, ...executePrice, triggerPrice, orderType, triggerType };
         const planPlaced: { data: any } = await this.post(`api/mix/v1/plan/placePlan`, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: planPlaced.data.orderId };
         return order;
