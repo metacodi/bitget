@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { createHmac } from 'crypto';
 import moment, { unitOfTime } from 'moment';
 
-import { timestamp } from '@metacodi/abstract-exchange';
+import { GetOpenOrdersRequest, timestamp } from '@metacodi/abstract-exchange';
 import { ExchangeApi, CoinType, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo } from '@metacodi/abstract-exchange';
 import { ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode } from '@metacodi/abstract-exchange';
 import { LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit } from '@metacodi/abstract-exchange';
@@ -466,7 +466,8 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES }
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List}
    */
-  async getOpenOrders(symbol: SymbolType): Promise<Partial<Order>[]> {
+  async getOpenOrders(request: GetOpenOrdersRequest): Promise<Partial<Order>[]> {
+    const { symbol } = request;
     const baseAsset = this.isTest ? `S${symbol.baseAsset}` : symbol.baseAsset;
     const quoteAsset = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
     const errorMessage = { code: 500, message: `No s'han pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };

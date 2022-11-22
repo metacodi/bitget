@@ -1,3 +1,4 @@
+import { GetOpenOrdersRequest } from '@metacodi/abstract-exchange';
 import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo } from '@metacodi/abstract-exchange';
 import { ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, MarginMode } from '@metacodi/abstract-exchange';
 import { LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol } from '@metacodi/abstract-exchange';
@@ -31,7 +32,7 @@ export declare class BitgetApi extends ApiClient implements ExchangeApi {
     getLeverage(symbol: SymbolType, mode?: MarginMode): Promise<LeverageInfo>;
     setLeverage(request: SetLeverage): Promise<void>;
     getHistoryOrders(request: GetHistoryOrdersRequest): Promise<Order[]>;
-    getOpenOrders(symbol: SymbolType): Promise<Partial<Order>[]>;
+    getOpenOrders(request: GetOpenOrdersRequest): Promise<Partial<Order>[]>;
     getOrder(request: GetOrderRequest): Promise<Partial<Order>>;
     postOrder(request: PostOrderRequest): Promise<Order>;
     cancelOrder(request: CancelOrderRequest): Promise<any>;

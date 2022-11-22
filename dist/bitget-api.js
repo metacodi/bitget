@@ -441,8 +441,9 @@ class BitgetApi extends node_api_client_1.ApiClient {
         });
     }
     getHistoryOrders(request) { return {}; }
-    getOpenOrders(symbol) {
+    getOpenOrders(request) {
         return __awaiter(this, void 0, void 0, function* () {
+            const { symbol } = request;
             const baseAsset = this.isTest ? `S${symbol.baseAsset}` : symbol.baseAsset;
             const quoteAsset = this.isTest ? `S${symbol.quoteAsset}` : symbol.quoteAsset;
             const errorMessage = { code: 500, message: `No s'han pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
