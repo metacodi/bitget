@@ -51,7 +51,7 @@ const testApi = async () => {
     // writeLog(`getOpenOrders_${options.market}`, getOpenOrders, 'results/getOpenOrders.ts');
 
     
-    // Post Order (market) buy
+    // Entramos a mercado en Long
     // const postOrder_buy = await api.postOrder({
     //   id: `1-1-${moment().format("MMDDHHmmss")}`,
     //   side: 'buy',
@@ -61,9 +61,10 @@ const testApi = async () => {
     //     quoteAsset: 'USDT',
     //     baseAsset: 'BTC'
     //   },
-    //   quantity: 0.006
+    //   baseQuantity: 0.006
     // });
 
+    // Salimos a mercado en Long
     // const postOrder_sell = await api.postOrder({
     //   id: `1-1-${moment().format("MMDDHHmmss")}`,
     //   side: 'sell',
@@ -73,7 +74,7 @@ const testApi = async () => {
     //     quoteAsset: 'USDT',
     //     baseAsset: 'BTC'
     //   },
-    //   quantity: 0.006
+    //   baseQuantity: 0.006
     // });
 
     // const postOrder_buy_limit = await api.postOrder({
@@ -86,7 +87,7 @@ const testApi = async () => {
     //     quoteAsset: 'USDT',
     //     baseAsset: 'BTC'
     //   },
-    //   quantity: 0.005
+    //   baseQuantity: 0.005
     // });
 
     // Entramos a mercado en Short
@@ -125,7 +126,7 @@ const testApi = async () => {
     //     quoteAsset: 'USDT',
     //     baseAsset: 'BTC'
     //   },
-    //   quantity: 0.05,
+    //   baseQuantity: 0.05,
     //   price: 18950
     // });
 
@@ -140,7 +141,7 @@ const testApi = async () => {
     //     quoteAsset: 'USDT',
     //     baseAsset: 'BTC'
     //   },
-    //   quantity: 0.005,
+    //   baseQuantity: 0.005,
     //   price: 18700,
     //   stopPrice: 20485.5
     // });
@@ -156,7 +157,7 @@ const testApi = async () => {
     //     quoteAsset: 'USDT',
     //     baseAsset: 'BTC'
     //   },
-    //   quantity: 0.005,
+    //   baseQuantity: 0.005,
     //   stopPrice: 20585.5
     // });
 
