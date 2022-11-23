@@ -46,8 +46,8 @@ const testApi = async () => {
     console.log('getExchangeInfo() =>', await api.getExchangeInfo());
     console.log('getAccountInfo() =>', await api.getAccountInfo());
 
-    const getOpenOrders = await api.getOpenOrders({ quoteAsset: 'USDT', baseAsset: 'BTC'});
-    console.log('getOpenOrders() =>', getOpenOrders );
+    // const getOpenOrders = await api.getOpenOrders( { symbol : { quoteAsset: 'USDT', baseAsset: 'BTC'}});
+    // console.log('getOpenOrders() =>', getOpenOrders );
     // writeLog(`getOpenOrders_${options.market}`, getOpenOrders, 'results/getOpenOrders.ts');
 
     
@@ -89,8 +89,20 @@ const testApi = async () => {
     //   quantity: 0.005
     // });
 
-    // id++;
-    // // Post Order (market) sell
+    // Entramos a mercado en Short
+    // const postOrder_buy = await api.postOrder({
+    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
+    //   side: 'buy',
+    //   type: 'market',
+    //   trade: 'short',
+    //   symbol: {
+    //     quoteAsset: 'USDT',
+    //     baseAsset: 'BTC'
+    //   },
+    //   baseQuantity: 0.05
+    // });
+
+    // Salimos a mercado en Short
     // const postOrder_sell = await api.postOrder({
     //   id: `1-1-${moment().format("MMDDHHmmss")}`,
     //   side: 'sell',
@@ -100,10 +112,9 @@ const testApi = async () => {
     //     quoteAsset: 'USDT',
     //     baseAsset: 'BTC'
     //   },
-    //   quantity: 0.05
+    //   baseQuantity: 0.05
     // });
 
-    // id++;
     // Post Order (limit) buy
     // const postOrder_limit = await api.postOrder({
     //   id: `1-1-${moment().format("MMDDHHmmss")}`,
