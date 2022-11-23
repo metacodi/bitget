@@ -616,8 +616,17 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     const data = ev.data[0];
     const channel = ev.arg.channel;
     if (this.market === 'spot') {
-      const id = data.clOrdId;
-      const exchangeId = data.ordId;
+      // ---------------------------------------------------------------------------------------------------
+      //  NOTA: Les ordres posades per una algorítmica o stop no retornen l'id de client, en el seu lloc
+      //  retorna l'exchangeId de l'algorítmica. Per relacionar-les, utilitzem intercanviem l'id per exchangeId
+      //  i no retornem l'id de client per no substituir-lo i poder fer el matching amb la del market mirror.
+      // ---------------------------------------------------------------------------------------------------
+      // const id = data.clOrdId;
+      // const exchangeId = data.ordId;
+      const clientId = data.clOrdId;
+      const id = clientId.includes('-') ? { id: clientId } : undefined;
+      const exchangeId = id ? data.ordId : clientId;
+      // ---------------------------------------------------------------------------------------------------
       const symbol = this.api.parseSymbolProduct(data.instId);
       const side = parseOrderSide(data.side);
       const type = parseOrderType(data.ordType);
@@ -633,7 +642,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const commission = status === 'filled' || status === 'partial' ? data?.fillFee ? { commission: data?.fillFee } : undefined : undefined;
       const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
       return {
-        id, exchangeId, side, type, stop: 'normal', status, symbol,
+        ...id,
+        exchangeId, side, type, stop: 'normal', status, symbol,
         ...baseQuantity,   // quantitat satifeta baseAsset
         ...quoteQuantity,  // quantitat satifeta quoteAsset
         ...price,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
@@ -650,11 +660,17 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       };
 
     } else {
-      console.log(data);
+      // ---------------------------------------------------------------------------------------------------
+      //  NOTA: Les ordres posades per una algorítmica o stop no retornen l'id de client, en el seu lloc
+      //  retorna l'exchangeId de l'algorítmica. Per relacionar-les, utilitzem intercanviem l'id per exchangeId
+      //  i no retornem l'id de client per no substituir-lo i poder fer el matching amb la del market mirror.
+      // ---------------------------------------------------------------------------------------------------
+      // const id = channel === 'orders' ? data.clOrdId : data.cOid;
+      // const exchangeId = channel === 'orders' ? data.ordId : data.id;
       const clientId = channel === 'orders' ? data.clOrdId : data.cOid;
       const id = clientId.includes('-') ? { id: clientId } : undefined;
-      // const id = channel === 'orders' ? data.clOrdId : data.cOid;
       const exchangeId = id ? channel === 'orders' ? data.ordId : data.id : clientId;
+      // ---------------------------------------------------------------------------------------------------
       const trade = channel === 'orders' ? parsetOrderTradeSide(data.posSide) : parsetOrderAlgoTradeSide(data.posSide);
       const symbol = this.api.parseSymbolProduct(data.instId);
       const side = parseOrderSide(data.side);
