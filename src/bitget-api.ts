@@ -214,7 +214,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
     const errorMessage = { code: 500, message: `No s'ha pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.` };
     const params = { symbol: bitgetSymbol };
     return this.get(url, { params, isPublic: true, errorMessage }).then(response => {
-      const data = response.data[0];
+      const data = Array.isArray(response.data) ? response.data[0] : response.data;
       if (this.market === 'spot') {
         return {
           symbol,
@@ -685,6 +685,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         }
         const planPlaced: { data: any } = await this.post(urlPlan, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: planPlaced.data.orderId };
+        console.log(order);
         return order;
       }
     }
