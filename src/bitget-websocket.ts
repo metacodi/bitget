@@ -651,10 +651,10 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
 
     } else {
       console.log(data);
-      console.log(channel);
-      const id = channel === 'orders' ? data.clOrdId : data.cOid;
+      const clientId = channel === 'orders' ? data.clOrdId : data.cOid;
+      const id = clientId.includes('-') ? { id: clientId } : undefined;
       // const id = channel === 'orders' ? data.clOrdId : data.cOid;
-      const exchangeId = channel === 'orders' ? data.ordId : data.id;
+      const exchangeId = id ? channel === 'orders' ? data.ordId : data.id : clientId;
       const trade = channel === 'orders' ? parsetOrderTradeSide(data.posSide) : parsetOrderAlgoTradeSide(data.posSide);
       const symbol = this.api.parseSymbolProduct(data.instId);
       const side = parseOrderSide(data.side);
@@ -673,7 +673,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const leverage = status === 'filled' || status === 'partial' ? { leverage: +data?.lever } : undefined;
 
       return {
-        id, exchangeId, side, type, stop: 'normal', trade, status, symbol,
+        ...id,
+        exchangeId, side, type, stop: 'normal', trade, status, symbol,
         baseQuantity,   // quantitat satifeta baseAsset
         quoteQuantity,  // quantitat satifeta quoteAsset
         price,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.
