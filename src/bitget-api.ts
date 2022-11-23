@@ -617,6 +617,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#place-plan-order Place plan order - SPOT } */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-order Place order - Futures } */
   /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-stop-order Place Stop Order - Futures } */
+  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-stop-order Place plan order - Futures } */
   async postOrder(request: PostOrderRequest): Promise<Order> {
     const symbol = this.getSymbolProduct(request.symbol);
     const errorMessage = { code: 500, message: `No s'ha pogut enviar l'ordre ${request.id} en ${this.market} a Bitget.` };
@@ -671,8 +672,18 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         const triggerPrice = +request.stopPrice;
         const orderType = request.type;
         const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
-        const params = { ...baseParams, ...executePrice, triggerPrice, orderType, triggerType };
-        const planPlaced: { data: any } = await this.post(`api/mix/v1/plan/placePlan`, { params, errorMessage });
+        let urlPlan = '';
+        let params = {};
+        if (request.stop === 'normal') {
+          params = { ...baseParams, ...executePrice, triggerPrice, orderType, triggerType };
+          urlPlan = `api/mix/v1/plan/placePlan`;
+        } else {
+          const planType = request.stop === 'profit' || request.stop === 'profit_position' ? 'profit_plan' : 'loss_plan';
+          const holdSide = request.trade;
+          params = { ...baseParams, triggerPrice, planType, holdSide, triggerType };
+          urlPlan = request.stop === 'profit' || request.stop === 'loss' ? `api/mix/v1/plan/placeTPSL` : `api/mix/v1/plan/placePositionsTPSL`;
+        }
+        const planPlaced: { data: any } = await this.post(urlPlan, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: planPlaced.data.orderId };
         return order;
       }

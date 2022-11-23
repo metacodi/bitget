@@ -591,7 +591,6 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
     } else if (ev.arg.channel === 'positions') {
       const positions: Position[] = [];
       const dataPositions = ev.data;
-
       dataPositions.map(data => {
         const symbol = this.api.parseSymbolProduct(data.instId);
         const positionSide = parsetPositionTradeSide(data.holdSide);
