@@ -678,10 +678,10 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
           params = { ...baseParams, ...executePrice, triggerPrice, orderType, triggerType };
           urlPlan = `api/mix/v1/plan/placePlan`;
         } else {
-          const planType = request.stop === 'profit' || request.stop === 'profit_position' ? 'profit_plan' : 'loss_plan';
+          const planType = request.stop === 'profit' || request.stop === 'profit-position' ? 'profit_plan' : 'loss_plan';
           const holdSide = request.trade;
           params = { ...baseParams, triggerPrice, planType, holdSide, triggerType };
-          urlPlan = request.stop === 'profit' || request.stop === 'loss' ? `api/mix/v1/plan/placeTPSL` : `api/mix/v1/plan/placePositionsTPSL`;
+          urlPlan = `api/mix/v1/plan/${request.stop === 'profit' || request.stop === 'loss' ? `placeTPSL` : `placePositionsTPSL`}`;
         }
         const planPlaced: { data: any } = await this.post(urlPlan, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: planPlaced.data.orderId };

@@ -196,7 +196,7 @@ const testApi = async () => {
       id: `1-1-${moment().format("MMDDHHmmss")}`,
       side: 'sell',
       type: 'market',
-      stop: 'profit_position',
+      stop: 'profit-position',
       trade: 'short',
       symbol: {
         quoteAsset: 'USDT',
@@ -210,7 +210,7 @@ const testApi = async () => {
       id: `1-1-${moment().format("MMDDHHmmss")}`,
       side: 'sell',
       type: 'market',
-      stop: 'loss_position',
+      stop: 'loss-position',
       trade: 'short',
       symbol: {
         quoteAsset: 'USDT',
