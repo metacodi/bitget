@@ -478,8 +478,9 @@ class BitgetWebsocket extends events_1.default {
         const data = ev.data[0];
         const channel = ev.arg.channel;
         if (this.market === 'spot') {
-            const id = data.clOrdId;
-            const exchangeId = data.ordId;
+            const clientId = data.clOrdId;
+            const id = clientId.includes('-') ? { id: clientId } : undefined;
+            const exchangeId = id ? data.ordId : clientId;
             const symbol = this.api.parseSymbolProduct(data.instId);
             const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
             const type = (0, bitget_parsers_1.parseOrderType)(data.ordType);
@@ -492,13 +493,14 @@ class BitgetWebsocket extends events_1.default {
             const executed = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+(data === null || data === void 0 ? void 0 : data.uTime) ? +data.uTime : (0, moment_1.default)()));
             const commission = status === 'filled' || status === 'partial' ? (data === null || data === void 0 ? void 0 : data.fillFee) ? { commission: data === null || data === void 0 ? void 0 : data.fillFee } : undefined : undefined;
             const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
-            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ id, exchangeId, side, type, stop: 'normal', status, symbol }, baseQuantity), quoteQuantity), price), { created,
+            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, id), { exchangeId, side, type, stop: 'normal', status, symbol }), baseQuantity), quoteQuantity), price), { created,
                 posted,
                 executed }), commission), commissionAsset);
         }
         else {
-            const id = channel === 'orders' ? data.clOrdId : data.cOid;
-            const exchangeId = channel === 'orders' ? data.ordId : data.id;
+            const clientId = channel === 'orders' ? data.clOrdId : data.cOid;
+            const id = clientId.includes('-') ? { id: clientId } : undefined;
+            const exchangeId = id ? channel === 'orders' ? data.ordId : data.id : clientId;
             const trade = channel === 'orders' ? (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide) : (0, bitget_parsers_1.parsetOrderAlgoTradeSide)(data.posSide);
             const symbol = this.api.parseSymbolProduct(data.instId);
             const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
@@ -515,10 +517,10 @@ class BitgetWebsocket extends events_1.default {
             const commission = status === 'filled' || status === 'partial' ? { commission: data === null || data === void 0 ? void 0 : data.fillFee } : undefined;
             const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
             const leverage = status === 'filled' || status === 'partial' ? { leverage: +(data === null || data === void 0 ? void 0 : data.lever) } : undefined;
-            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ id, exchangeId, side, type, stop: 'normal', trade, status, symbol,
+            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, id), { exchangeId, side, type, stop: 'normal', trade, status, symbol,
                 baseQuantity,
                 quoteQuantity,
-                price }, stopPrice), { created,
+                price }), stopPrice), { created,
                 posted,
                 executed }), profit), commission), commissionAsset), leverage);
         }

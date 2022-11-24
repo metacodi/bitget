@@ -209,7 +209,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const errorMessage = { code: 500, message: `No s'ha pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.` };
             const params = { symbol: bitgetSymbol };
             return this.get(url, { params, isPublic: true, errorMessage }).then(response => {
-                const data = response.data[0];
+                const data = Array.isArray(response.data) ? response.data[0] : response.data;
                 if (this.market === 'spot') {
                     return {
                         symbol,
@@ -631,9 +631,21 @@ class BitgetApi extends node_api_client_1.ApiClient {
                     const triggerPrice = +request.stopPrice;
                     const orderType = request.type;
                     const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
-                    const params = Object.assign(Object.assign(Object.assign({}, baseParams), executePrice), { triggerPrice, orderType, triggerType });
-                    const planPlaced = yield this.post(`api/mix/v1/plan/placePlan`, { params, errorMessage });
+                    let urlPlan = '';
+                    let params = {};
+                    if (request.stop === 'normal') {
+                        params = Object.assign(Object.assign(Object.assign({}, baseParams), executePrice), { triggerPrice, orderType, triggerType });
+                        urlPlan = `api/mix/v1/plan/placePlan`;
+                    }
+                    else {
+                        const planType = request.stop === 'profit' || request.stop === 'profit-position' ? 'profit_plan' : 'loss_plan';
+                        const holdSide = request.trade;
+                        params = Object.assign(Object.assign({}, baseParams), { triggerPrice, planType, holdSide, triggerType });
+                        urlPlan = `api/mix/v1/plan/${request.stop === 'profit' || request.stop === 'loss' ? `placeTPSL` : `placePositionsTPSL`}`;
+                    }
+                    const planPlaced = yield this.post(urlPlan, { params, errorMessage });
                     const order = Object.assign(Object.assign({}, request), { status: 'post', exchangeId: planPlaced.data.orderId });
+                    console.log(order);
                     return order;
                 }
             }
