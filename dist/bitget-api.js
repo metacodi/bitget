@@ -148,7 +148,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const { baseAsset, quoteAsset } = symbol;
             const url = this.market === 'spot' ? `api/spot/v1/market/ticker` : `api/mix/v1/market/mark-price`;
             const bitgetSymbol = this.resolveSymbol(symbol);
-            const errorMessage = { code: 500, message: `No s'ha pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.` };
+            const errorMessage = { code: 500, message: `No s'ha pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} de ${this.market} a Bitget.` };
             const params = { symbol: bitgetSymbol };
             return this.get(url, { params, isPublic: true, errorMessage }).then(response => {
                 const data = Array.isArray(response.data) ? response.data[0] : response.data;
@@ -187,7 +187,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const startField = this.market === 'spot' ? 'after' : 'startTime';
             const endField = this.market === 'spot' ? 'before' : 'endTime';
             const toUnix = (time) => { return (0, moment_1.default)(time).unix().toString() + '000'; };
-            const errorMessage = { code: 500, message: `No s'ha pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} per ${this.market} a Bitget.` };
+            const errorMessage = { code: 500, message: `No s'ha pogut obtenir el preu del símbol ${baseAsset}_${quoteAsset} de ${this.market} a Bitget.` };
             const requestKlines = (query) => this.get(`${url}${query}`, { isPublic: true, errorMessage }).then(response => {
                 return response.data.map(data => {
                     if (this.market === 'spot') {
@@ -283,7 +283,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const canDeposit = (_g = (_f = InfoApiKey === null || InfoApiKey === void 0 ? void 0 : InfoApiKey.data) === null || _f === void 0 ? void 0 : _f.authorities) === null || _g === void 0 ? void 0 : _g.some((a) => a === 'deposit');
             const accountInfo = { canTrade, canWithdraw, canDeposit, balances: [], positions: [] };
             if (this.market === 'spot') {
-                const errorMessage = { code: 500, message: `No s'han pogut obtenir els balanços per ${this.market} a Bitget.` };
+                const errorMessage = { code: 500, message: `No s'han pogut obtenir els balanços de ${this.market} a Bitget.` };
                 const assetsList = yield this.get(`api/spot/v1/account/assets`, { errorMessage });
                 accountInfo.balances.push(...assetsList.data.map(b => {
                     const balance = {
@@ -303,7 +303,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                     if (this.isTest) {
                         productType = `s${productType}`;
                     }
-                    const errorMessage = { code: 500, message: `No s'han pogut obtenir els balanços per ${this.market} a Bitget.` };
+                    const errorMessage = { code: 500, message: `No s'han pogut obtenir els balanços de ${this.market} a Bitget.` };
                     const params = { productType };
                     const accountsList = yield this.get(`api/mix/v1/account/accounts`, { params, errorMessage });
                     accountInfo.balances.push(...accountsList.data.map(b => {
@@ -322,7 +322,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                     if (this.isTest) {
                         productType = `s${productType}`;
                     }
-                    const errorMessage = { code: 500, message: `No s'han pogut obtenir les posicions per ${this.market} a Bitget.` };
+                    const errorMessage = { code: 500, message: `No s'han pogut obtenir les posicions de ${this.market} a Bitget.` };
                     const params = { productType };
                     const positionsList = yield this.get(`api/mix/v1/position/allPosition`, { params, errorMessage });
                     accountInfo.positions.push(...positionsList.data.map(p => {
@@ -452,10 +452,10 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const exchangeId = request.exchangeId ? { orderId: request.exchangeId } : undefined;
             const id = request.id ? { clientOid: request.id } : undefined;
             const params = Object.assign(Object.assign({ symbol, marginCoin }, exchangeId), id);
-            const errorMessage = { code: 500, message: `No s'ha pogut obtenir l'ordre ${request.id} en ${this.market} a Bitget.` };
+            const errorMessage = { code: 500, message: `No s'ha pogut obtenir l'ordre ${request.id} de ${this.market} a Bitget.` };
             if (this.market === 'spot') {
                 if (!params.orderId) {
-                    return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} en ${this.market} a Bitget. L'identificador d'exchange es obligatori per 'spot'.`);
+                    return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} de ${this.market} a Bitget. L'identificador d'exchange es obligatori per 'spot'.`);
                 }
                 const ordersList = yield this.get(`api/spot/v1/trade/orderInfo`, { params, errorMessage });
                 ordersList.data.map(o => {
@@ -519,7 +519,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const { baseAsset, quoteAsset } = request.symbol;
             const marginCoin = this.resolveAsset(quoteAsset);
             const symbol = this.resolveSymbol(request.symbol);
-            const errorMessage = { code: 500, message: `No s'ha pogut enviar l'ordre ${request.id} en ${this.market} a Bitget.` };
+            const errorMessage = { code: 500, message: `No s'ha pogut enviar l'ordre ${request.id} de ${this.market} a Bitget.` };
             if (this.market === 'spot') {
                 const baseParams = {
                     symbol,
@@ -595,7 +595,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const { baseAsset, quoteAsset } = request.symbol;
             const marginCoin = this.resolveAsset(quoteAsset);
             const symbol = this.resolveSymbol(request.symbol);
-            const errorMessage = { code: 500, message: `No s'ha pogut cancel·lar l'ordre ${request.id} en ${this.market} a Bitget.` };
+            const errorMessage = { code: 500, message: `No s'ha pogut cancel·lar l'ordre ${request.id} de ${this.market} a Bitget.` };
             if (this.market === 'spot') {
                 const params = {
                     symbol,
