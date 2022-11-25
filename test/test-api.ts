@@ -91,17 +91,17 @@ const testApi = async () => {
     // });
 
     // Entramos a mercado en Short
-    const postOrder_buy = await api.postOrder({
-      id: `1-1-${moment().format("MMDDHHmmss")}`,
-      side: 'buy',
-      type: 'market',
-      trade: 'short',
-      symbol: {
-        quoteAsset: 'USDT',
-        baseAsset: 'BTC'
-      },
-      baseQuantity: 0.5
-    });
+    // const postOrder_buy = await api.postOrder({
+    //   id: `1-1-${moment().format("MMDDHHmmss")}`,
+    //   side: 'buy',
+    //   type: 'market',
+    //   trade: 'short',
+    //   symbol: {
+    //     quoteAsset: 'USDT',
+    //     baseAsset: 'BTC'
+    //   },
+    //   baseQuantity: 0.5
+    // });
 
     // Salimos a mercado en Short
     // const postOrder_sell = await api.postOrder({
@@ -191,41 +191,41 @@ const testApi = async () => {
     //   stopPrice: 16580
     // });
 
-    setTimeout(async () => {
-    try {
-        const price = await api.getPriceTicker({ quoteAsset: 'USDT', baseAsset: 'BTC'});
-        // Post Order (stop_market) profit_possition le precio medio a 16568.06
-        const postOrder_profit_position = await api.postOrder({
-          id: `1-TP-${moment().format("MMDDHHmmss")}`,
-          side: 'sell',
-          type: 'market',
-          stop: 'profit-position',
-          trade: 'short',
-          symbol: {
-            quoteAsset: 'USDT',
-            baseAsset: 'BTC'
-          },
-          stopPrice: round(price.price - 3, 0)
-        });
+    // setTimeout(async () => {
+    // try {
+    //     const price = await api.getPriceTicker({ quoteAsset: 'USDT', baseAsset: 'BTC'});
+    //     // Post Order (stop_market) profit_possition le precio medio a 16568.06
+    //     const postOrder_profit_position = await api.postOrder({
+    //       id: `1-TP-${moment().format("MMDDHHmmss")}`,
+    //       side: 'sell',
+    //       type: 'market',
+    //       stop: 'profit-position',
+    //       trade: 'short',
+    //       symbol: {
+    //         quoteAsset: 'USDT',
+    //         baseAsset: 'BTC'
+    //       },
+    //       stopPrice: round(price.price - 3, 0)
+    //     });
     
-        // // // Post Order (stop_market) loss_possition le precio medio a 16568.06
-        const postOrder_loss_possition = await api.postOrder({
-          id: `1-SL-${moment().format("MMDDHHmmss")}`,
-          side: 'sell',
-          type: 'market',
-          stop: 'loss-position',
-          trade: 'short',
-          symbol: {
-            quoteAsset: 'USDT',
-            baseAsset: 'BTC'
-          },
-          stopPrice: round(price.price + 3, 0)
-        });
+    //     // // // Post Order (stop_market) loss_possition le precio medio a 16568.06
+    //     const postOrder_loss_possition = await api.postOrder({
+    //       id: `1-SL-${moment().format("MMDDHHmmss")}`,
+    //       side: 'sell',
+    //       type: 'market',
+    //       stop: 'loss-position',
+    //       trade: 'short',
+    //       symbol: {
+    //         quoteAsset: 'USDT',
+    //         baseAsset: 'BTC'
+    //       },
+    //       stopPrice: round(price.price + 3, 0)
+    //     });
         
-      } catch (error) {
-        Terminal.error(error);
-      }
-    }, 1500);
+    //   } catch (error) {
+    //     Terminal.error(error);
+    //   }
+    // }, 1500);
 
     // console.log('postOrder() =>', postOrder_stop);
     // writeLog(`postOrder_${options.market}`, postOrder_stop);

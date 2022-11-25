@@ -1,5 +1,5 @@
 import { GetOpenOrdersRequest } from '@metacodi/abstract-exchange';
-import { ExchangeApi, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo } from '@metacodi/abstract-exchange';
+import { ExchangeApi, CoinType, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo } from '@metacodi/abstract-exchange';
 import { ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, MarginMode } from '@metacodi/abstract-exchange';
 import { LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol } from '@metacodi/abstract-exchange';
 import { SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
@@ -19,12 +19,6 @@ export declare class BitgetApi extends ApiClient implements ExchangeApi {
     get market(): MarketType;
     getExchangeInfo(): Promise<ExchangeInfo>;
     getMarketSymbol(symbol: SymbolType): Promise<MarketSymbol>;
-    resolveAssets(symbol: SymbolType): SymbolType;
-    getSymbolProduct(symbol: SymbolType): string;
-    getProductType(symbol: SymbolType): string;
-    getInstrumentId(symbol: SymbolType): string;
-    parseInstrumentId(instId: string): SymbolType;
-    parseSymbolProduct(symbol: string): SymbolType;
     getPriceTicker(symbol: SymbolType): Promise<MarketPrice>;
     getKlines(request: KlinesRequest): Promise<MarketKline[]>;
     getApiKeyInfo(): Promise<AccountInfo>;
@@ -36,5 +30,12 @@ export declare class BitgetApi extends ApiClient implements ExchangeApi {
     getOrder(request: GetOrderRequest): Promise<Partial<Order>>;
     postOrder(request: PostOrderRequest): Promise<Order>;
     cancelOrder(request: CancelOrderRequest): Promise<any>;
+    resolveAsset(asset: CoinType): string;
+    parseAsset(asset: string): CoinType;
+    resolveSymbol(symbol: SymbolType): string;
+    resolveProductType(symbol: SymbolType): string;
+    resolveInstrumentId(symbol: SymbolType): string;
+    parseInstrumentId(instId: string): SymbolType;
+    parseSymbolProduct(symbol: string): SymbolType;
 }
 //# sourceMappingURL=bitget-api.d.ts.map

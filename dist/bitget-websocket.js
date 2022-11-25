@@ -291,13 +291,13 @@ class BitgetWebsocket extends events_1.default {
     priceTicker(symbol) {
         const channel = `ticker`;
         const { instType } = this;
-        const instId = this.api.getInstrumentId(symbol);
+        const instId = this.api.resolveInstrumentId(symbol);
         return this.registerChannelSubscription({ channel, instType, instId });
     }
     klineTicker(symbol, interval) {
         const channel = `candle${interval}`;
         const { instType } = this;
-        const instId = this.api.getInstrumentId(symbol);
+        const instId = this.api.resolveInstrumentId(symbol);
         return this.registerChannelSubscription({ channel, instType, instId });
     }
     accountUpdate(symbol) {
@@ -305,18 +305,18 @@ class BitgetWebsocket extends events_1.default {
             return this.registerChannelSubscription({ channel: 'account', instType: 'spbl', instId: 'default' });
         }
         else {
-            const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
+            const instId = symbol ? this.api.resolveSymbol(symbol) : 'default';
             const instType = symbol === undefined || (symbol === null || symbol === void 0 ? void 0 : symbol.quoteAsset) === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
             return this.registerChannelSubscription([{ channel: 'account', instType: this.isTest ? 's' + instType : instType, instId: 'default' }, { channel: 'positions', instType: this.isTest ? 's' + instType : instType, instId }]);
         }
     }
     orderUpdate(symbol) {
         if (this.market === 'spot') {
-            const instId = symbol ? { instId: this.api.getSymbolProduct(symbol) } : 'default';
+            const instId = symbol ? { instId: this.api.resolveSymbol(symbol) } : 'default';
             return this.registerChannelSubscription({ channel: 'orders', instType: 'spbl', instId });
         }
         else {
-            const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
+            const instId = symbol ? this.api.resolveSymbol(symbol) : 'default';
             const instType = symbol === undefined || (symbol === null || symbol === void 0 ? void 0 : symbol.quoteAsset) === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
             return this.registerChannelSubscription([{ channel: 'orders', instType: this.isTest ? 's' + instType : instType, instId: 'default' }, { channel: 'ordersAlgo', instType: this.isTest ? 's' + instType : instType, instId }]);
         }

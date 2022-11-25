@@ -377,7 +377,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   priceTicker(symbol: SymbolType): Subject<MarketPrice> {
     const channel: BitgetWsChannelType = `ticker`;
     const { instType } = this;
-    const instId = this.api.getInstrumentId(symbol);
+    const instId = this.api.resolveInstrumentId(symbol);
     return this.registerChannelSubscription({ channel, instType, instId });
   }
 
@@ -388,7 +388,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
   klineTicker(symbol: SymbolType, interval: KlineIntervalType): Subject<MarketKline> {
     const channel: BitgetWsChannelType = `candle${interval}`;
     const { instType } = this;
-    const instId = this.api.getInstrumentId(symbol);
+    const instId = this.api.resolveInstrumentId(symbol);
     return this.registerChannelSubscription({ channel, instType, instId });
   }
 
@@ -407,7 +407,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       // NOTA: el canal `account` no accepta monedes per `instId`, només 'default'.
       return this.registerChannelSubscription({ channel: 'account', instType: 'spbl', instId: 'default' });
     } else {
-      const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
+      const instId = symbol ? this.api.resolveSymbol(symbol) : 'default';
       const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
       // NOTA: el canal `account` no accepta monedes per `instId`, només 'default'.
       // NOTA: el canal `positions` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
@@ -422,11 +422,11 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
    */
   orderUpdate(symbol?: SymbolType): Subject<Order> {
     if (this.market === 'spot') {
-      const instId = symbol ? { instId: this.api.getSymbolProduct(symbol) } : 'default';
+      const instId = symbol ? { instId: this.api.resolveSymbol(symbol) } : 'default';
       // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
       return this.registerChannelSubscription({ channel: 'orders', instType: 'spbl', instId });
     } else {
-      const instId = symbol ? this.api.getSymbolProduct(symbol) : 'default';
+      const instId = symbol ? this.api.resolveSymbol(symbol) : 'default';
       const instType = symbol === undefined || symbol?.quoteAsset === 'USDT' ? 'umcbl' : (symbol.quoteAsset === 'USDC' ? 'cmcbl' : 'dmcbl');
       // NOTA: el canal `orders` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
       // NOTA: el canal `ordersAlgo` requereix un paràmetre `instId` informat encara que a la documentació digui que és opcional.
