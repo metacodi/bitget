@@ -259,7 +259,7 @@ class BitgetWebsocket extends events_1.default {
             default:
                 if ((data === null || data === void 0 ? void 0 : data.event) === 'subscribe') {
                     const argsArray = Object.keys(data.arg).map(prop => data.arg[prop]);
-                    console.log(`${this.constructor.name}.subscribe =>`, [argsArray]);
+                    console.log(`${this.constructor.name}.subscribe =>`, argsArray);
                 }
                 else {
                     console.log(`${this.constructor.name}.onWsMessage =>`, data);

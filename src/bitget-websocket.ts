@@ -334,7 +334,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       default:
         if (data?.event === 'subscribe') {
           const argsArray = Object.keys(data.arg).map(prop => data.arg[prop]);
-          console.log(`${this.constructor.name}.subscribe =>`, [argsArray]);
+          console.log(`${this.constructor.name}.subscribe =>`, argsArray);
         } else {
           console.log(`${this.constructor.name}.onWsMessage =>`, data);
         }
