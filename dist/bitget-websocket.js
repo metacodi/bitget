@@ -257,9 +257,8 @@ class BitgetWebsocket extends events_1.default {
             case 'error':
                 console.error(this.constructor.name + `.onWsMessage error: ${data.msg}`);
             default:
-                if ((data === null || data === void 0 ? void 0 : data.event) === 'subscribe') {
-                    const argsArray = Object.keys(data.arg).map(prop => data.arg[prop]);
-                    console.log(`${this.constructor.name}.subscribe =>`, argsArray);
+                if (!!(data === null || data === void 0 ? void 0 : data.event) && typeof (data === null || data === void 0 ? void 0 : data.arg) === 'object') {
+                    console.log(`${this.constructor.name}.${data.event} =>`, Object.keys(data.arg).map(prop => data.arg[prop]));
                 }
                 else {
                     console.log(`${this.constructor.name}.onWsMessage =>`, data);
