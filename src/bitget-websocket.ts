@@ -332,7 +332,12 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
         // throw { code: data.code, message: `WEBSOCKET-ERROR: ${data.msg}` };
         console.error(this.constructor.name + `.onWsMessage error: ${data.msg}`);
       default:
-        console.log(this.constructor.name + '.onWsMessage =>', data);
+        if (data?.event === 'subscribe') {
+          const argsArray = Object.keys(data.arg).map(prop => data.arg[prop]);
+          console.log(`${this.constructor.name}.subscribe =>`, [argsArray]);
+        } else {
+          console.log(`${this.constructor.name}.onWsMessage =>`, data);
+        }
       // console.log(JSON.stringify(data));
     }
   }

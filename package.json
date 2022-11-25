@@ -1,6 +1,6 @@
 {
   "name": "@metacodi/bitget",
-  "version": "1.0.50",
+  "version": "1.0.51",
   "description": "Bitget API Client",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
