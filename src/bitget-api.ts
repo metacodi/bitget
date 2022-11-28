@@ -749,7 +749,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   }
 
   parseMarketSymbol(ms: any): MarketSymbol {
-    const { market, parseSymbol } = this;
+    const { market } = this;
     if (market === 'spot') {
       /*
         {
@@ -767,7 +767,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         }
       */
       return {
-        symbol: parseSymbol(ms.symbol),
+        symbol: this.parseSymbol(ms.symbol),
         ready: ms.status === 'online',
         // NOTA: No s'informa de la precisió de quote asset per posar ordres. Forcem la precissió a 1 decimal.
         pricePrecision: 1,
@@ -804,7 +804,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         }
       */
       return {
-        symbol: parseSymbol(ms.symbol),
+        symbol: this.parseSymbol(ms.symbol),
         ready: true,
         pricePrecision: +ms.pricePlace,
         quantityPrecision: +ms.volumePlace,

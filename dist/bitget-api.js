@@ -675,10 +675,10 @@ class BitgetApi extends node_api_client_1.ApiClient {
         }
     }
     parseMarketSymbol(ms) {
-        const { market, parseSymbol } = this;
+        const { market } = this;
         if (market === 'spot') {
             return {
-                symbol: parseSymbol(ms.symbol),
+                symbol: this.parseSymbol(ms.symbol),
                 ready: ms.status === 'online',
                 pricePrecision: 1,
                 quantityPrecision: +ms.priceScale,
@@ -694,7 +694,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
         }
         else {
             return {
-                symbol: parseSymbol(ms.symbol),
+                symbol: this.parseSymbol(ms.symbol),
                 ready: true,
                 pricePrecision: +ms.pricePlace,
                 quantityPrecision: +ms.volumePlace,
