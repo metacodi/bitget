@@ -104,10 +104,10 @@ class BitgetApi extends node_api_client_1.ApiClient {
                 return Promise.resolve({
                     symbol,
                     ready: found.status === 'online',
-                    quotePrecision: +found.priceScale,
-                    basePrecision: +found.priceScale,
-                    quantityPrecision: +found.quantityScale,
-                    pricePrecision: +found.priceScale,
+                    pricePrecision: 1,
+                    quantityPrecision: +found.priceScale,
+                    basePrecision: +found.quantityScale,
+                    quotePrecision: +found.quantityScale,
                     tradeAmountAsset: 'base',
                     minTradeAmount: +found.minTradeAmount,
                     maxTradeAmount: +found.maxTradeAmount,
@@ -127,10 +127,10 @@ class BitgetApi extends node_api_client_1.ApiClient {
                 return Promise.resolve({
                     symbol,
                     ready: true,
-                    quotePrecision: +found.pricePlace,
-                    basePrecision: +found.pricePlace,
-                    quantityPrecision: +found.volumePlace,
                     pricePrecision: +found.pricePlace,
+                    quantityPrecision: +found.volumePlace,
+                    basePrecision: 8,
+                    quotePrecision: 8,
                     tradeAmountAsset: 'base',
                     minTradeAmount: +found.minTradeNum,
                     maxTradeAmount: +found.maxTradeAmount,
@@ -616,6 +616,10 @@ class BitgetApi extends node_api_client_1.ApiClient {
             }
         });
     }
+    fixPrice(price, marketSymbol) { return +price.toFixed(marketSymbol.pricePrecision || 3); }
+    fixQuantity(quantity, marketSymbol) { return +quantity.toFixed(marketSymbol.quantityPrecision || 2); }
+    fixBase(base, marketSymbol) { return +base.toFixed(marketSymbol.basePrecision); }
+    fixQuote(quote, marketSymbol) { return +quote.toFixed(marketSymbol.quotePrecision); }
     resolveAsset(asset) {
         return this.isTest ? `S${asset}` : asset;
     }

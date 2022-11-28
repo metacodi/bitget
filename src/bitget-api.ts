@@ -114,13 +114,29 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
     const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
     if (!found) { throw { code: 500, message: `getMarketSymbol: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
     if (this.market === 'spot') {
+      /*
+        {
+          "symbol":"BTCUSDT_SPBL",
+          "symbolName":"BTCUSDT",
+          "baseCoin":"BTC",
+          "quoteCoin":"USDT",
+          "minTradeAmount":"0.0001",
+          "maxTradeAmount":"10000",
+          "takerFeeRate":"0.001",
+          "makerFeeRate":"0.001",
+          "priceScale":"4",
+          "quantityScale":"8",
+          "status":"online"
+        }
+      */
       return Promise.resolve<MarketSymbol>({
         symbol,
         ready: found.status === 'online',
-        quotePrecision: +found.priceScale,
-        basePrecision: +found.priceScale,
-        quantityPrecision: +found.quantityScale,
-        pricePrecision: +found.priceScale,
+        // pricePrecision: +found.priceScale,
+        pricePrecision: 1,
+        quantityPrecision: +found.priceScale,
+        basePrecision: +found.quantityScale,
+        quotePrecision: +found.quantityScale,
         tradeAmountAsset: 'base',
         minTradeAmount: +found.minTradeAmount,
         maxTradeAmount: +found.maxTradeAmount,
@@ -137,13 +153,31 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         found.minLeverage = +response.data.minLeverage;
         found.maxLeverage = +response.data.maxLeverage;
       }
+      /*
+          baseCoin: 'BTC'
+          buyLimitPriceRatio: '0.01'
+          feeRateUpRatio: '0.005'
+          makerFeeRate: '0.0002'
+          minTradeNum: '0.001'
+          openCostUpRatio: '0.01'
+          priceEndStep: '5'
+          pricePlace: '1' <=> 0.1
+          quoteCoin: 'USDT'
+          sellLimitPriceRatio: '0.01'
+          sizeMultiplier: '0.001'
+          supportMarginCoins: (1) ['USDT']
+          symbol: 'BTCUSDT_UMCBL'
+          symbolType: 'perpetual'
+          takerFeeRate: '0.0006'
+          volumePlace: '3'
+      */
       return Promise.resolve<MarketSymbol>({
         symbol,
         ready: true,
-        quotePrecision: +found.pricePlace,
-        basePrecision: +found.pricePlace,
-        quantityPrecision: +found.volumePlace,
         pricePrecision: +found.pricePlace,
+        quantityPrecision: +found.volumePlace,
+        basePrecision: 8,
+        quotePrecision: 8,
         tradeAmountAsset: 'base',
         minTradeAmount: +found.minTradeNum,
         maxTradeAmount: +found.maxTradeAmount,
@@ -676,6 +710,23 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
       return order;
     }
   }
+
+
+  // ---------------------------------------------------------------------------------------------------
+  //  helpers
+  // ---------------------------------------------------------------------------------------------------
+
+  /** Arrodoneix la quantitat de quote asset per posar ordres. */
+  fixPrice(price: number, marketSymbol: MarketSymbol) { return +price.toFixed(marketSymbol.pricePrecision || 3); }
+  
+  /** Arrodoneix la quantitat de base asset per posar ordres. */
+  fixQuantity(quantity: number, marketSymbol: MarketSymbol) { return +quantity.toFixed(marketSymbol.quantityPrecision || 2); }
+  
+  /** Arrodoneix la quantitat de quote asset per gestionar els balanços. */
+  fixBase(base: number, marketSymbol: MarketSymbol) { return +base.toFixed(marketSymbol.basePrecision); }
+  
+  /** Arrodoneix la quantitat de base asset per gestionar els balanços. */
+  fixQuote(quote: number, marketSymbol: MarketSymbol) { return +quote.toFixed(marketSymbol.quotePrecision); }
 
 
   // ---------------------------------------------------------------------------------------------------
