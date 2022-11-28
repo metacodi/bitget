@@ -18,9 +18,9 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
 
   options: ApiOptions;
   user_id: String;
-  limits: any[] = [];
+  limits: Limit[] = [];
   currencies: any[] = [];
-  symbols: any[] = [];
+  exchangeSymbols: any[] = [];
 
   constructor(
     options?: ApiOptions,
@@ -87,13 +87,13 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
     this.currencies.push(...currenciesList.data);
 
     // Obtenim els símbols.
-    this.symbols = [];
+    this.exchangeSymbols = [];
     const url = this.market === 'spot' ? `api/spot/v1/public/products` : `api/mix/v1/market/contracts`;
     if (this.market === 'spot') {
       /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-symbols Get Symbols} */
       const errorMessage = { code: 500, message: `No s'ha pogut obtenir el llistat de símbols per spot a Bitget.` };
       const symbolsList: { data: any[] } = await this.get(url, { isPublic: true, errorMessage });
-      this.symbols.push(...symbolsList.data.map(symbol => ({ ...symbol, productType: 'spbl' })));
+      this.exchangeSymbols.push(...symbolsList.data.map(symbol => ({ ...symbol, productType: 'spbl' })));
       return Promise.resolve({ limits: this.limits });
     } else {
       await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
@@ -101,93 +101,37 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols} */
         const errorMessage = { code: 500, message: `No s'ha pogut obtenir el llistat dels símbols disponibles pel producte '${productType}' de futurs a Bitget.` };
         const symbolsList: { data: any[] } = await this.get(url, { params: { productType }, isPublic: true, errorMessage });
-        this.symbols.push(...symbolsList.data.map(symbol => ({ ...symbol, productType, symbolName: `${symbol.baseCoin}${symbol.quoteCoin}` })));
+        this.exchangeSymbols.push(...symbolsList.data.map(symbol => ({ ...symbol, productType, symbolName: `${symbol.baseCoin}${symbol.quoteCoin}` })));
       }));
       return Promise.resolve({ limits: this.limits });
     }
   }
 
-  async getMarketSymbol(symbol: SymbolType): Promise<MarketSymbol> {
-    const { baseAsset, quoteAsset } = symbol;
+  /** Les propietats `minLeverage` i `maxLeverage` potser no estan definides. S'estableixen amb una crida a `getMarketSymbol()`. */
+  get symbols(): MarketSymbol[] { return this.exchangeSymbols.map(s => this.parseMarketSymbol(s)); }
+
+  private findMarketSymbol(symbol: SymbolType): any {
     const baseCoin = this.resolveAsset(symbol.baseAsset);
     const quoteCoin = this.resolveAsset(symbol.quoteAsset);
-    const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+    const found = this.exchangeSymbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+    return found;
+  }
+
+  /** Obtenim els detalls del símbol. */
+  async getMarketSymbol(symbol: SymbolType): Promise<MarketSymbol> {
+    const { baseAsset, quoteAsset } = symbol;
+    const found = this.findMarketSymbol(symbol);
     if (!found) { throw { code: 500, message: `getMarketSymbol: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
-    if (this.market === 'spot') {
-      /*
-        {
-          "symbol":"BTCUSDT_SPBL",
-          "symbolName":"BTCUSDT",
-          "baseCoin":"BTC",
-          "quoteCoin":"USDT",
-          "minTradeAmount":"0.0001",
-          "maxTradeAmount":"10000",
-          "takerFeeRate":"0.001",
-          "makerFeeRate":"0.001",
-          "priceScale":"4",
-          "quantityScale":"8",
-          "status":"online"
-        }
-      */
-      return Promise.resolve<MarketSymbol>({
-        symbol,
-        ready: found.status === 'online',
-        // pricePrecision: +found.priceScale,
-        pricePrecision: 1,
-        quantityPrecision: +found.priceScale,
-        basePrecision: +found.quantityScale,
-        quotePrecision: +found.quantityScale,
-        tradeAmountAsset: 'base',
-        minTradeAmount: +found.minTradeAmount,
-        maxTradeAmount: +found.maxTradeAmount,
-        commissionAsset: 'quote',
-        makerCommission: +found.makerFeeRate,
-        takerCommission: +found.takerFeeRate,
-      });
-    } else {
-      if (found.minLeverage === undefined) {
-        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-symbol-leverage Get Symbol Leverage} */
-        const errorMessage = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-        const params = { symbol: found.symbol };
-        const response: { data: any } = await this.get(`api/mix/v1/market/symbol-leverage`, { params, isPublic: true, errorMessage });
-        found.minLeverage = +response.data.minLeverage;
-        found.maxLeverage = +response.data.maxLeverage;
-      }
-      /*
-          baseCoin: 'BTC'
-          buyLimitPriceRatio: '0.01'
-          feeRateUpRatio: '0.005'
-          makerFeeRate: '0.0002'
-          minTradeNum: '0.001'
-          openCostUpRatio: '0.01'
-          priceEndStep: '5'
-          pricePlace: '1' <=> 0.1
-          quoteCoin: 'USDT'
-          sellLimitPriceRatio: '0.01'
-          sizeMultiplier: '0.001'
-          supportMarginCoins: (1) ['USDT']
-          symbol: 'BTCUSDT_UMCBL'
-          symbolType: 'perpetual'
-          takerFeeRate: '0.0006'
-          volumePlace: '3'
-      */
-      return Promise.resolve<MarketSymbol>({
-        symbol,
-        ready: true,
-        pricePrecision: +found.pricePlace,
-        quantityPrecision: +found.volumePlace,
-        basePrecision: 8,
-        quotePrecision: 8,
-        tradeAmountAsset: 'base',
-        minTradeAmount: +found.minTradeNum,
-        maxTradeAmount: +found.maxTradeAmount,
-        commissionAsset: 'quote',
-        makerCommission: +found.makerFeeRate,
-        takerCommission: +found.takerFeeRate,
-        minLeverage: +found.minLeverage,
-        maxLeverage: +found.maxLeverage,
-      });
+    // NOTA: A futures, haurem de recuperar el leverage la primera vegada.
+    if (this.market === 'futures' && found.minLeverage === undefined) {
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-symbol-leverage Get Symbol Leverage} */
+      const errorMessage = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+      const params = { symbol: found.symbol };
+      const response: { data: any } = await this.get(`api/mix/v1/market/symbol-leverage`, { params, isPublic: true, errorMessage });
+      found.minLeverage = +response.data.minLeverage;
+      found.maxLeverage = +response.data.maxLeverage;
     }
+    return Promise.resolve<MarketSymbol>(this.parseMarketSymbol(found));
   }
 
 
@@ -386,7 +330,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         const params = { productType };
         const positionsList: { data: any[] } = await this.get(`api/mix/v1/position/allPosition`, { params, errorMessage });
         accountInfo.positions.push(...positionsList.data.map(p => {
-          const symbol = this.parseSymbolProduct(p.symbol);
+          const symbol = this.parseSymbol(p.symbol);
           const position: Position = {
             symbol,
             marginAsset: this.parseAsset(p.marginCoin),
@@ -473,7 +417,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
           side: parseOrderSide(o.side),
           type: parseOrderType(o.orderType),
           status: parseOrderStatus(o.status),
-          symbol: this.parseSymbolProduct(o.symbol),
+          symbol: this.parseSymbol(o.symbol),
           baseQuantity: +o.quantity,
           price: +o.price,
           created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
@@ -491,7 +435,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
           trade: parsetOrderTradeSide(o.side),
           type: parseOrderType(o.orderType),
           status: parseOrderStatus(o.state),
-          symbol: this.parseSymbolProduct(o.symbol),
+          symbol: this.parseSymbol(o.symbol),
           baseQuantity: +o.size,
           price: +o.price,
           created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
@@ -509,7 +453,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
           type: parseOrderType(o.orderType),
           stop: parseStopType(o.planType),
           status: parsePlanStatus(o.status),
-          symbol: this.parseSymbolProduct(o.symbol),
+          symbol: this.parseSymbol(o.symbol),
           baseQuantity: +o.size,
           price: +o.executePrice,
           stopPrice: +o.triggerPrice,
@@ -544,7 +488,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
           side: parseOrderSide(o.side),
           type: parseOrderType(o.orderType),
           status: parseOrderStatus(o.status),
-          symbol: this.parseSymbolProduct(o.symbol),
+          symbol: this.parseSymbol(o.symbol),
           baseQuantity: +o.quantity,
           price: +o.price,
           created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
@@ -564,7 +508,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
           side: parseOrderSide(o.side),
           type: parseOrderType(o.orderType),
           status: parseOrderStatus(o.status),
-          symbol: this.parseSymbolProduct(o.symbol),
+          symbol: this.parseSymbol(o.symbol),
           baseQuantity: +o.quantity,
           price: +o.price,
           created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
@@ -582,7 +526,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
               type: parseOrderType(o.orderType),
               stop: parseStopType(o.planType),
               status: parsePlanStatus(o.status),
-              symbol: this.parseSymbolProduct(o.symbol),
+              symbol: this.parseSymbol(o.symbol),
               baseQuantity: +o.size,
               price: +o.executePrice,
               stopPrice: +o.triggerPrice,
@@ -601,11 +545,16 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   //  Trade Orders
   // ---------------------------------------------------------------------------------------------------
 
-  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#place-order Place order - SPOT } */
-  /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#place-plan-order Place plan order - SPOT } */
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-order Place order - Futures } */
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-stop-order Place Stop Order - Futures } */
-  /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-stop-order Place plan order - Futures } */
+  /**
+   * ```
+   * (spot) !request.stop => api/spot/v1/trade/orders
+   * (spot) request.stop => api/spot/v1/plan/placePlan
+   * (futures) !request.stop => api/mix/v1/order/placeOrder
+   * (futures) request.stop: 'normal' => api/mix/v1/plan/placePlan
+   * (futures) request.stop: 'profit' | 'loss' => api/mix/v1/plan/placeTPSL
+   * (futures) request.stop: 'profit-position' | 'loss-position' => api/mix/v1/plan/placePositionsTPSL
+   * ```
+   */
   async postOrder(request: PostOrderRequest): Promise<Order> {
     const { baseAsset, quoteAsset } = request.symbol;
     const marginCoin = this.resolveAsset(quoteAsset);
@@ -623,10 +572,11 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         const quantity = +request.baseQuantity;
         const force = 'normal';
         const params = { ...baseParams, ...price, quantity, force };
+        /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#place-order Place order - SPOT } */
         const orderPlaced: { data: any } = await this.post(`api/spot/v1/trade/orders`, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: orderPlaced.data.orderId };
         return order;
-
+        
       } else {
         const size = +request.baseQuantity;
         const executePrice = request.type === 'limit' ? { executePrice: +request.price } : undefined;
@@ -634,11 +584,12 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         const triggerType = request.type === 'market' ? 'market_price' : 'fill_price';
         const timeInForceValue = 'normal';
         const params = { ...baseParams, ...executePrice, size, triggerPrice, triggerType, timeInForceValue };
+        /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#place-plan-order Place plan order - SPOT } */
         const orderPlaced: { data: any } = await this.post(`api/spot/v1/plan/placePlan`, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: orderPlaced.data.orderId };
         return order;
       }
-
+      
     } else {
       const baseParams = {
         symbol,
@@ -652,10 +603,11 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         const price = request.type === 'limit' ? { price: request.price } : undefined;
         const orderType = formatOrderType(request.type);
         const params = { ...baseParams, orderType, ...price };
+        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-order Place order} */
         const orderPlaced: { data: any } = await this.post(`api/mix/v1/order/placeOrder`, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: orderPlaced.data.orderId };
         return order;
-
+        
       } else {
         const executePrice = request.type === 'limit' ? { executePrice: +request.price } : undefined;
         const triggerPrice = +request.stopPrice;
@@ -667,11 +619,14 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
           params = { ...baseParams, ...executePrice, triggerPrice, orderType, triggerType };
           urlPlan = `api/mix/v1/plan/placePlan`;
         } else {
-          const planType = request.stop === 'profit' || request.stop === 'profit-position' ? 'profit_plan' : 'loss_plan';
+          const planType = request.stop.includes('profit') ? 'profit_plan' : 'loss_plan';
           const holdSide = request.trade;
           params = { ...baseParams, triggerPrice, planType, holdSide, triggerType };
-          urlPlan = `api/mix/v1/plan/${request.stop === 'profit' || request.stop === 'loss' ? `placeTPSL` : `placePositionsTPSL`}`;
+          urlPlan = `api/mix/v1/plan/${request.stop.includes('-position') ? `placePositionsTPSL` : `placeTPSL`}`;
         }
+        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-plan-order Place Plan Order} */
+        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-stop-order Place Stop Order} */
+        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#place-position-tpsl Place Position TPSL} */
         const planPlaced: { data: any } = await this.post(urlPlan, { params, errorMessage });
         const order: Order = { ...request, status: 'post', exchangeId: planPlaced.data.orderId };
         console.log(order);
@@ -717,16 +672,23 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   // ---------------------------------------------------------------------------------------------------
 
   /** Arrodoneix la quantitat de quote asset per posar ordres. */
-  fixPrice(price: number, marketSymbol: MarketSymbol) { return +price.toFixed(marketSymbol.pricePrecision || 3); }
+  fixPrice(price: number, marketSymbol: SymbolType | MarketSymbol) { return +price.toFixed(this.resolveMarketSymbol(marketSymbol).pricePrecision || 3); }
   
   /** Arrodoneix la quantitat de base asset per posar ordres. */
-  fixQuantity(quantity: number, marketSymbol: MarketSymbol) { return +quantity.toFixed(marketSymbol.quantityPrecision || 2); }
+  fixQuantity(quantity: number, marketSymbol: SymbolType | MarketSymbol) { return +quantity.toFixed(this.resolveMarketSymbol(marketSymbol).quantityPrecision || 2); }
   
   /** Arrodoneix la quantitat de quote asset per gestionar els balanços. */
-  fixBase(base: number, marketSymbol: MarketSymbol) { return +base.toFixed(marketSymbol.basePrecision); }
+  fixBase(base: number, marketSymbol: SymbolType | MarketSymbol) { return +base.toFixed(this.resolveMarketSymbol(marketSymbol).basePrecision); }
   
   /** Arrodoneix la quantitat de base asset per gestionar els balanços. */
-  fixQuote(quote: number, marketSymbol: MarketSymbol) { return +quote.toFixed(marketSymbol.quotePrecision); }
+  fixQuote(quote: number, marketSymbol: SymbolType | MarketSymbol) { return +quote.toFixed(this.resolveMarketSymbol(marketSymbol).quotePrecision); }
+
+  private resolveMarketSymbol(symbol: SymbolType | MarketSymbol): MarketSymbol {
+    if (typeof symbol === 'object' && symbol.hasOwnProperty('symbol')) { return symbol as MarketSymbol; }
+    const { baseAsset, quoteAsset } = symbol as SymbolType;
+    const found = this.findMarketSymbol(symbol as SymbolType);
+    if (found) { return found; } else { throw { code: 500, message: `[resolveMarketSymbol] No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+  }
 
 
   // ---------------------------------------------------------------------------------------------------
@@ -743,44 +705,123 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
 
   resolveSymbol(symbol: SymbolType): string {
     const { baseAsset, quoteAsset } = symbol;
-    const baseCoin = this.resolveAsset(symbol.baseAsset);
-    const quoteCoin = this.resolveAsset(symbol.quoteAsset);
-    const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+    const found = this.findMarketSymbol(symbol);
     if (found) { return found.symbol; } else { throw { code: 500, message: `[resolveSymbol] No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+  }
+
+  parseSymbol(symbol: string): SymbolType {
+    const found = this.exchangeSymbols.find(s => s.symbol === symbol);
+    if (found) {
+      const baseAsset = this.parseAsset(found.baseCoin);
+      const quoteAsset = this.parseAsset(found.quoteCoin);
+      return { baseAsset, quoteAsset };
+    } else { throw { code: 500, message: `[parseSymbol] No s'ha trobat el símbol ${symbol} a Bitget.` }; }
   }
 
   resolveProductType(symbol: SymbolType): string {
     const { baseAsset, quoteAsset } = symbol;
-    const baseCoin = this.resolveAsset(symbol.baseAsset);
-    const quoteCoin = this.resolveAsset(symbol.quoteAsset);
-    const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+    const found = this.findMarketSymbol(symbol);
     if (found) { return found.productType; } else { throw { code: 500, message: `[resolveProductType] No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
+  }
+
+  parseProductType(productType: string): SymbolType {
+    const found = this.exchangeSymbols.find(s => s.productType === productType);
+    if (found) {
+      const baseAsset = this.parseAsset(found.baseCoin);
+      const quoteAsset = this.parseAsset(found.quoteCoin);
+      return { baseAsset, quoteAsset };
+    } else { throw { code: 500, message: `[parseProductType] No s'ha trobat el símbol ${productType} a Bitget.` }; }
   }
 
   resolveInstrumentId(symbol: SymbolType): string {
     const { baseAsset, quoteAsset } = symbol;
-    const baseCoin = this.resolveAsset(symbol.baseAsset);
-    const quoteCoin = this.resolveAsset(symbol.quoteAsset);
-    const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+    const found = this.findMarketSymbol(symbol);
     if (found) { return found.symbolName; } else { throw { code: 500, message: `[resolveInstrumentId] No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` }; }
   }
 
   parseInstrumentId(instId: string): SymbolType {
-    const found = this.symbols.find(s => s.symbolName === instId);
+    const found = this.exchangeSymbols.find(s => s.symbolName === instId);
     if (found) {
       const baseAsset = this.parseAsset(found.baseCoin);
       const quoteAsset = this.parseAsset(found.quoteCoin);
       return { baseAsset, quoteAsset };
-    } else { throw { code: 500, message: `parseInstrumentId: No s'ha trobat el símbol ${instId} a Bitget.` }; }
+    } else { throw { code: 500, message: `[parseInstrumentId] No s'ha trobat el símbol ${instId} a Bitget.` }; }
   }
 
-  parseSymbolProduct(symbol: string): SymbolType {
-    const found = this.symbols.find(s => s.symbol === symbol);
-    if (found) {
-      const baseAsset = this.parseAsset(found.baseCoin);
-      const quoteAsset = this.parseAsset(found.quoteCoin);
-      return { baseAsset, quoteAsset };
-    } else { throw { code: 500, message: `parseSymbolProduct: No s'ha trobat el símbol ${symbol} a Bitget.` }; }
+  parseMarketSymbol(ms: any): MarketSymbol {
+    const { market, parseSymbol } = this;
+    if (market === 'spot') {
+      /*
+        {
+          "symbol":"BTCUSDT_SPBL",
+          "symbolName":"BTCUSDT",
+          "baseCoin":"BTC",
+          "quoteCoin":"USDT",
+          "minTradeAmount":"0.0001",
+          "maxTradeAmount":"10000",
+          "takerFeeRate":"0.001",
+          "makerFeeRate":"0.001",
+          "priceScale":"4",
+          "quantityScale":"8",
+          "status":"online"
+        }
+      */
+      return {
+        symbol: parseSymbol(ms.symbol),
+        ready: ms.status === 'online',
+        // NOTA: No s'informa de la precisió de quote asset per posar ordres. Forcem la precissió a 1 decimal.
+        pricePrecision: 1,
+        quantityPrecision: +ms.priceScale,
+        basePrecision: +ms.quantityScale,
+        quotePrecision: +ms.quantityScale,
+        tradeAmountAsset: 'base',
+        minTradeAmount: +ms.minTradeAmount,
+        maxTradeAmount: +ms.maxTradeAmount,
+        commissionAsset: 'quote',
+        makerCommission: +ms.makerFeeRate,
+        takerCommission: +ms.takerFeeRate,
+      };
+      
+    } else {
+      /**
+        {
+          baseCoin: 'BTC'
+          buyLimitPriceRatio: '0.01'
+          feeRateUpRatio: '0.005'
+          makerFeeRate: '0.0002'
+          minTradeNum: '0.001'
+          openCostUpRatio: '0.01'
+          priceEndStep: '5'
+          pricePlace: '1' <=> 0.1
+          quoteCoin: 'USDT'
+          sellLimitPriceRatio: '0.01'
+          sizeMultiplier: '0.001'
+          supportMarginCoins: (1) ['USDT']
+          symbol: 'BTCUSDT_UMCBL'
+          symbolType: 'perpetual'
+          takerFeeRate: '0.0006'
+          volumePlace: '3'
+        }
+      */
+      return {
+        symbol: parseSymbol(ms.symbol),
+        ready: true,
+        pricePrecision: +ms.pricePlace,
+        quantityPrecision: +ms.volumePlace,
+        // NOTA: A diferència d'spot, a futures no s'informa de cap `quantityScale`. Forcem la precissió a 8 decimals.
+        basePrecision: 8,
+        // NOTA: A diferència d'spot, a futures no s'informa de cap `quantityScale`. Forcem la precissió a 8 decimals.
+        quotePrecision: 8,
+        tradeAmountAsset: 'base',
+        minTradeAmount: +ms.minTradeNum,
+        maxTradeAmount: +ms.maxTradeAmount,
+        commissionAsset: 'quote',
+        makerCommission: +ms.makerFeeRate,
+        takerCommission: +ms.takerFeeRate,
+        minLeverage: +ms.minLeverage,
+        maxLeverage: +ms.maxLeverage,
+      };
+    }
   }
 
 }

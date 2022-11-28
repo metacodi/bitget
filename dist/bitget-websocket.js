@@ -465,7 +465,7 @@ class BitgetWebsocket extends events_1.default {
             const positions = [];
             const dataPositions = ev.data;
             dataPositions.map(data => {
-                const symbol = this.api.parseSymbolProduct(data.instId);
+                const symbol = this.api.parseSymbol(data.instId);
                 const positionSide = (0, bitget_parsers_1.parsetPositionTradeSide)(data.holdSide);
                 const marginAsset = symbol.quoteAsset;
                 const positionAmount = +data.total;
@@ -486,7 +486,7 @@ class BitgetWebsocket extends events_1.default {
             const clientId = data.clOrdId;
             const id = clientId.includes('-') ? { id: clientId } : undefined;
             const exchangeId = id ? data.ordId : clientId;
-            const symbol = this.api.parseSymbolProduct(data.instId);
+            const symbol = this.api.parseSymbol(data.instId);
             const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
             const type = (0, bitget_parsers_1.parseOrderType)(data.ordType);
             const status = (0, bitget_parsers_1.parseOrderStatus)(data.status);
@@ -507,7 +507,7 @@ class BitgetWebsocket extends events_1.default {
             const id = clientId.includes('-') ? { id: clientId } : undefined;
             const exchangeId = id ? channel === 'orders' ? data.ordId : data.id : clientId;
             const trade = channel === 'orders' ? (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide) : (0, bitget_parsers_1.parsetOrderAlgoTradeSide)(data.posSide);
-            const symbol = this.api.parseSymbolProduct(data.instId);
+            const symbol = this.api.parseSymbol(data.instId);
             const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
             const type = (0, bitget_parsers_1.parseOrderType)(data.ordType);
             const status = channel === 'orders' ? (0, bitget_parsers_1.parseOrderStatus)(data.status) : (0, bitget_parsers_1.parsePlanStatus)(data.state);

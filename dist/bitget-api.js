@@ -24,7 +24,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
         super(options);
         this.limits = [];
         this.currencies = [];
-        this.symbols = [];
+        this.exchangeSymbols = [];
     }
     baseUrl() { return `api.bitget.com`; }
     ;
@@ -70,12 +70,12 @@ class BitgetApi extends node_api_client_1.ApiClient {
             const errorMessage = { code: 500, message: `No s'ha pogut obtenir el llistat de monedes disponibles a Bitget.` };
             const currenciesList = yield this.get(`api/spot/v1/public/currencies`, { isPublic: true, errorMessage });
             this.currencies.push(...currenciesList.data);
-            this.symbols = [];
+            this.exchangeSymbols = [];
             const url = this.market === 'spot' ? `api/spot/v1/public/products` : `api/mix/v1/market/contracts`;
             if (this.market === 'spot') {
                 const errorMessage = { code: 500, message: `No s'ha pogut obtenir el llistat de símbols per spot a Bitget.` };
                 const symbolsList = yield this.get(url, { isPublic: true, errorMessage });
-                this.symbols.push(...symbolsList.data.map(symbol => (Object.assign(Object.assign({}, symbol), { productType: 'spbl' }))));
+                this.exchangeSymbols.push(...symbolsList.data.map(symbol => (Object.assign(Object.assign({}, symbol), { productType: 'spbl' }))));
                 return Promise.resolve({ limits: this.limits });
             }
             else {
@@ -85,62 +85,34 @@ class BitgetApi extends node_api_client_1.ApiClient {
                     }
                     const errorMessage = { code: 500, message: `No s'ha pogut obtenir el llistat dels símbols disponibles pel producte '${productType}' de futurs a Bitget.` };
                     const symbolsList = yield this.get(url, { params: { productType }, isPublic: true, errorMessage });
-                    this.symbols.push(...symbolsList.data.map(symbol => (Object.assign(Object.assign({}, symbol), { productType, symbolName: `${symbol.baseCoin}${symbol.quoteCoin}` }))));
+                    this.exchangeSymbols.push(...symbolsList.data.map(symbol => (Object.assign(Object.assign({}, symbol), { productType, symbolName: `${symbol.baseCoin}${symbol.quoteCoin}` }))));
                 })));
                 return Promise.resolve({ limits: this.limits });
             }
         });
     }
+    get symbols() { return this.exchangeSymbols.map(s => this.parseMarketSymbol(s)); }
+    findMarketSymbol(symbol) {
+        const baseCoin = this.resolveAsset(symbol.baseAsset);
+        const quoteCoin = this.resolveAsset(symbol.quoteAsset);
+        const found = this.exchangeSymbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+        return found;
+    }
     getMarketSymbol(symbol) {
         return __awaiter(this, void 0, void 0, function* () {
             const { baseAsset, quoteAsset } = symbol;
-            const baseCoin = this.resolveAsset(symbol.baseAsset);
-            const quoteCoin = this.resolveAsset(symbol.quoteAsset);
-            const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+            const found = this.findMarketSymbol(symbol);
             if (!found) {
                 throw { code: 500, message: `getMarketSymbol: No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
             }
-            if (this.market === 'spot') {
-                return Promise.resolve({
-                    symbol,
-                    ready: found.status === 'online',
-                    pricePrecision: 1,
-                    quantityPrecision: +found.priceScale,
-                    basePrecision: +found.quantityScale,
-                    quotePrecision: +found.quantityScale,
-                    tradeAmountAsset: 'base',
-                    minTradeAmount: +found.minTradeAmount,
-                    maxTradeAmount: +found.maxTradeAmount,
-                    commissionAsset: 'quote',
-                    makerCommission: +found.makerFeeRate,
-                    takerCommission: +found.takerFeeRate,
-                });
+            if (this.market === 'futures' && found.minLeverage === undefined) {
+                const errorMessage = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+                const params = { symbol: found.symbol };
+                const response = yield this.get(`api/mix/v1/market/symbol-leverage`, { params, isPublic: true, errorMessage });
+                found.minLeverage = +response.data.minLeverage;
+                found.maxLeverage = +response.data.maxLeverage;
             }
-            else {
-                if (found.minLeverage === undefined) {
-                    const errorMessage = { code: 500, message: `No s'ha pogut obtenir el leverage del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
-                    const params = { symbol: found.symbol };
-                    const response = yield this.get(`api/mix/v1/market/symbol-leverage`, { params, isPublic: true, errorMessage });
-                    found.minLeverage = +response.data.minLeverage;
-                    found.maxLeverage = +response.data.maxLeverage;
-                }
-                return Promise.resolve({
-                    symbol,
-                    ready: true,
-                    pricePrecision: +found.pricePlace,
-                    quantityPrecision: +found.volumePlace,
-                    basePrecision: 8,
-                    quotePrecision: 8,
-                    tradeAmountAsset: 'base',
-                    minTradeAmount: +found.minTradeNum,
-                    maxTradeAmount: +found.maxTradeAmount,
-                    commissionAsset: 'quote',
-                    makerCommission: +found.makerFeeRate,
-                    takerCommission: +found.takerFeeRate,
-                    minLeverage: +found.minLeverage,
-                    maxLeverage: +found.maxLeverage,
-                });
-            }
+            return Promise.resolve(this.parseMarketSymbol(found));
         });
     }
     getPriceTicker(symbol) {
@@ -326,7 +298,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                     const params = { productType };
                     const positionsList = yield this.get(`api/mix/v1/position/allPosition`, { params, errorMessage });
                     accountInfo.positions.push(...positionsList.data.map(p => {
-                        const symbol = this.parseSymbolProduct(p.symbol);
+                        const symbol = this.parseSymbol(p.symbol);
                         const position = {
                             symbol,
                             marginAsset: this.parseAsset(p.marginCoin),
@@ -401,7 +373,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                         side: (0, bitget_parsers_1.parseOrderSide)(o.side),
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
                         status: (0, bitget_parsers_1.parseOrderStatus)(o.status),
-                        symbol: this.parseSymbolProduct(o.symbol),
+                        symbol: this.parseSymbol(o.symbol),
                         baseQuantity: +o.quantity,
                         price: +o.price,
                         created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
@@ -418,7 +390,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                         trade: (0, bitget_parsers_1.parsetOrderTradeSide)(o.side),
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
                         status: (0, bitget_parsers_1.parseOrderStatus)(o.state),
-                        symbol: this.parseSymbolProduct(o.symbol),
+                        symbol: this.parseSymbol(o.symbol),
                         baseQuantity: +o.size,
                         price: +o.price,
                         created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
@@ -433,7 +405,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
                         stop: (0, bitget_parsers_1.parseStopType)(o.planType),
                         status: (0, bitget_parsers_1.parsePlanStatus)(o.status),
-                        symbol: this.parseSymbolProduct(o.symbol),
+                        symbol: this.parseSymbol(o.symbol),
                         baseQuantity: +o.size,
                         price: +o.executePrice,
                         stopPrice: +o.triggerPrice,
@@ -465,7 +437,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                         side: (0, bitget_parsers_1.parseOrderSide)(o.side),
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
                         status: (0, bitget_parsers_1.parseOrderStatus)(o.status),
-                        symbol: this.parseSymbolProduct(o.symbol),
+                        symbol: this.parseSymbol(o.symbol),
                         baseQuantity: +o.quantity,
                         price: +o.price,
                         created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
@@ -483,7 +455,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                         side: (0, bitget_parsers_1.parseOrderSide)(o.side),
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
                         status: (0, bitget_parsers_1.parseOrderStatus)(o.status),
-                        symbol: this.parseSymbolProduct(o.symbol),
+                        symbol: this.parseSymbol(o.symbol),
                         baseQuantity: +o.quantity,
                         price: +o.price,
                         created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
@@ -501,7 +473,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                                 type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
                                 stop: (0, bitget_parsers_1.parseStopType)(o.planType),
                                 status: (0, bitget_parsers_1.parsePlanStatus)(o.status),
-                                symbol: this.parseSymbolProduct(o.symbol),
+                                symbol: this.parseSymbol(o.symbol),
                                 baseQuantity: +o.size,
                                 price: +o.executePrice,
                                 stopPrice: +o.triggerPrice,
@@ -577,10 +549,10 @@ class BitgetApi extends node_api_client_1.ApiClient {
                         urlPlan = `api/mix/v1/plan/placePlan`;
                     }
                     else {
-                        const planType = request.stop === 'profit' || request.stop === 'profit-position' ? 'profit_plan' : 'loss_plan';
+                        const planType = request.stop.includes('profit') ? 'profit_plan' : 'loss_plan';
                         const holdSide = request.trade;
                         params = Object.assign(Object.assign({}, baseParams), { triggerPrice, planType, holdSide, triggerType });
-                        urlPlan = `api/mix/v1/plan/${request.stop === 'profit' || request.stop === 'loss' ? `placeTPSL` : `placePositionsTPSL`}`;
+                        urlPlan = `api/mix/v1/plan/${request.stop.includes('-position') ? `placePositionsTPSL` : `placeTPSL`}`;
                     }
                     const planPlaced = yield this.post(urlPlan, { params, errorMessage });
                     const order = Object.assign(Object.assign({}, request), { status: 'post', exchangeId: planPlaced.data.orderId });
@@ -616,10 +588,23 @@ class BitgetApi extends node_api_client_1.ApiClient {
             }
         });
     }
-    fixPrice(price, marketSymbol) { return +price.toFixed(marketSymbol.pricePrecision || 3); }
-    fixQuantity(quantity, marketSymbol) { return +quantity.toFixed(marketSymbol.quantityPrecision || 2); }
-    fixBase(base, marketSymbol) { return +base.toFixed(marketSymbol.basePrecision); }
-    fixQuote(quote, marketSymbol) { return +quote.toFixed(marketSymbol.quotePrecision); }
+    fixPrice(price, marketSymbol) { return +price.toFixed(this.resolveMarketSymbol(marketSymbol).pricePrecision || 3); }
+    fixQuantity(quantity, marketSymbol) { return +quantity.toFixed(this.resolveMarketSymbol(marketSymbol).quantityPrecision || 2); }
+    fixBase(base, marketSymbol) { return +base.toFixed(this.resolveMarketSymbol(marketSymbol).basePrecision); }
+    fixQuote(quote, marketSymbol) { return +quote.toFixed(this.resolveMarketSymbol(marketSymbol).quotePrecision); }
+    resolveMarketSymbol(symbol) {
+        if (typeof symbol === 'object' && symbol.hasOwnProperty('symbol')) {
+            return symbol;
+        }
+        const { baseAsset, quoteAsset } = symbol;
+        const found = this.findMarketSymbol(symbol);
+        if (found) {
+            return found;
+        }
+        else {
+            throw { code: 500, message: `[resolveMarketSymbol] No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+        }
+    }
     resolveAsset(asset) {
         return this.isTest ? `S${asset}` : asset;
     }
@@ -628,9 +613,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
     }
     resolveSymbol(symbol) {
         const { baseAsset, quoteAsset } = symbol;
-        const baseCoin = this.resolveAsset(symbol.baseAsset);
-        const quoteCoin = this.resolveAsset(symbol.quoteAsset);
-        const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+        const found = this.findMarketSymbol(symbol);
         if (found) {
             return found.symbol;
         }
@@ -638,11 +621,20 @@ class BitgetApi extends node_api_client_1.ApiClient {
             throw { code: 500, message: `[resolveSymbol] No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
         }
     }
+    parseSymbol(symbol) {
+        const found = this.exchangeSymbols.find(s => s.symbol === symbol);
+        if (found) {
+            const baseAsset = this.parseAsset(found.baseCoin);
+            const quoteAsset = this.parseAsset(found.quoteCoin);
+            return { baseAsset, quoteAsset };
+        }
+        else {
+            throw { code: 500, message: `[parseSymbol] No s'ha trobat el símbol ${symbol} a Bitget.` };
+        }
+    }
     resolveProductType(symbol) {
         const { baseAsset, quoteAsset } = symbol;
-        const baseCoin = this.resolveAsset(symbol.baseAsset);
-        const quoteCoin = this.resolveAsset(symbol.quoteAsset);
-        const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+        const found = this.findMarketSymbol(symbol);
         if (found) {
             return found.productType;
         }
@@ -650,11 +642,20 @@ class BitgetApi extends node_api_client_1.ApiClient {
             throw { code: 500, message: `[resolveProductType] No s'ha trobat el símbol ${baseAsset}_${quoteAsset} a Bitget.` };
         }
     }
+    parseProductType(productType) {
+        const found = this.exchangeSymbols.find(s => s.productType === productType);
+        if (found) {
+            const baseAsset = this.parseAsset(found.baseCoin);
+            const quoteAsset = this.parseAsset(found.quoteCoin);
+            return { baseAsset, quoteAsset };
+        }
+        else {
+            throw { code: 500, message: `[parseProductType] No s'ha trobat el símbol ${productType} a Bitget.` };
+        }
+    }
     resolveInstrumentId(symbol) {
         const { baseAsset, quoteAsset } = symbol;
-        const baseCoin = this.resolveAsset(symbol.baseAsset);
-        const quoteCoin = this.resolveAsset(symbol.quoteAsset);
-        const found = this.symbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
+        const found = this.findMarketSymbol(symbol);
         if (found) {
             return found.symbolName;
         }
@@ -663,25 +664,51 @@ class BitgetApi extends node_api_client_1.ApiClient {
         }
     }
     parseInstrumentId(instId) {
-        const found = this.symbols.find(s => s.symbolName === instId);
+        const found = this.exchangeSymbols.find(s => s.symbolName === instId);
         if (found) {
             const baseAsset = this.parseAsset(found.baseCoin);
             const quoteAsset = this.parseAsset(found.quoteCoin);
             return { baseAsset, quoteAsset };
         }
         else {
-            throw { code: 500, message: `parseInstrumentId: No s'ha trobat el símbol ${instId} a Bitget.` };
+            throw { code: 500, message: `[parseInstrumentId] No s'ha trobat el símbol ${instId} a Bitget.` };
         }
     }
-    parseSymbolProduct(symbol) {
-        const found = this.symbols.find(s => s.symbol === symbol);
-        if (found) {
-            const baseAsset = this.parseAsset(found.baseCoin);
-            const quoteAsset = this.parseAsset(found.quoteCoin);
-            return { baseAsset, quoteAsset };
+    parseMarketSymbol(ms) {
+        const { market, parseSymbol } = this;
+        if (market === 'spot') {
+            return {
+                symbol: parseSymbol(ms.symbol),
+                ready: ms.status === 'online',
+                pricePrecision: 1,
+                quantityPrecision: +ms.priceScale,
+                basePrecision: +ms.quantityScale,
+                quotePrecision: +ms.quantityScale,
+                tradeAmountAsset: 'base',
+                minTradeAmount: +ms.minTradeAmount,
+                maxTradeAmount: +ms.maxTradeAmount,
+                commissionAsset: 'quote',
+                makerCommission: +ms.makerFeeRate,
+                takerCommission: +ms.takerFeeRate,
+            };
         }
         else {
-            throw { code: 500, message: `parseSymbolProduct: No s'ha trobat el símbol ${symbol} a Bitget.` };
+            return {
+                symbol: parseSymbol(ms.symbol),
+                ready: true,
+                pricePrecision: +ms.pricePlace,
+                quantityPrecision: +ms.volumePlace,
+                basePrecision: 8,
+                quotePrecision: 8,
+                tradeAmountAsset: 'base',
+                minTradeAmount: +ms.minTradeNum,
+                maxTradeAmount: +ms.maxTradeAmount,
+                commissionAsset: 'quote',
+                makerCommission: +ms.makerFeeRate,
+                takerCommission: +ms.takerFeeRate,
+                minLeverage: +ms.minLeverage,
+                maxLeverage: +ms.maxLeverage,
+            };
         }
     }
 }
