@@ -32,10 +32,10 @@ export declare class BitgetApi extends ApiClient implements ExchangeApi {
     getOrder(request: GetOrderRequest): Promise<Partial<Order>>;
     postOrder(request: PostOrderRequest): Promise<Order>;
     cancelOrder(request: CancelOrderRequest): Promise<any>;
-    fixPrice(price: number, marketSymbol: SymbolType | MarketSymbol): number;
-    fixQuantity(quantity: number, marketSymbol: SymbolType | MarketSymbol): number;
-    fixBase(base: number, marketSymbol: SymbolType | MarketSymbol): number;
-    fixQuote(quote: number, marketSymbol: SymbolType | MarketSymbol): number;
+    fixPrice(price: number, symbol: SymbolType | MarketSymbol): number;
+    fixQuantity(quantity: number, symbol: SymbolType | MarketSymbol): number;
+    fixBase(base: number, symbol: SymbolType | MarketSymbol): number;
+    fixQuote(quote: number, symbol: SymbolType | MarketSymbol): number;
     private resolveMarketSymbol;
     resolveAsset(asset: CoinType): string;
     parseAsset(asset: string): CoinType;
