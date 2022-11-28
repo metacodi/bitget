@@ -588,10 +588,10 @@ class BitgetApi extends node_api_client_1.ApiClient {
             }
         });
     }
-    fixPrice(price, symbol) { return +price.toFixed(this.resolveMarketSymbol(symbol).pricePrecision || 3); }
-    fixQuantity(quantity, symbol) { return +quantity.toFixed(this.resolveMarketSymbol(symbol).quantityPrecision || 2); }
-    fixBase(base, symbol) { return +base.toFixed(this.resolveMarketSymbol(symbol).basePrecision); }
-    fixQuote(quote, symbol) { return +quote.toFixed(this.resolveMarketSymbol(symbol).quotePrecision); }
+    fixPrice(price, symbol) { return +(+price || 0.0).toFixed(this.resolveMarketSymbol(symbol).pricePrecision || 3); }
+    fixQuantity(quantity, symbol) { return +(+quantity || 0.0).toFixed(this.resolveMarketSymbol(symbol).quantityPrecision || 2); }
+    fixBase(base, symbol) { return +(+base || 0.0).toFixed(this.resolveMarketSymbol(symbol).basePrecision); }
+    fixQuote(quote, symbol) { return +(+quote || 0.0).toFixed(this.resolveMarketSymbol(symbol).quotePrecision); }
     resolveMarketSymbol(symbol) {
         if (typeof symbol === 'object' && symbol.hasOwnProperty('symbol')) {
             return symbol;
