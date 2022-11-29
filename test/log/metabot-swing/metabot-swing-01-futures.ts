@@ -3162,3 +3162,31 @@ const long_sell_market_filled_2022_11_28_19_06_28_282 = {
  "leverage": 25
 };
 
+const balances_2022_11_29_09_52_38_169 = {
+ "balances": [
+  {
+   "asset": "USDT",
+   "available": "2993.66605670",
+   "locked": "0.00000000"
+  }
+ ]
+};
+
+const positions_2022_11_29_09_52_38_180 = {
+ "positions": []
+};
+
+const balances_2022_11_29_09_52_58_148 = {
+ "balances": [
+  {
+   "asset": "USDT",
+   "available": "2993.66605670",
+   "locked": "0.00000000"
+  }
+ ]
+};
+
+const positions_2022_11_29_09_52_58_153 = {
+ "positions": []
+};
+

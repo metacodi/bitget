@@ -588,10 +588,20 @@ class BitgetApi extends node_api_client_1.ApiClient {
             }
         });
     }
-    fixPrice(price, symbol) { return +(+price || 0.0).toFixed(this.resolveMarketSymbol(symbol).pricePrecision || 3); }
+    fixPrice(price, symbol) { return this.roundEndStep(+(+price || 0.0).toFixed(this.resolveMarketSymbol(symbol).pricePrecision || 3), symbol); }
     fixQuantity(quantity, symbol) { return +(+quantity || 0.0).toFixed(this.resolveMarketSymbol(symbol).quantityPrecision || 2); }
     fixBase(base, symbol) { return +(+base || 0.0).toFixed(this.resolveMarketSymbol(symbol).basePrecision); }
     fixQuote(quote, symbol) { return +(+quote || 0.0).toFixed(this.resolveMarketSymbol(symbol).quotePrecision); }
+    roundEndStep(price, symbol) {
+        const ms = this.resolveMarketSymbol(symbol);
+        const { pricePrecision, priceEndStep } = ms;
+        if (!priceEndStep) {
+            return price;
+        }
+        const dec = Math.pow(10, pricePrecision);
+        const res = Math.round(price * dec / priceEndStep) * priceEndStep / dec;
+        return res;
+    }
     resolveMarketSymbol(symbol) {
         if (typeof symbol === 'object' && symbol.hasOwnProperty('symbol')) {
             return symbol;
@@ -708,6 +718,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                 takerCommission: +ms.takerFeeRate,
                 minLeverage: +ms.minLeverage,
                 maxLeverage: +ms.maxLeverage,
+                priceEndStep: +ms.priceEndStep,
             };
         }
     }

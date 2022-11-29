@@ -36,6 +36,7 @@ export declare class BitgetApi extends ApiClient implements ExchangeApi {
     fixQuantity(quantity: number, symbol: SymbolType | MarketSymbol): number;
     fixBase(base: number, symbol: SymbolType | MarketSymbol): number;
     fixQuote(quote: number, symbol: SymbolType | MarketSymbol): number;
+    roundEndStep(price: number, symbol: SymbolType | MarketSymbol): number;
     private resolveMarketSymbol;
     resolveAsset(asset: CoinType): string;
     parseAsset(asset: string): CoinType;

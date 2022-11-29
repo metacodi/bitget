@@ -672,7 +672,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   // ---------------------------------------------------------------------------------------------------
 
   /** Arrodoneix la quantitat de quote asset per posar ordres. */
-  fixPrice(price: number, symbol: SymbolType | MarketSymbol) { return +(+price || 0.0).toFixed(this.resolveMarketSymbol(symbol).pricePrecision || 3); }
+  fixPrice(price: number, symbol: SymbolType | MarketSymbol) { return this.roundEndStep(+(+price || 0.0).toFixed(this.resolveMarketSymbol(symbol).pricePrecision || 3), symbol); }
   
   /** Arrodoneix la quantitat de base asset per posar ordres. */
   fixQuantity(quantity: number, symbol: SymbolType | MarketSymbol) { return +(+quantity || 0.0).toFixed(this.resolveMarketSymbol(symbol).quantityPrecision || 2); }
@@ -682,6 +682,15 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   
   /** Arrodoneix la quantitat de base asset per gestionar els balanços. */
   fixQuote(quote: number, symbol: SymbolType | MarketSymbol) { return +(+quote || 0.0).toFixed(this.resolveMarketSymbol(symbol).quotePrecision); }
+
+  roundEndStep(price: number, symbol: SymbolType | MarketSymbol): number {
+    const ms = this.resolveMarketSymbol(symbol);
+    const { pricePrecision, priceEndStep } = ms;
+    if (!priceEndStep) { return price; }
+    const dec = Math.pow(10, pricePrecision);
+    const res = Math.round(price * dec / priceEndStep) * priceEndStep / dec;
+    return res;
+  }
 
   private resolveMarketSymbol(symbol: SymbolType | MarketSymbol): MarketSymbol {
     if (typeof symbol === 'object' && symbol.hasOwnProperty('symbol')) { return symbol as MarketSymbol; }
@@ -820,6 +829,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         takerCommission: +ms.takerFeeRate,
         minLeverage: +ms.minLeverage,
         maxLeverage: +ms.maxLeverage,
+        priceEndStep: +ms.priceEndStep,
       };
     }
   }
