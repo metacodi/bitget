@@ -643,7 +643,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const posted = timestamp(moment(+data.cTime));
       const executed = timestamp(moment(+data?.uTime ? +data.uTime : moment()));
 
-      const commission = status === 'filled' || status === 'partial' ? data?.fillFee ? { commission: data?.fillFee } : undefined : undefined;
+      const commission = status === 'filled' || status === 'partial' ? +data?.fillFee ? { commission: +data?.fillFee } : undefined : undefined;
       const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
       return {
         ...id,
@@ -687,8 +687,8 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const created = status === 'post' ? timestamp(moment()) : timestamp(moment(+data.cTime));
       const posted = timestamp(moment(+data.cTime));
       const executed = timestamp(moment(status === 'filled' || status === 'partial' ? (channel === 'orders' ? +data.fillTime : +data.triggerTime) : channel === 'orders' ? +data.uTime : moment()));
-      const profit = status === 'filled' || status === 'partial' ? { profit: data?.pnl } : undefined;
-      const commission = status === 'filled' || status === 'partial' ? { commission: data?.fillFee } : undefined;
+      const profit = status === 'filled' || status === 'partial' ? { profit: +data?.pnl } : undefined;
+      const commission = status === 'filled' || status === 'partial' ? { commission: +data?.fillFee } : undefined;
       const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
       const leverage = status === 'filled' || status === 'partial' ? { leverage: +data?.lever } : undefined;
 

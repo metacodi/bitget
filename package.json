@@ -1,6 +1,6 @@
 {
   "name": "@metacodi/bitget",
-  "version": "1.0.59",
+  "version": "1.0.60",
   "description": "Bitget API Client",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,7 +39,7 @@
     "ws": "^8.4.2"
   },
   "devDependencies": {
-    "@metacodi/node-utils": "^1.0.19",
+    "@metacodi/node-utils": "^1.0.21",
     "@types/ftp": "^0.3.33",
     "@types/node": "^18.7.23",
     "@types/ws": "^8.2.2",

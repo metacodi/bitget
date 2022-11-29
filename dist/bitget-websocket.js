@@ -496,7 +496,7 @@ class BitgetWebsocket extends events_1.default {
             const created = status === 'post' ? (0, abstract_exchange_1.timestamp)((0, moment_1.default)()) : (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime));
             const posted = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime));
             const executed = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+(data === null || data === void 0 ? void 0 : data.uTime) ? +data.uTime : (0, moment_1.default)()));
-            const commission = status === 'filled' || status === 'partial' ? (data === null || data === void 0 ? void 0 : data.fillFee) ? { commission: data === null || data === void 0 ? void 0 : data.fillFee } : undefined : undefined;
+            const commission = status === 'filled' || status === 'partial' ? +(data === null || data === void 0 ? void 0 : data.fillFee) ? { commission: +(data === null || data === void 0 ? void 0 : data.fillFee) } : undefined : undefined;
             const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
             return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, id), { exchangeId, side, type, stop: 'normal', status, symbol }), baseQuantity), quoteQuantity), price), { created,
                 posted,
@@ -518,8 +518,8 @@ class BitgetWebsocket extends events_1.default {
             const created = status === 'post' ? (0, abstract_exchange_1.timestamp)((0, moment_1.default)()) : (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime));
             const posted = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(+data.cTime));
             const executed = (0, abstract_exchange_1.timestamp)((0, moment_1.default)(status === 'filled' || status === 'partial' ? (channel === 'orders' ? +data.fillTime : +data.triggerTime) : channel === 'orders' ? +data.uTime : (0, moment_1.default)()));
-            const profit = status === 'filled' || status === 'partial' ? { profit: data === null || data === void 0 ? void 0 : data.pnl } : undefined;
-            const commission = status === 'filled' || status === 'partial' ? { commission: data === null || data === void 0 ? void 0 : data.fillFee } : undefined;
+            const profit = status === 'filled' || status === 'partial' ? { profit: +(data === null || data === void 0 ? void 0 : data.pnl) } : undefined;
+            const commission = status === 'filled' || status === 'partial' ? { commission: +(data === null || data === void 0 ? void 0 : data.fillFee) } : undefined;
             const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
             const leverage = status === 'filled' || status === 'partial' ? { leverage: +(data === null || data === void 0 ? void 0 : data.lever) } : undefined;
             return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, id), { exchangeId, side, type, stop: 'normal', trade, status, symbol,
