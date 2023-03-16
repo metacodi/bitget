@@ -28,15 +28,15 @@ function writeLog(variable: string, data: any, fileName?: string) {
 
 const unixTime = () => timestamp().replace(new RegExp(`[ :.-]`, 'g'), '_');
 
-const testMarketWs = async () => {
+const testUserWs = async () => {
   try {
 
-    console.log('---------------- Market WebSocket TEST ----------------------');
+    console.log('---------------- User WebSocket TEST ----------------------');
 
     // const market: MarketType = 'spot';
     const market: MarketType = 'futures';
 
-    const isTest = true;
+    const isTest = false;
 
     const options: WebsocketOptions = {
       streamType: 'user',
@@ -74,7 +74,7 @@ const testMarketWs = async () => {
         return props[0];
       }
     }
-    const fileName = `log/metabot-swing/metabot-swing-01-${market}.ts`;
+    const fileName = `log/metabot-scalping/metabot-scalping-01-${market}.ts`;
     ws.accountUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
     ws.orderUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
 
@@ -85,4 +85,4 @@ const testMarketWs = async () => {
   }
 };
 
-testMarketWs();
+testUserWs();

@@ -51,13 +51,13 @@ const testMarketWs = async () => {
     //  PUBLIC
     // ---------------------------------------------------------------------------------------------------
 
-    const marketSymbol = await ws.api.getMarketSymbol(symbol);
-    console.log(marketSymbol);
-    console.log(JSON.stringify(marketSymbol, null, '  '));
+    // const marketSymbol = await ws.api.getMarketSymbol(symbol);
+    // console.log(marketSymbol);
+    // console.log(JSON.stringify(marketSymbol, null, '  '));
 
 
-    // const ticker = ws.priceTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }).subscribe(data => console.log('priceTicker =>', data));
-    // setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 5000);
+    const ticker = ws.priceTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }).subscribe(data => console.log('priceTicker =>', data));
+    setTimeout(() => { console.log('Test => Unsubscribe ticker'); ticker.unsubscribe(); }, 10000);
 
     // const klines = ws.klineTicker({ baseAsset: 'BTC', quoteAsset: 'USDT' }, '1m').subscribe(data => console.log('klines =>', data));    
     // setTimeout(() => { console.log('Test => Unsubscribe klines'); klines.unsubscribe(); }, 5000);

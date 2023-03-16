@@ -1,6 +1,6 @@
 {
   "name": "@metacodi/bitget",
-  "version": "1.0.61",
+  "version": "1.0.62",
   "description": "Bitget API Client",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,17 +31,17 @@
   "homepage": "https://github.com/metacodi/bitget#readme",
   "license": "ISC",
   "peerDependencies": {
-    "@metacodi/abstract-exchange": "^1.0.100",
-    "@metacodi/node-api-client": "^1.0.15",
+    "@metacodi/abstract-exchange": "^1.0.101",
+    "@metacodi/node-api-client": "^1.0.16",
     "axios": "^1.1.3",
     "isomorphic-ws": "^4.0.1",
-    "rxjs": "~6.6.0",
+    "rxjs": "~7.5.0",
     "ws": "^8.4.2"
   },
   "devDependencies": {
-    "@metacodi/node-utils": "^1.0.21",
+    "@metacodi/node-utils": "^1.0.27",
     "@types/ftp": "^0.3.33",
-    "@types/node": "^18.7.23",
+    "@types/node": "^18.11.19",
     "@types/ws": "^8.2.2",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
