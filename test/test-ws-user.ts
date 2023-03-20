@@ -36,7 +36,7 @@ const testUserWs = async () => {
     // const market: MarketType = 'spot';
     const market: MarketType = 'futures';
 
-    const isTest = false;
+    const isTest = true;
 
     const options: WebsocketOptions = {
       streamType: 'user',
@@ -57,7 +57,7 @@ const testUserWs = async () => {
     // const orderUpdate = ws.orderUpdate().subscribe((data: any) => writeLog(`o_${unixTime()}`, data, `log/metabot-swing-01-${market}.ts`));
     // const accountUpdate = ws.accountUpdate(symbol).subscribe(data => console.log('accountUpdate =>', data));
 
-    // const orderUpdate = ws.orderUpdate().subscribe(data => console.log('orderUpdate =>', data));
+    const orderUpdate = ws.orderUpdate().subscribe(data => console.log('orderUpdate =>', data));
     // const orderUpdate = ws.orderUpdate(symbol).subscribe(data => console.log('orderUpdate =>', data));
     
     // setTimeout(() => { console.log('Close...'); ws.close(); }, 120000);
@@ -74,7 +74,7 @@ const testUserWs = async () => {
         return props[0];
       }
     }
-    const fileName = `log/metabot-scalping/metabot-scalping-01-${market}.ts`;
+    const fileName = `log/test-cancel-TPSL-${market}.ts`;
     ws.accountUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
     ws.orderUpdate().subscribe((data: any) => { writeLog(`${resolveConstant(data)}_${unixTime()}`, data, fileName); });
 

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parsetMarginMode = exports.parsetPositionTradeSide = exports.parsePlanStatus = exports.formatOrderStatus = exports.parseOrderStatus = exports.formatStopType = exports.parseStopType = exports.formatOrderType = exports.parseOrderType = exports.parsetOrderAlgoTradeSide = exports.parsetOrderTradeSide = exports.formatOrderTradeSide = exports.parsetOrderSideFutures = exports.formatOrderSide = exports.parseOrderSide = void 0;
+exports.parsetMarginMode = exports.parsetPositionTradeSide = exports.parsePlanStatus = exports.formatOrderStatus = exports.parseOrderStatus = exports.formatStopType = exports.parsePlanType = exports.parseStopType = exports.formatOrderType = exports.parseOrderType = exports.parsetOrderAlgoTradeSide = exports.parsetOrderTradeSide = exports.formatOrderTradeSide = exports.parsetOrderSideFutures = exports.formatOrderSide = exports.parseOrderSide = void 0;
 const parseOrderSide = (side) => {
     switch (side) {
         case 'buy': return 'buy';
@@ -82,6 +82,17 @@ const parseStopType = (type) => {
     }
 };
 exports.parseStopType = parseStopType;
+const parsePlanType = (type) => {
+    switch (type) {
+        case 'pl': return 'normal';
+        case 'tp': return 'profit';
+        case 'sl': return 'loss';
+        case 'ptp': return 'profit-position';
+        case 'psl': return 'loss-position';
+        default: throw ({ message: `No s'ha implementat el parser Bitget pel PlanType type '${type}'` });
+    }
+};
+exports.parsePlanType = parsePlanType;
 const formatStopType = (type) => {
     switch (type) {
         case 'normal': return 'normal_plan';

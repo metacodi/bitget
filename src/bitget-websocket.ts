@@ -10,7 +10,7 @@ import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, W
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
-import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode, parsetPositionTradeSide, parsetOrderAlgoTradeSide } from './bitget-parsers';
+import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode, parsetPositionTradeSide, parsetOrderAlgoTradeSide, parsePlanType } from './bitget-parsers';
 
 
 /**
@@ -691,10 +691,11 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const commission = status === 'filled' || status === 'partial' ? { commission: +data?.fillFee } : undefined;
       const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
       const leverage = status === 'filled' || status === 'partial' ? { leverage: +data?.lever } : undefined;
+      const stop = channel === 'ordersAlgo' ? parsePlanType(data.planType) : 'normal';
 
       return {
         ...id,
-        exchangeId, side, type, stop: 'normal', trade, status, symbol,
+        exchangeId, side, type, stop, trade, status, symbol,
         baseQuantity,   // quantitat satifeta baseAsset
         quoteQuantity,  // quantitat satifeta quoteAsset
         price,           // preu per les ordres de tipus limit, les market l'ignoren pq ja entren a mercat.

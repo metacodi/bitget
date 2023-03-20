@@ -71,8 +71,26 @@ export type accountType =
   'USDT_MIX' //	USDT Future Account
   ;
 
+/** {@link https://bitgetlimited.github.io/apidoc/en/mix/#plantype API planType} */
 export type BitgetStopType = 
-  'normal_plan' | 'profit_plan' | 'loss_plan'
+'normal_plan' | 'profit_plan' | 'loss_plan'
+
+/** {@link https://bitgetlimited.github.io/apidoc/en/mix/#websocket-plantype Websocket planType} */
+export type BitgetPlanType = 
+  'pl' | // default, push data whenever a plan order is created/cancelled/modified/triggered
+  'tp' | // take profit event, push data when a take profit order(partial position) is created/cancelled/modified/triggered
+  'sl' | // stop loss event, push data when a stop loss order(partial position) is created/cancelled/modified/triggered
+  'ptp' | // position take profit event, push data when a position take profit order(whole position) is created/cancelled/modified/triggered
+  'psl' // position stop loss event, push data when a position stop loss order(whole position) is created/cancelled/modified/triggered
+;
+
+
+
+
+
+
+
+export const v: BitgetPlanType = 'pl';
 
 // ---------------------------------------------------------------------------------------------------
 //  Websocket

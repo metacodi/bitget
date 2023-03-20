@@ -12,6 +12,8 @@ export declare type BitgetPostPosiSide = 'long' | 'short';
 export declare type BitgetOrderType = 'market' | 'limit';
 export declare type accountType = 'EXCHANGE' | 'OTC_SGD' | 'CONTRACT' | 'USD_MIX' | 'USDT_MIX';
 export declare type BitgetStopType = 'normal_plan' | 'profit_plan' | 'loss_plan';
+export declare type BitgetPlanType = 'pl' | 'tp' | 'sl' | 'ptp' | 'psl';
+export declare const v: BitgetPlanType;
 export declare type BitgetWsChannelType = 'ticker' | `candle${KlineIntervalType}` | 'account' | 'positions' | 'balance_and_position' | 'orders' | 'ordersAlgo' | 'liquidation-warning';
 export declare type BitgetWsEventType = 'pong' | 'login' | 'subscribe' | 'unsubscribe' | 'error';
 export interface BitgetWsLoginRequest {

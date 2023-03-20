@@ -522,7 +522,8 @@ class BitgetWebsocket extends events_1.default {
             const commission = status === 'filled' || status === 'partial' ? { commission: +(data === null || data === void 0 ? void 0 : data.fillFee) } : undefined;
             const commissionAsset = status === 'filled' || status === 'partial' ? { commissionAsset: symbol.quoteAsset } : undefined;
             const leverage = status === 'filled' || status === 'partial' ? { leverage: +(data === null || data === void 0 ? void 0 : data.lever) } : undefined;
-            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, id), { exchangeId, side, type, stop: 'normal', trade, status, symbol,
+            const stop = channel === 'ordersAlgo' ? (0, bitget_parsers_1.parsePlanType)(data.planType) : 'normal';
+            return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, id), { exchangeId, side, type, stop, trade, status, symbol,
                 baseQuantity,
                 quoteQuantity,
                 price }), stopPrice), { created,

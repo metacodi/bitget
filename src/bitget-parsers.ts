@@ -2,7 +2,7 @@ import moment, { unitOfTime } from 'moment';
 
 import { timestamp, SymbolType, MarketType, MarketPrice, KlineIntervalType, Order, OrderSide, OrderType, OrderStatus, TradeSide, StopType, PositionSide, MarginMode } from '@metacodi/abstract-exchange';
 
-import { BitgetMarginMode, BitgetOrderSide, BitgetOrderStatus, BitgetOrderTradeSide, BitgetOrderType, BitgetPlanStatus, BitgetPostOrderSide, BitgetStopType } from './bitget.types';
+import { BitgetMarginMode, BitgetOrderSide, BitgetOrderStatus, BitgetOrderTradeSide, BitgetOrderType, BitgetPlanStatus, BitgetPlanType, BitgetPostOrderSide, BitgetStopType } from './bitget.types';
 
 
 export const parseOrderSide = (side: BitgetOrderSide): OrderSide => {
@@ -54,9 +54,9 @@ export const parsetOrderAlgoTradeSide = (tradeSide: BitgetOrderTradeSide): Trade
     case 'open_long': 
     case 'close_long': 
       return 'long';
-      case 'open_short': 
-      case 'close_short': 
-       return 'short';
+    case 'open_short': 
+    case 'close_short': 
+      return 'short';
     default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderAlgoTradeSide type '${tradeSide}'` });
   }
 }
@@ -83,6 +83,17 @@ export const parseStopType = (type: BitgetStopType): StopType => {
     case 'profit_plan': return 'profit';
     case 'loss_plan': return 'loss';
     default: throw ({ message: `No s'ha implementat el parser Bitget pel StopType type '${type}'` });
+  }
+}
+
+export const parsePlanType = (type: BitgetPlanType): StopType => {
+  switch (type) {
+    case 'pl': return 'normal';
+    case 'tp': return 'profit';
+    case 'sl': return 'loss';
+    case 'ptp': return 'profit-position';
+    case 'psl': return 'loss-position';
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel PlanType type '${type}'` });
   }
 }
 
