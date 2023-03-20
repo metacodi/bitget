@@ -675,7 +675,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const id = clientId.includes('-') ? { id: clientId } : undefined;
       const exchangeId = id ? channel === 'orders' ? data.ordId : data.id : clientId;
       // ---------------------------------------------------------------------------------------------------
-      const trade = channel === 'orders' ? parsetOrderTradeSide(data.posSide) : parsetOrderAlgoTradeSide(data.posSide);
+      const trade = channel === 'orders' ? parsetOrderTradeSide(data.posSide) : parsetOrderAlgoTradeSide(data.tS);
       const symbol = this.api.parseSymbol(data.instId);
       const side = parseOrderSide(data.side);
       const type = parseOrderType(data.ordType);

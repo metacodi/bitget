@@ -506,7 +506,7 @@ class BitgetWebsocket extends events_1.default {
             const clientId = channel === 'orders' ? data.clOrdId : data.cOid;
             const id = clientId.includes('-') ? { id: clientId } : undefined;
             const exchangeId = id ? channel === 'orders' ? data.ordId : data.id : clientId;
-            const trade = channel === 'orders' ? (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide) : (0, bitget_parsers_1.parsetOrderAlgoTradeSide)(data.posSide);
+            const trade = channel === 'orders' ? (0, bitget_parsers_1.parsetOrderTradeSide)(data.posSide) : (0, bitget_parsers_1.parsetOrderAlgoTradeSide)(data.tS);
             const symbol = this.api.parseSymbol(data.instId);
             const side = (0, bitget_parsers_1.parseOrderSide)(data.side);
             const type = (0, bitget_parsers_1.parseOrderType)(data.ordType);
