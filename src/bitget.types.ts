@@ -20,15 +20,24 @@ export type BitgetOrderForceType =
   'post_only' | //	Maker Only
   'fok' | //	Fill Or Kill（FOK）
   'ioc'  //	Immediate-Or-Cancel（IOC）
-  ;
+;
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#status } */
 export type BitgetOrderStatus =
-  'new' | //	Unfilled
-  'partial-fill' | //	Partially filled
-  'full-fill' | //	Fully filled
+  'new' | //	new order, pending match in orderbook
+  'partial_fill' | //	Partially filled
+  'full_fill' | //	Fully filled
   'cancelled' //	Cancelled
-  ;
+;
+
+/** {@link https://bitgetlimited.github.io/apidoc/en/mix/#state } */
+export type BitgetFuturesOrderStatus =
+  'init' | //	initial order, inserted into DB
+  'new' | //	new order, pending match in orderbook
+  'partially_filled' | //	Partially filled
+  'filled' | //	Fully filled
+  'canceled' //	Cancelled
+;
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#planstatus } */
 export type BitgetPlanStatus =
@@ -43,24 +52,30 @@ export type BitgetPlanStatus =
 export type BitgetOrderSide = 'buy' | 'sell';
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#tradeside } */
-export type BitgetOrderTradeSide = 
-'open_long' |
-'open_short' |
-'close_long' |
-'close_short' |
-'burst_close_long' |
-'burst_close_short' |
-'offset_close_long' |
-'offset_close_short' 
+export type BitgetFuturesTradeSide = 
+  // ATENCIÓ: Només està `doble_hold`, falten els valors per `single_hold`.
+  'open_long' | // open long
+  'open_short' | // open short
+  'close_long' | // close long
+  'close_short' | // close short
+  'reduce_close_long' | // Force reduce long position
+  'reduce_close_short' | // Force reduce short position
+  'offset_close_long' | // Force netting: close long position
+  'offset_close_short' | // Force netting: close short position
+  'burst_close_long' | // Force liquidation: close long position
+  'burst_close_short' | // Force liquidation: close short position
+  'delivery_close_long' | // Future delivery close long
+  'delivery_close_short' // Future delivery close short
 ;
-export type BitgetPostOrderSide = 'long' | 'short';
-export type BitgetPostPosiSide = 'long' | 'short';
+
+/** {@link https://bitgetlimited.github.io/apidoc/en/mix/#holdside Position Direction} */
+export type BitgetTradeSide = 'long' | 'short';
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#ordertype } */
 export type BitgetOrderType =
   'market' | // market order
   'limit' // limit order
-  ;
+;
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#accounttype } */
 export type accountType =
@@ -69,11 +84,10 @@ export type accountType =
   'CONTRACT' | //	contract account
   'USD_MIX' | //	Mix account
   'USDT_MIX' //	USDT Future Account
-  ;
+;
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#plantype API planType} */
-export type BitgetStopType = 
-'normal_plan' | 'profit_plan' | 'loss_plan'
+export type BitgetStopType = 'normal_plan' | 'profit_plan' | 'loss_plan';
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#websocket-plantype Websocket planType} */
 export type BitgetPlanType = 
@@ -84,13 +98,6 @@ export type BitgetPlanType =
   'psl' // position stop loss event, push data when a position stop loss order(whole position) is created/cancelled/modified/triggered
 ;
 
-
-
-
-
-
-
-export const v: BitgetPlanType = 'pl';
 
 // ---------------------------------------------------------------------------------------------------
 //  Websocket

@@ -32,23 +32,94 @@ const testApi = async () => {
 
     console.log('---------------- API TEST ----------------------');
 
-    const isTest = true;
+    const isTest = false;
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
-      // market: 'spot',
-      market: 'futures',
+      market: 'spot',
+      // market: 'futures',
       isTest,
     } as any;
 
     const api = new BitgetApi(options);
 
-    console.log('getExchangeInfo() =>', await api.getExchangeInfo());
-    console.log('getAccountInfo() =>', await api.getAccountInfo());
+    const timestamp = unixTime();
+
+    const exchangeInfo = await api.getExchangeInfo();
+    console.log('getExchangeInfo() =>', exchangeInfo);
+
+    const accountInfo = await api.getAccountInfo();
+    accountInfo.balances = (accountInfo.balances || []).filter(b => !!b.balance);
+    accountInfo.positions = (accountInfo.positions || []).map(p => ({ ...p, ...{ symbol: JSON.stringify(p.symbol) } as any })).filter(p => !!p.positionAmount);
+    console.log('getAccountInfo() =>', accountInfo);
+    // writeLog(`accountInfo_${options.market}_${timestamp}`, accountInfo, 'results/accountInfo.ts');
+
+    const quoteAsset = 'USDT';
+    const baseAsset: any = 'BTC';
+    // const productType = await api.getMarketSymbol({ quoteAsset, baseAsset });
+    const productType = api.exchangeSymbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
+    const startTime = options.market === 'futures' ? { startTime: moment().subtract(1, 'month').unix() * 1000 } : undefined;
+    const endTime = options.market === 'futures' ? { endTime: moment().unix() * 1000 } : undefined;
+    // const endTime = options.market === 'futures' ? { endTime: moment().subtract(1, 'month').add(20, 'days').unix() * 1000 } : undefined;
+    const getHistoryOrders = await api.getHistoryOrders( { symbol: { quoteAsset, baseAsset }, ...startTime, ...endTime });
+    const getHistoryOrders_raw = await api.getHistoryOrders( { symbol: { quoteAsset, baseAsset }, ...startTime, ...endTime }, true);
+    writeLog(`${options.market}_${productType.symbol}_${timestamp}`, getHistoryOrders, `results/getHistoryOrders_${options.market}_${productType.symbol}.ts`);
+    writeLog(`${options.market}_${productType.symbol}_raw_${timestamp}`, getHistoryOrders_raw, `results/getHistoryOrders_${options.market}_${productType.symbol}_raw.ts`);
+
+    // const results: any[] = [];
+    // const getHistoryOrders: any[] = [];
+    // do {
+    //   const startTime = options.market === 'futures' ? { startTime: moment().subtract(1, 'month').unix() * 1000 } : undefined;
+    //   const endTime = options.market === 'futures' ? { endTime: moment().subtract(1, 'month').add(10, 'days').unix() * 1000 } : undefined;
+    //   const results = await api.getHistoryOrders( { symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, ...startTime, ...endTime }, true);
+    //   writeLog(`getHistoryOrders_${options.market}_${endTime}`, getHistoryOrders, `results/getHistoryOrders_${options.market}.ts`);
+    //   writeLog(`getHistoryOrders_${options.market}_raw`, getHistoryOrders_raw, `results/getHistoryOrders_${options.market}_raw.ts`);
+
+    // } while (results.length > 0);
+
+    // const startTime = options.market === 'futures' ? { startTime: moment().subtract(1, 'month').unix() * 1000 } : undefined;
+    // const endTime = options.market === 'futures' ? { endTime: moment().unix() * 1000 } : undefined;
+    // const getHistoryOrders = await api.getHistoryOrders( { symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, ...startTime, ...endTime });
+    // const getHistoryOrders_raw = await api.getHistoryOrders( { symbol: { quoteAsset: 'USDT', baseAsset: 'BTC'}, ...startTime, ...endTime }, true);
+    // writeLog(`getHistoryOrders_${options.market}`, getHistoryOrders, `results/getHistoryOrders_${options.market}.ts`);
+    // writeLog(`getHistoryOrders_${options.market}_raw`, getHistoryOrders_raw, `results/getHistoryOrders_${options.market}_raw.ts`);
+
+    const getOpenOrders = await api.getOpenOrders(options.market === 'spot' ? {} : { symbol : { quoteAsset, baseAsset }});
+    const getOpenOrders_raw = await api.getOpenOrders(options.market === 'spot' ? {} : { symbol : { quoteAsset, baseAsset }}, true);
+    writeLog(`getOpenOrders_${options.market}_${timestamp}`, getOpenOrders, 'results/getOpenOrders.ts');
+    writeLog(`getOpenOrders_${options.market}_raw_${timestamp}`, getOpenOrders_raw, 'results/getOpenOrders_raw.ts');
+
+    // const url = `test/results/getHistoryOrders_futures_raw.ts`;
+    // const content: {[key: string]: any}[] = await Resource.open(url, { parseJsonFile: true })
+    // console.log(content.length);
+    // const headers = content.reduce((all: string[], c) => [...all, ...Object.keys(c).filter(k => !all.includes(k))], []);
+    // // const values = content.map(v => ({...v, priceAvg: v.priceAvg || 0, presetStopLossPrice: v.presetStopLossPrice || 0, presetTakeProfitPrice: v.presetTakeProfitPrice || 0 }));
+    // const parseValue = (k: string, v: any): any => {
+    //   if (typeof v === 'number') {
+    //     return `${v}`.replace('.', ',');
+    //   } else if (k.includes('Time')) {
+    //     return moment(+v).format('YYYY-MM-DD HH:mm:ss');
+    //   } else {
+    //     return v;
+    //   }
+    // }
+    // const values = content.map(v => {
+    //   const o: any = {};
+    //   headers.map(k => o[k] = v.hasOwnProperty(k) ? parseValue(k, v[k]) : '');
+    //   return o;
+    // });
+    // const urlCSV = `test/results/getHistoryOrders_futures_raw.csv`;
+    // fs.appendFileSync(urlCSV, `${headers.join(';')}\n${values.map(v => Object.values(v).join(';')+'\n')}`);
 
     // const getOpenOrders = await api.getOpenOrders( { symbol : { quoteAsset: 'USDT', baseAsset: 'BTC'}});
-    // console.log('getOpenOrders() =>', getOpenOrders );
-    // writeLog(`getOpenOrders_${options.market}`, getOpenOrders, 'results/getOpenOrders.ts');
+    // const getOpenOrders_raw = await api.getOpenOrders( { symbol : { quoteAsset: 'USDT', baseAsset: 'BTC'}}, true);
+    // writeLog(`getOpenOrders_${options.market}_${timestamp}`, getOpenOrders, 'results/getOpenOrders.ts');
+    // writeLog(`getOpenOrders_${options.market}_raw_${timestamp}`, getOpenOrders_raw, 'results/getOpenOrders_raw.ts');
+
+    // const getOpenOrders_SOL = await api.getOpenOrders( { symbol : { quoteAsset: 'USDT' as any, baseAsset: 'SOL' as any}});
+    // const getOpenOrders_SOL_raw = await api.getOpenOrders( { symbol : { quoteAsset: 'USDT' as any, baseAsset: 'SOL' as any}}, true);
+    // writeLog(`getOpenOrders_${options.market}_SOL`, getOpenOrders, 'results/getOpenOrders.ts');
+    // writeLog(`getOpenOrders_${options.market}_SOL_raw`, getOpenOrders_raw, 'results/getOpenOrders_raw.ts');
 
     
     // Entramos a mercado en Long

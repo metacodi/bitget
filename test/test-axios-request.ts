@@ -2,8 +2,12 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
 import { Terminal } from "@metacodi/node-utils";
 
-
-class TestErr {
+/**
+ * Test request `axios()` encapsulat en una promise i cridat dins un try catch.
+ *
+ * Per provar el test establir una url incorrecte que retorni un status diferent a 200.
+ */
+class AxiosRequestTest {
 
   async axiosRequest(symbol: string) {
     const method = 'GET';
@@ -46,7 +50,7 @@ class TestErr {
     throw 'Excepció provocada per errMethod!';
   }
 
-  metode(): Promise<any> {
+  axiosRequestInPromiseAll(): Promise<any> {
     return new Promise<any>(async (resolve: any, reject: any) => {
       try {
         const results: any[] = await Promise.all(['BTCUSDT_SPBL', 'BTCUSDT_SPBL'].map(async symbol => {
@@ -67,10 +71,10 @@ const testApi = async () => {
 
     Terminal.title(`Test captura d'errors`)
 
-    const test = new TestErr();
+    const test = new AxiosRequestTest();
 
-    const res = await test.metode();
     // const res = await test.axiosRequest();
+    const res = await test.axiosRequestInPromiseAll();
     console.log(res);
 
     // throw `Excepció provocada!`;

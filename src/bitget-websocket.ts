@@ -10,7 +10,7 @@ import { ExchangeWebsocket, WebsocketOptions, WsStreamType, WsConnectionState, W
 
 import { BitgetApi } from './bitget-api';
 import { BitgetInstrumentType, BitgetWsChannelEvent, BitgetWsChannelType, BitgetWsEventType, BitgetWsSubscriptionArguments, BitgetWsSubscriptionRequest } from './bitget.types';
-import { formatOrderSide, formatOrderType, formatOrderTradeSide, parseOrderSide, parseOrderType, parsetOrderTradeSide, parseOrderStatus, parsePlanStatus, parsetMarginMode, parsetPositionTradeSide, parsetOrderAlgoTradeSide, parsePlanType } from './bitget-parsers';
+import { formatOrderSide, formatOrderType, formatFuturesTradeSide, parseOrderSide, parseOrderType, parseFuturesTradeSide, parseOrderStatus, parsePlanStatus, parseMarginMode, parsePositionTradeSide, parsePlanType } from './bitget-parsers';
 
 
 /**
@@ -597,13 +597,13 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const dataPositions = ev.data;
       dataPositions.map(data => {
         const symbol = this.api.parseSymbol(data.instId);
-        const positionSide = parsetPositionTradeSide(data.holdSide);
+        const positionSide = parsePositionTradeSide(data.holdSide);
         const marginAsset = symbol.quoteAsset;
         const positionAmount = +data.total;
         const leverage = +data.leverage;
         const price = +data.averageOpenPrice;
         const unrealisedPnl = +data.upl;
-        const marginType = parsetMarginMode(data.marginMode);
+        const marginType = parseMarginMode(data.marginMode);
         const liquidationPrice = +data.liqPx;
         positions.push({ symbol, positionSide, marginAsset, positionAmount, price, leverage, unrealisedPnl, marginType, liquidationPrice });
       });
@@ -675,7 +675,7 @@ export class BitgetWebsocket extends EventEmitter implements ExchangeWebsocket {
       const id = clientId.includes('-') ? { id: clientId } : undefined;
       const exchangeId = id ? channel === 'orders' ? data.ordId : data.id : clientId;
       // ---------------------------------------------------------------------------------------------------
-      const trade = channel === 'orders' ? parsetOrderTradeSide(data.posSide) : parsetOrderAlgoTradeSide(data.tS);
+      const trade = parseFuturesTradeSide(channel === 'orders' ? data.posSide : data.tS);
       const symbol = this.api.parseSymbol(data.instId);
       const side = parseOrderSide(data.side);
       const type = parseOrderType(data.ordType);

@@ -2,15 +2,15 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { createHmac } from 'crypto';
 import moment, { unitOfTime } from 'moment';
 
-import { GetOpenOrdersRequest, timestamp } from '@metacodi/abstract-exchange';
+import { GetOpenOrdersRequest, StopType, timestamp } from '@metacodi/abstract-exchange';
 import { ExchangeApi, CoinType, MarketType, HttpMethod, ApiOptions, ApiRequestOptions, AccountInfo } from '@metacodi/abstract-exchange';
 import { ExchangeInfo, SymbolType, MarketPrice, MarketKline, KlinesRequest, Balance, Position, MarginMode } from '@metacodi/abstract-exchange';
 import { LeverageInfo, Order, GetOrderRequest, PostOrderRequest, CancelOrderRequest, MarketSymbol, Limit } from '@metacodi/abstract-exchange';
 import { calculateCloseTime, KlineIntervalType, SetLeverage, GetHistoryOrdersRequest } from '@metacodi/abstract-exchange';
 import { ApiClient } from '@metacodi/node-api-client';
 
-import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parsetOrderTradeSide, parsetOrderSideFutures, parseStopType, parsetPositionTradeSide } from './bitget-parsers';
-import { formatOrderSide, formatOrderType, formatOrderTradeSide } from './bitget-parsers';
+import { parseOrderSide, parseOrderStatus, parseOrderType, parsePlanStatus, parseFuturesTradeSide, parseFuturesOrderSide, parseStopType, parsePositionTradeSide, parseFuturesOrderStatus } from './bitget-parsers';
+import { formatOrderSide, formatOrderType, formatFuturesTradeSide } from './bitget-parsers';
 
 
 /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#request-interaction Request Interaction} */
@@ -96,7 +96,8 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
       this.exchangeSymbols.push(...symbolsList.data.map(symbol => ({ ...symbol, productType: 'spbl' })));
       return Promise.resolve({ limits: this.limits });
     } else {
-      await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
+      // await Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map(async productType => {
+      await Promise.all(['umcbl', 'dmcbl'].map(async productType => {
         if (this.isTest) { productType = `s${productType}`; }
         /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-symbols Get Symbols} */
         const errorMessage = { code: 500, message: `No s'ha pogut obtenir el llistat dels símbols disponibles pel producte '${productType}' de futurs a Bitget.` };
@@ -110,7 +111,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   /** Les propietats `minLeverage` i `maxLeverage` potser no estan definides. S'estableixen amb una crida a `getMarketSymbol()`. */
   get symbols(): MarketSymbol[] { return this.exchangeSymbols.map(s => this.parseMarketSymbol(s)); }
 
-  private findMarketSymbol(symbol: SymbolType): any {
+  findMarketSymbol(symbol: SymbolType): any {
     const baseCoin = this.resolveAsset(symbol.baseAsset);
     const quoteCoin = this.resolveAsset(symbol.quoteAsset);
     const found = this.exchangeSymbols.find(s => s.baseCoin === baseCoin && s.quoteCoin === quoteCoin);
@@ -339,7 +340,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
             leverage: +p.leverage,
             unrealisedPnl: +p.unrealizedPL,
             marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
-            positionSide: parsetPositionTradeSide(p.holdSide),
+            positionSide: parsePositionTradeSide(p.holdSide),
           };
           return position;
         }));
@@ -392,25 +393,35 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
   //  Account Orders
   // ---------------------------------------------------------------------------------------------------
 
-  getHistoryOrders(request: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
+  private extractCommission(feeDetail: string) {
+    if (!feeDetail) { return undefined; }
+    const parsedFee = JSON.parse(feeDetail);
+    if (!Object.keys(parsedFee).length) { return undefined; }
+    const asset = Object.keys(parsedFee)[0] as CoinType;
+    // if (!parsedFee[asset] || !parsedFee[asset].totalFee) { return undefined; }
+    const commission = parsedFee[asset].totalFee;
+    return { commission, commissionAsset: asset };
+  }
 
   /**
-   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List - SPOT }
-   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES }
-   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List}
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-history Get order history - SPOT }
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-history-orders Get History Orders - FUTURES }
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-history-plan-orders-tpsl Get History Plan Orders (TPSL) - FUTURES }
    */
-  async getOpenOrders(request: GetOpenOrdersRequest): Promise<Partial<Order>[]> {
+  async getHistoryOrders(request: GetHistoryOrdersRequest, raw = false): Promise<Partial<Order>[]> {
     const { baseAsset, quoteAsset } = request.symbol;
-    const marginCoin = this.resolveAsset(quoteAsset);
     const symbol = this.resolveSymbol(request.symbol);
-    const productType = this.resolveProductType(request.symbol);
-    const errorMessage = { code: 500, message: `No s'han pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+    const errorMessage = { code: 500, message: `No s'han pogut obtenir les orders històriques del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
     const results: Partial<Order>[] = [];
     if (this.market === 'spot') {
-      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List} */
-      const ordersList: { data: any[] } = await this.post(`api/spot/v1/trade/open-orders`, { params: { symbol }, errorMessage });
+      const after = request.afterExchangeId ? { after: request.afterExchangeId } : undefined;
+      const before = request.beforeExchangeId ? { before: request.beforeExchangeId } : undefined;
+      const limit = request.limit ? { limit: request.limit } : undefined;
+      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-history Get order history} */
+      const ordersList: { data: any[] } = await this.post(`api/spot/v1/trade/history`, { params: { symbol, ...after, ...before, ...limit }, errorMessage });
       results.push(...ordersList.data.map(o => {
-        // return o as any;
+        const commission = this.extractCommission(o.feeDetail);
+        if (raw) { return o as any; }
         return {
           id: o.clientOrderId,
           exchangeId: o.orderId,
@@ -418,23 +429,119 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
           type: parseOrderType(o.orderType),
           status: parseOrderStatus(o.status),
           symbol: this.parseSymbol(o.symbol),
-          baseQuantity: +o.quantity,
-          price: +o.price,
+          price: o.fillPrice ? +o.fillPrice : +o.price,
+          // NOTA: Comprovem sempre `fillPrice` enlloc de `fillQuantity` o `fillTotalAmount` pq a poden vadre "0".
+          baseQuantity: o.fillPrice ? +o.fillQuantity : +o.quantity,
+          quoteQuantity: o.fillPrice ? +o.fillTotalAmount : +o.price * +o.quantity,
+          ...commission,
           created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
         };
       }));
     } else {
-      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order} */
-      const ordersList: { data: any[] } = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params: { productType, marginCoin }, errorMessage });
-      results.push(...ordersList.data.map(o => {
-        // return o as any;
+      const startTime = request.startTime ? { startTime: request.startTime } : undefined;
+      const endTime = request.endTime ? { endTime: request.endTime } : undefined;
+      const pageSize = { pageSize: request.pageSize || 1000 };
+      if (!startTime) { return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}. L'hora d'inici (startTime) és obligatoria per 'futures'.`); }
+      if (!endTime) { return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}. L'hora de finalització (endTime) és obligatoria per 'futures'.`); }
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-history-orders Get History Orders} */
+      const response: { data: { orderList: any[] }} = await this.get(`api/mix/v1/order/history`, { params: { symbol, ...startTime, ...endTime, ...pageSize }, errorMessage });
+      results.push(...(response.data.orderList || []).map(o => {
+        const commission = o.fee ? { commission: +o.fee, commissionAsset: quoteAsset } : undefined;
+        const stopLoss: { stop: StopType; stopPrice: number } = o.presetStopLossPrice ? { stop: 'loss', stopPrice: +o.presetStopLossPrice } : undefined;
+        const takeProfit: { stop: StopType; stopPrice: number } = o.presetTakeProfitPrice ? { stop: 'profit', stopPrice: +o.presetTakeProfitPrice } : undefined;
+        if (raw) { return o as any; }
         return {
           id: o.clientOid,
           exchangeId: o.orderId,
-          side: parsetOrderSideFutures(o.side),
-          trade: parsetOrderTradeSide(o.side),
+          side: parseFuturesOrderSide(o.side),
+          trade: parseFuturesTradeSide(o.tradeSide),
           type: parseOrderType(o.orderType),
-          status: parseOrderStatus(o.state),
+          status: parseFuturesOrderStatus(o.state),
+          symbol: this.parseSymbol(o.symbol),
+          baseQuantity: o.filledQty ? +o.filledQty : +o.size,
+          quoteQuantity: o.filledAmount ? +o.filledAmount : +o.price * +o.size,
+          price: o.priceAvg ? +o.priceAvg : +o.price,
+          profit: +o.totalProfits,
+          leverage: +o.leverage,
+          ...commission,
+          ...stopLoss,
+          ...takeProfit,
+          created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
+        };
+      }));
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-history-plan-orders-tpsl Get History Plan Orders (TPSL)} */
+      const algoResponse: { data: { orderList: any[] }} = await this.get(`api/mix/v1/plan/historyPlan`, { params: { symbol, ...startTime, ...endTime, ...pageSize }, errorMessage });
+      results.push(...(algoResponse.data.orderList || []).map(o => {
+        const commission = o.fee ? { commission: +o.fee, commissionAsset: quoteAsset } : undefined;
+        const stopLoss: { stop: StopType; stopPrice: number } = o.presetStopLossPrice ? { stop: 'loss', stopPrice: +o.presetStopLossPrice } : undefined;
+        const takeProfit: { stop: StopType; stopPrice: number } = o.presetTakeProfitPrice ? { stop: 'profit', stopPrice: +o.presetTakeProfitPrice } : undefined;
+        if (raw) { return o as any; }
+        return {
+          id: o.clientOid,
+          exchangeId: o.orderId,
+          side: parseFuturesOrderSide(o.side),
+          trade: parseFuturesTradeSide(o.tradeSide),
+          type: parseOrderType(o.orderType),
+          status: parsePlanStatus(o.state),
+          symbol: this.parseSymbol(o.symbol),
+          baseQuantity: o.filledQty ? +o.filledQty : +o.size,
+          quoteQuantity: o.filledAmount ? +o.filledAmount : +o.price * +o.size,
+          price: o.priceAvg ? +o.priceAvg : +o.price,
+          profit: +o.totalProfits,
+          leverage: +o.leverage,
+          ...commission,
+          ...stopLoss,
+          ...takeProfit,
+          created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
+        };
+      }));
+    }
+    return Promise.resolve(results);
+  }
+
+  /**
+   * {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List - SPOT }
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order - FUTURES }
+   * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List}
+   */
+  async getOpenOrders(request: GetOpenOrdersRequest, raw = false): Promise<Partial<Order>[]> {
+    const { baseAsset, quoteAsset } = request.symbol || {};
+    const symbol = request.symbol ? { symbol: this.resolveSymbol(request.symbol) } : undefined;
+    const errorMessage = { code: 500, message: `No s'han pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+    const results: Partial<Order>[] = [];
+    if (this.market === 'spot') {
+      /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-list Get order List} */
+      const ordersList: { data: any[] } = await this.post(`api/spot/v1/trade/open-orders`, { params: { ...symbol }, errorMessage });
+      results.push(...ordersList.data.map(o => {
+        if (raw) { return o as any; }
+        return {
+          id: o.clientOrderId,
+          exchangeId: o.orderId,
+          side: parseOrderSide(o.side),
+          type: parseOrderType(o.orderType),
+          status: parseOrderStatus(o.status),
+          symbol: this.parseSymbol(o.symbol),
+          price: o.fillPrice ? +o.fillPrice : +o.price,
+          // NOTA: Comprovem sempre `fillPrice` enlloc de `fillQuantity` o `fillTotalAmount` pq a poden vadre "0".
+          baseQuantity: o.fillPrice ? +o.fillQuantity : +o.quantity,
+          quoteQuantity: o.fillPrice ? +o.fillTotalAmount : +o.price * +o.quantity,
+          created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
+        };
+      }));
+    } else {
+      const productType = this.resolveProductType(request.symbol);
+      const marginCoin = this.resolveAsset(quoteAsset);
+      /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-all-open-order Get All Open Order} */
+      const ordersList: { data: any[] } = await this.get(`api/mix/v1/order/marginCoinCurrent`, { params: { productType, marginCoin }, errorMessage });
+      results.push(...ordersList.data.map(o => {
+        if (raw) { return o as any; }
+        return {
+          id: o.clientOid,
+          exchangeId: o.orderId,
+          side: parseFuturesOrderSide(o.side),
+          trade: parseFuturesTradeSide(o.side),
+          type: parseOrderType(o.orderType),
+          status: parseFuturesOrderStatus(o.state),
           symbol: this.parseSymbol(o.symbol),
           baseQuantity: +o.size,
           price: +o.price,
@@ -442,14 +549,14 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         };
       }));
       /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List} */
-      const currentPlan: { data: any[] } = await this.get(`api/mix/v1/plan/currentPlan`, { params: { symbol, productType, marginCoin }, errorMessage });
+      const currentPlan: { data: any[] } = await this.get(`api/mix/v1/plan/currentPlan`, { params: { ...symbol, productType, marginCoin }, errorMessage });
       results.push(...currentPlan.data.map(o => {
-        // return o as any;
+        if (raw) { return o as any; }
         return {
           // id: null,
           exchangeId: o.orderId,
-          side: parsetOrderSideFutures(o.side),
-          trade: parsetOrderTradeSide(o.side),
+          side: parseFuturesOrderSide(o.side),
+          trade: parseFuturesTradeSide(o.side),
           type: parseOrderType(o.orderType),
           stop: parseStopType(o.planType),
           status: parsePlanStatus(o.status),
@@ -469,77 +576,78 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-order-details Get order details - FUTURES }
    * {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List - FUTURES }
    */
-  async getOrder(request: GetOrderRequest): Promise<Partial<Order>> {
+  async getOrder(request: GetOrderRequest, raw = false): Promise<Partial<Order>> {
     const { baseAsset, quoteAsset } = request.symbol;
     const marginCoin = this.resolveAsset(quoteAsset);
     const symbol = this.resolveSymbol(request.symbol);
     const exchangeId = request.exchangeId ? { orderId: request.exchangeId } : undefined;
     const id = request.id ? { clientOid: request.id } : undefined;
-    const params = { symbol, marginCoin, ...exchangeId, ...id };
+    const params = { symbol, ...exchangeId, ...id };
     const errorMessage = { code: 500, message: `No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}.` };
     if (this.market === 'spot') {
-      if (!params.orderId) { return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}. L'identificador d'exchange es obligatori per 'spot'.`); }
+      if (!exchangeId) { return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}. L'identificador d'exchange es obligatori per 'spot'.`); }
       /** {@link https://bitgetlimited.github.io/apidoc/en/spot/#get-order-details Get order details} */
-      const ordersList: { data: any[] } = await this.get(`api/spot/v1/trade/orderInfo`, { params, errorMessage });
-      ordersList.data.map(o => {
-        return Promise.resolve({
-          id: o.clientOrderId,
-          exchangeId: o.orderId,
-          side: parseOrderSide(o.side),
-          type: parseOrderType(o.orderType),
-          status: parseOrderStatus(o.status),
-          symbol: this.parseSymbol(o.symbol),
-          baseQuantity: +o.quantity,
-          price: +o.price,
-          created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
-        });
+      const ordersList: { data: any[] } = await this.post(`api/spot/v1/trade/orderInfo`, { params: { ...params, marginCoin }, errorMessage });
+      const o = ordersList.data.find(o => o.orderId === params.orderId);
+      if (!o) { return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}.`); }
+      if (raw) { return o as any; }
+      const commission = this.extractCommission(o.feeDetail);
+      return Promise.resolve({
+        id: o.clientOrderId,
+        exchangeId: o.orderId,
+        side: parseOrderSide(o.side),
+        type: parseOrderType(o.orderType),
+        status: parseOrderStatus(o.status),
+        symbol: this.parseSymbol(o.symbol),
+        price: o.fillPrice ? +o.fillPrice : +o.price,
+        // NOTA: Comprovem sempre `fillPrice` enlloc de `fillQuantity` o `fillTotalAmount` pq poden valer "0".
+        baseQuantity: o.fillPrice ? +o.fillQuantity : +o.quantity,
+        quoteQuantity: o.fillPrice ? +o.fillTotalAmount : +o.price * +o.quantity,
+        ...commission,
+        created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
       });
-
-      return Promise.resolve({});
 
     } else {
       /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-order-details Get order details} */
       const response: { data: any[] } = await this.get(`api/mix/v1/order/detail`, { params, errorMessage });
-      let o: Order = undefined;
-      response.data.map(o => {
+      const o = Array.isArray(response.data) ? response.data.find(o => o.orderId === params.orderId) : response.data;
+      if (o) {
+        if (raw) { return o as any; }
         return Promise.resolve({
           id: o.clientOrderId,
           exchangeId: o.orderId,
-          side: parseOrderSide(o.side),
+          side: parseFuturesOrderSide(o.side),
+          trade: parseFuturesTradeSide(o.tradeSide),
           type: parseOrderType(o.orderType),
-          status: parseOrderStatus(o.status),
+          status: parseFuturesOrderStatus(o.state),
           symbol: this.parseSymbol(o.symbol),
           baseQuantity: +o.quantity,
           price: +o.price,
           created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
         });
-      });
-      if (!o) {
-        const currentPlan: { data: any[] } = await this.get(`/api/mix/v1/plan/currentPlan`, { params, errorMessage });
-        let o: Order = undefined;
-        currentPlan.data.map(o => {
-          if (o.orderId === params.orderId) {
-            return Promise.resolve({
-              exchangeId: o.orderId,
-              side: parsetOrderSideFutures(o.side),
-              trade: parsetOrderTradeSide(o.side),
-              type: parseOrderType(o.orderType),
-              stop: parseStopType(o.planType),
-              status: parsePlanStatus(o.status),
-              symbol: this.parseSymbol(o.symbol),
-              baseQuantity: +o.size,
-              price: +o.executePrice,
-              stopPrice: +o.triggerPrice,
-              created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss'),
-            });
-          }
+
+      } else {
+        /** {@link https://bitgetlimited.github.io/apidoc/en/mix/#get-plan-order-tpsl-list Get Plan Order (TPSL) List} */
+        const algoResponse: { data: any[] } = await this.get(`/api/mix/v1/plan/currentPlan`, { params, errorMessage });
+        const o = Array.isArray(algoResponse.data) ? algoResponse.data.find(o => o.orderId === params.orderId) : algoResponse.data;
+        if (!o) { return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}.`); }
+        if (raw) { return o as any; }
+        return Promise.resolve({
+          exchangeId: o.orderId,
+          side: parseFuturesOrderSide(o.side),
+          trade: parseFuturesTradeSide(o.side),
+          type: parseOrderType(o.orderType),
+          stop: parseStopType(o.planType),
+          status: parsePlanStatus(o.status),
+          symbol: this.parseSymbol(o.symbol),
+          baseQuantity: +o.size,
+          price: +o.executePrice,
+          stopPrice: +o.triggerPrice,
+          created: moment(+o.cTime).format('YYYY-MM-DD HH:mm:ss'),
         });
       }
-      return Promise.resolve(o);
     }
   }
-
-  // getAccountTradeList(request: GetHistoryOrdersRequest): Promise<Order[]> { return {} as any; }
 
 
   //  Trade Orders
@@ -596,7 +704,7 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
         marginCoin,
         size: +request.baseQuantity,
         clientOid: request.id,
-        side: formatOrderTradeSide(request.side, request.trade),
+        side: formatFuturesTradeSide(request.side, request.trade),
         timeInForceValue: 'normal',
       };
       if (!request.stop) {

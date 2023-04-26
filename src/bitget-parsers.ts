@@ -2,7 +2,7 @@ import moment, { unitOfTime } from 'moment';
 
 import { timestamp, SymbolType, MarketType, MarketPrice, KlineIntervalType, Order, OrderSide, OrderType, OrderStatus, TradeSide, StopType, PositionSide, MarginMode } from '@metacodi/abstract-exchange';
 
-import { BitgetMarginMode, BitgetOrderSide, BitgetOrderStatus, BitgetOrderTradeSide, BitgetOrderType, BitgetPlanStatus, BitgetPlanType, BitgetPostOrderSide, BitgetStopType } from './bitget.types';
+import { BitgetMarginMode, BitgetOrderSide, BitgetOrderStatus, BitgetFuturesTradeSide, BitgetOrderType, BitgetPlanStatus, BitgetPlanType, BitgetTradeSide, BitgetStopType, BitgetFuturesOrderStatus } from './bitget.types';
 
 
 export const parseOrderSide = (side: BitgetOrderSide): OrderSide => {
@@ -21,7 +21,7 @@ export const formatOrderSide = (side: OrderSide): BitgetOrderSide => {
   }
 }
 
-export const parsetOrderSideFutures = (trade: BitgetOrderTradeSide): OrderSide => {
+export const parseFuturesOrderSide = (trade: BitgetFuturesTradeSide): OrderSide => {
   switch (trade) {
     case 'open_long': 
     case 'open_short': 
@@ -29,11 +29,11 @@ export const parsetOrderSideFutures = (trade: BitgetOrderTradeSide): OrderSide =
     case 'close_long': 
     case 'close_short': 
       return 'sell';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderSideFutures type '${trade}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel parseFuturesOrderSide type '${trade}'` });
   }
 }
 
-export const formatOrderTradeSide = (side: OrderSide, tradeSide: TradeSide): BitgetOrderTradeSide => {
+export const formatFuturesTradeSide = (side: OrderSide, tradeSide: TradeSide): BitgetFuturesTradeSide => {
   switch (side) {
     case 'buy': return tradeSide === 'long' ? 'open_long' : 'open_short';
     case 'sell': return tradeSide === 'long' ? 'close_long' : 'close_short';
@@ -41,23 +41,19 @@ export const formatOrderTradeSide = (side: OrderSide, tradeSide: TradeSide): Bit
   }
 }
 
-export const parsetOrderTradeSide = (tradeSide: BitgetPostOrderSide): TradeSide => {
+export const parseFuturesTradeSide = (tradeSide: BitgetFuturesTradeSide): TradeSide => {
   switch (tradeSide) {
-    case 'long': return 'long';
-    case 'short':  return 'short';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderTradeSide type '${tradeSide}'` });
-  }
-}
-
-export const parsetOrderAlgoTradeSide = (tradeSide: BitgetOrderTradeSide): TradeSide => {
-  switch (tradeSide) {
-    case 'open_long': 
-    case 'close_long': 
+    case 'open_long':
+    case 'close_long':
+    case 'offset_close_long':
+    case 'burst_close_long':
       return 'long';
-    case 'open_short': 
-    case 'close_short': 
+    case 'open_short':
+    case 'close_short':
+    case 'offset_close_short':
+    case 'burst_close_short':
       return 'short';
-    default: throw ({ message: `No s'ha implementat el parser Bitget pel parsetOrderAlgoTradeSide type '${tradeSide}'` });
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel parseFuturesTradeSide type '${tradeSide}'` });
   }
 }
 
@@ -109,8 +105,8 @@ export const formatStopType = (type: StopType): BitgetStopType => {
 export const parseOrderStatus = (status: BitgetOrderStatus): OrderStatus => {
   switch (status) {
     case 'new': return 'new';
-    case 'full-fill': return 'filled';
-    case 'partial-fill': return 'partial';
+    case 'full_fill': return 'filled';
+    case 'partial_fill': return 'partial';
     case 'cancelled': return 'canceled';
     default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderStatus type '${status}'` });
   }
@@ -119,9 +115,30 @@ export const parseOrderStatus = (status: BitgetOrderStatus): OrderStatus => {
 export const formatOrderStatus = (status: OrderStatus): BitgetOrderStatus => {
   switch (status) {
     case 'new': return 'new';
-    case 'filled': return 'full-fill';
-    case 'partial': return 'partial-fill';
+    case 'filled': return 'full_fill';
+    case 'partial': return 'partial_fill';
     case 'canceled': return 'cancelled';
+    default: throw ({ message: `No s'ha implementat el format Bitget pel OrderStatus type '${status}'` });
+  }
+}
+
+export const parseFuturesOrderStatus = (status: BitgetFuturesOrderStatus): OrderStatus => {
+  switch (status) {
+    case 'init': return 'new';
+    case 'new': return 'new';
+    case 'filled': return 'filled';
+    case 'partially_filled': return 'partial';
+    case 'canceled': return 'canceled';
+    default: throw ({ message: `No s'ha implementat el parser Bitget pel OrderStatus type '${status}'` });
+  }
+}
+
+export const formatFuturesOrderStatus = (status: OrderStatus): BitgetFuturesOrderStatus => {
+  switch (status) {
+    case 'new': return 'new';
+    case 'filled': return 'filled';
+    case 'partial': return 'partially_filled';
+    case 'canceled': return 'canceled';
     default: throw ({ message: `No s'ha implementat el format Bitget pel OrderStatus type '${status}'` });
   }
 }
@@ -129,7 +146,7 @@ export const formatOrderStatus = (status: OrderStatus): BitgetOrderStatus => {
 export const parsePlanStatus = (status: BitgetPlanStatus): OrderStatus => {
   switch (status) {
     case 'not_trigger': return 'new';
-    case 'executing': return 'new'; // Que fem amb aquest estat ????????? 
+    case 'executing': return 'partial'; // Que fem amb aquest estat ????????? 
     case 'triggered': return 'filled';
     case 'fail_trigger': return 'rejected';
     case 'cancel': return 'canceled';
@@ -139,7 +156,7 @@ export const parsePlanStatus = (status: BitgetPlanStatus): OrderStatus => {
 
 // Positions
 
-export const parsetPositionTradeSide = (tradeSide: BitgetPostOrderSide): PositionSide => {
+export const parsePositionTradeSide = (tradeSide: BitgetTradeSide): PositionSide => {
   switch (tradeSide) {
     case 'long': return 'long';
     case 'short': return 'short';
@@ -147,7 +164,7 @@ export const parsetPositionTradeSide = (tradeSide: BitgetPostOrderSide): Positio
   }
 }
 
-export const parsetMarginMode = (tradeSide: BitgetMarginMode): MarginMode => {
+export const parseMarginMode = (tradeSide: BitgetMarginMode): MarginMode => {
   switch (tradeSide) {
     case 'crossed': return 'cross';
     case 'fixed': return 'isolated';
