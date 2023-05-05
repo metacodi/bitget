@@ -19,7 +19,7 @@ export declare class BitgetApi extends ApiClient implements ExchangeApi {
     get market(): MarketType;
     getExchangeInfo(): Promise<ExchangeInfo>;
     get symbols(): MarketSymbol[];
-    private findMarketSymbol;
+    findMarketSymbol(symbol: SymbolType): any;
     getMarketSymbol(symbol: SymbolType): Promise<MarketSymbol>;
     getPriceTicker(symbol: SymbolType): Promise<MarketPrice>;
     getKlines(request: KlinesRequest): Promise<MarketKline[]>;
@@ -27,9 +27,10 @@ export declare class BitgetApi extends ApiClient implements ExchangeApi {
     getAccountInfo(): Promise<AccountInfo>;
     getLeverage(symbol: SymbolType, mode?: MarginMode): Promise<LeverageInfo>;
     setLeverage(request: SetLeverage): Promise<void>;
-    getHistoryOrders(request: GetHistoryOrdersRequest): Promise<Order[]>;
-    getOpenOrders(request: GetOpenOrdersRequest): Promise<Partial<Order>[]>;
-    getOrder(request: GetOrderRequest): Promise<Partial<Order>>;
+    private extractCommission;
+    getHistoryOrders(request: GetHistoryOrdersRequest, raw?: boolean): Promise<Partial<Order>[]>;
+    getOpenOrders(request: GetOpenOrdersRequest, raw?: boolean): Promise<Partial<Order>[]>;
+    getOrder(request: GetOrderRequest, raw?: boolean): Promise<Partial<Order>>;
     postOrder(request: PostOrderRequest): Promise<Order>;
     cancelOrder(request: CancelOrderRequest): Promise<any>;
     fixPrice(price: number, symbol: SymbolType | MarketSymbol): number;

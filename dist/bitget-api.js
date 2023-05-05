@@ -79,7 +79,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                 return Promise.resolve({ limits: this.limits });
             }
             else {
-                yield Promise.all(['umcbl', 'dmcbl', 'cmcbl'].map((productType) => __awaiter(this, void 0, void 0, function* () {
+                yield Promise.all(['umcbl', 'dmcbl'].map((productType) => __awaiter(this, void 0, void 0, function* () {
                     if (this.isTest) {
                         productType = `s${productType}`;
                     }
@@ -307,7 +307,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                             leverage: +p.leverage,
                             unrealisedPnl: +p.unrealizedPL,
                             marginType: p.marginMode === 'crossed' ? 'cross' : 'isolated',
-                            positionSide: (0, bitget_parsers_1.parsetPositionTradeSide)(p.holdSide),
+                            positionSide: (0, bitget_parsers_1.parsePositionTradeSide)(p.holdSide),
                         };
                         return position;
                     }));
@@ -355,18 +355,83 @@ class BitgetApi extends node_api_client_1.ApiClient {
             return Promise.resolve();
         });
     }
-    getHistoryOrders(request) { return {}; }
-    getOpenOrders(request) {
+    extractCommission(feeDetail) {
+        if (!feeDetail) {
+            return undefined;
+        }
+        const parsedFee = JSON.parse(feeDetail);
+        if (!Object.keys(parsedFee).length) {
+            return undefined;
+        }
+        const asset = Object.keys(parsedFee)[0];
+        const commission = parsedFee[asset].totalFee;
+        return { commission, commissionAsset: asset };
+    }
+    getHistoryOrders(request, raw = false) {
         return __awaiter(this, void 0, void 0, function* () {
             const { baseAsset, quoteAsset } = request.symbol;
-            const marginCoin = this.resolveAsset(quoteAsset);
             const symbol = this.resolveSymbol(request.symbol);
-            const productType = this.resolveProductType(request.symbol);
+            const errorMessage = { code: 500, message: `No s'han pogut obtenir les orders històriques del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
+            const results = [];
+            if (this.market === 'spot') {
+                const after = request.afterExchangeId ? { after: request.afterExchangeId } : undefined;
+                const before = request.beforeExchangeId ? { before: request.beforeExchangeId } : undefined;
+                const limit = request.limit ? { limit: request.limit } : undefined;
+                const ordersList = yield this.post(`api/spot/v1/trade/history`, { params: Object.assign(Object.assign(Object.assign({ symbol }, after), before), limit), errorMessage });
+                results.push(...ordersList.data.map(o => {
+                    const commission = this.extractCommission(o.feeDetail);
+                    if (raw) {
+                        return o;
+                    }
+                    return Object.assign(Object.assign({ id: o.clientOrderId, exchangeId: o.orderId, side: (0, bitget_parsers_1.parseOrderSide)(o.side), type: (0, bitget_parsers_1.parseOrderType)(o.orderType), status: (0, bitget_parsers_1.parseOrderStatus)(o.status), symbol: this.parseSymbol(o.symbol), price: o.fillPrice ? +o.fillPrice : +o.price, baseQuantity: o.fillPrice ? +o.fillQuantity : +o.quantity, quoteQuantity: o.fillPrice ? +o.fillTotalAmount : +o.price * +o.quantity }, commission), { created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString() });
+                }));
+            }
+            else {
+                const startTime = request.startTime ? { startTime: request.startTime } : undefined;
+                const endTime = request.endTime ? { endTime: request.endTime } : undefined;
+                const pageSize = { pageSize: request.pageSize || 1000 };
+                if (!startTime) {
+                    return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}. L'hora d'inici (startTime) és obligatoria per 'futures'.`);
+                }
+                if (!endTime) {
+                    return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}. L'hora de finalització (endTime) és obligatoria per 'futures'.`);
+                }
+                const response = yield this.get(`api/mix/v1/order/history`, { params: Object.assign(Object.assign(Object.assign({ symbol }, startTime), endTime), pageSize), errorMessage });
+                results.push(...(response.data.orderList || []).map(o => {
+                    const commission = o.fee ? { commission: +o.fee, commissionAsset: quoteAsset } : undefined;
+                    const stopLoss = o.presetStopLossPrice ? { stop: 'loss', stopPrice: +o.presetStopLossPrice } : undefined;
+                    const takeProfit = o.presetTakeProfitPrice ? { stop: 'profit', stopPrice: +o.presetTakeProfitPrice } : undefined;
+                    if (raw) {
+                        return o;
+                    }
+                    return Object.assign(Object.assign(Object.assign(Object.assign({ id: o.clientOid, exchangeId: o.orderId, side: (0, bitget_parsers_1.parseFuturesOrderSide)(o.side), trade: (0, bitget_parsers_1.parseFuturesTradeSide)(o.tradeSide), type: (0, bitget_parsers_1.parseOrderType)(o.orderType), status: (0, bitget_parsers_1.parseFuturesOrderStatus)(o.state), symbol: this.parseSymbol(o.symbol), baseQuantity: o.filledQty ? +o.filledQty : +o.size, quoteQuantity: o.filledAmount ? +o.filledAmount : +o.price * +o.size, price: o.priceAvg ? +o.priceAvg : +o.price, profit: +o.totalProfits, leverage: +o.leverage }, commission), stopLoss), takeProfit), { created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString() });
+                }));
+                const algoResponse = yield this.get(`api/mix/v1/plan/historyPlan`, { params: Object.assign(Object.assign(Object.assign({ symbol }, startTime), endTime), pageSize), errorMessage });
+                results.push(...(algoResponse.data.orderList || []).map(o => {
+                    const commission = o.fee ? { commission: +o.fee, commissionAsset: quoteAsset } : undefined;
+                    const stopLoss = o.presetStopLossPrice ? { stop: 'loss', stopPrice: +o.presetStopLossPrice } : undefined;
+                    const takeProfit = o.presetTakeProfitPrice ? { stop: 'profit', stopPrice: +o.presetTakeProfitPrice } : undefined;
+                    if (raw) {
+                        return o;
+                    }
+                    return Object.assign(Object.assign(Object.assign(Object.assign({ id: o.clientOid, exchangeId: o.orderId, side: (0, bitget_parsers_1.parseFuturesOrderSide)(o.side), trade: (0, bitget_parsers_1.parseFuturesTradeSide)(o.tradeSide), type: (0, bitget_parsers_1.parseOrderType)(o.orderType), status: (0, bitget_parsers_1.parsePlanStatus)(o.state), symbol: this.parseSymbol(o.symbol), baseQuantity: o.filledQty ? +o.filledQty : +o.size, quoteQuantity: o.filledAmount ? +o.filledAmount : +o.price * +o.size, price: o.priceAvg ? +o.priceAvg : +o.price, profit: +o.totalProfits, leverage: +o.leverage }, commission), stopLoss), takeProfit), { created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString() });
+                }));
+            }
+            return Promise.resolve(results);
+        });
+    }
+    getOpenOrders(request, raw = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { baseAsset, quoteAsset } = request.symbol || {};
+            const symbol = request.symbol ? { symbol: this.resolveSymbol(request.symbol) } : undefined;
             const errorMessage = { code: 500, message: `No s'han pogut obtenir les orders del símbol ${baseAsset}_${quoteAsset} a Bitget.` };
             const results = [];
             if (this.market === 'spot') {
-                const ordersList = yield this.post(`api/spot/v1/trade/open-orders`, { params: { symbol }, errorMessage });
+                const ordersList = yield this.post(`api/spot/v1/trade/open-orders`, { params: Object.assign({}, symbol), errorMessage });
                 results.push(...ordersList.data.map(o => {
+                    if (raw) {
+                        return o;
+                    }
                     return {
                         id: o.clientOrderId,
                         exchangeId: o.orderId,
@@ -374,34 +439,43 @@ class BitgetApi extends node_api_client_1.ApiClient {
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
                         status: (0, bitget_parsers_1.parseOrderStatus)(o.status),
                         symbol: this.parseSymbol(o.symbol),
-                        baseQuantity: +o.quantity,
-                        price: +o.price,
+                        price: o.fillPrice ? +o.fillPrice : +o.price,
+                        baseQuantity: o.fillPrice ? +o.fillQuantity : +o.quantity,
+                        quoteQuantity: o.fillPrice ? +o.fillTotalAmount : +o.price * +o.quantity,
                         created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
                     };
                 }));
             }
             else {
+                const productType = this.resolveProductType(request.symbol);
+                const marginCoin = this.resolveAsset(quoteAsset);
                 const ordersList = yield this.get(`api/mix/v1/order/marginCoinCurrent`, { params: { productType, marginCoin }, errorMessage });
                 results.push(...ordersList.data.map(o => {
+                    if (raw) {
+                        return o;
+                    }
                     return {
                         id: o.clientOid,
                         exchangeId: o.orderId,
-                        side: (0, bitget_parsers_1.parsetOrderSideFutures)(o.side),
-                        trade: (0, bitget_parsers_1.parsetOrderTradeSide)(o.side),
+                        side: (0, bitget_parsers_1.parseFuturesOrderSide)(o.side),
+                        trade: (0, bitget_parsers_1.parseFuturesTradeSide)(o.side),
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
-                        status: (0, bitget_parsers_1.parseOrderStatus)(o.state),
+                        status: (0, bitget_parsers_1.parseFuturesOrderStatus)(o.state),
                         symbol: this.parseSymbol(o.symbol),
                         baseQuantity: +o.size,
                         price: +o.price,
                         created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
                     };
                 }));
-                const currentPlan = yield this.get(`api/mix/v1/plan/currentPlan`, { params: { symbol, productType, marginCoin }, errorMessage });
+                const currentPlan = yield this.get(`api/mix/v1/plan/currentPlan`, { params: Object.assign(Object.assign({}, symbol), { productType, marginCoin }), errorMessage });
                 results.push(...currentPlan.data.map(o => {
+                    if (raw) {
+                        return o;
+                    }
                     return {
                         exchangeId: o.orderId,
-                        side: (0, bitget_parsers_1.parsetOrderSideFutures)(o.side),
-                        trade: (0, bitget_parsers_1.parsetOrderTradeSide)(o.side),
+                        side: (0, bitget_parsers_1.parseFuturesOrderSide)(o.side),
+                        trade: (0, bitget_parsers_1.parseFuturesTradeSide)(o.side),
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
                         stop: (0, bitget_parsers_1.parseStopType)(o.planType),
                         status: (0, bitget_parsers_1.parsePlanStatus)(o.status),
@@ -416,73 +490,73 @@ class BitgetApi extends node_api_client_1.ApiClient {
             return Promise.resolve(results);
         });
     }
-    getOrder(request) {
+    getOrder(request, raw = false) {
         return __awaiter(this, void 0, void 0, function* () {
             const { baseAsset, quoteAsset } = request.symbol;
             const marginCoin = this.resolveAsset(quoteAsset);
             const symbol = this.resolveSymbol(request.symbol);
             const exchangeId = request.exchangeId ? { orderId: request.exchangeId } : undefined;
             const id = request.id ? { clientOid: request.id } : undefined;
-            const params = Object.assign(Object.assign({ symbol, marginCoin }, exchangeId), id);
+            const params = Object.assign(Object.assign({ symbol }, exchangeId), id);
             const errorMessage = { code: 500, message: `No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}.` };
             if (this.market === 'spot') {
-                if (!params.orderId) {
+                if (!exchangeId) {
                     return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}. L'identificador d'exchange es obligatori per 'spot'.`);
                 }
-                const ordersList = yield this.get(`api/spot/v1/trade/orderInfo`, { params, errorMessage });
-                ordersList.data.map(o => {
-                    return Promise.resolve({
-                        id: o.clientOrderId,
-                        exchangeId: o.orderId,
-                        side: (0, bitget_parsers_1.parseOrderSide)(o.side),
-                        type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
-                        status: (0, bitget_parsers_1.parseOrderStatus)(o.status),
-                        symbol: this.parseSymbol(o.symbol),
-                        baseQuantity: +o.quantity,
-                        price: +o.price,
-                        created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
-                    });
-                });
-                return Promise.resolve({});
+                const ordersList = yield this.post(`api/spot/v1/trade/orderInfo`, { params: Object.assign(Object.assign({}, params), { marginCoin }), errorMessage });
+                const o = ordersList.data.find(o => o.orderId === params.orderId);
+                if (!o) {
+                    return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}.`);
+                }
+                if (raw) {
+                    return o;
+                }
+                const commission = this.extractCommission(o.feeDetail);
+                return Promise.resolve(Object.assign(Object.assign({ id: o.clientOrderId, exchangeId: o.orderId, side: (0, bitget_parsers_1.parseOrderSide)(o.side), type: (0, bitget_parsers_1.parseOrderType)(o.orderType), status: (0, bitget_parsers_1.parseOrderStatus)(o.status), symbol: this.parseSymbol(o.symbol), price: o.fillPrice ? +o.fillPrice : +o.price, baseQuantity: o.fillPrice ? +o.fillQuantity : +o.quantity, quoteQuantity: o.fillPrice ? +o.fillTotalAmount : +o.price * +o.quantity }, commission), { created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString() }));
             }
             else {
                 const response = yield this.get(`api/mix/v1/order/detail`, { params, errorMessage });
-                let o = undefined;
-                response.data.map(o => {
+                const o = Array.isArray(response.data) ? response.data.find(o => o.orderId === params.orderId) : response.data;
+                if (o) {
+                    if (raw) {
+                        return o;
+                    }
                     return Promise.resolve({
                         id: o.clientOrderId,
                         exchangeId: o.orderId,
-                        side: (0, bitget_parsers_1.parseOrderSide)(o.side),
+                        side: (0, bitget_parsers_1.parseFuturesOrderSide)(o.side),
+                        trade: (0, bitget_parsers_1.parseFuturesTradeSide)(o.tradeSide),
                         type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
-                        status: (0, bitget_parsers_1.parseOrderStatus)(o.status),
+                        status: (0, bitget_parsers_1.parseFuturesOrderStatus)(o.state),
                         symbol: this.parseSymbol(o.symbol),
                         baseQuantity: +o.quantity,
                         price: +o.price,
                         created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss').toString(),
                     });
-                });
-                if (!o) {
-                    const currentPlan = yield this.get(`/api/mix/v1/plan/currentPlan`, { params, errorMessage });
-                    let o = undefined;
-                    currentPlan.data.map(o => {
-                        if (o.orderId === params.orderId) {
-                            return Promise.resolve({
-                                exchangeId: o.orderId,
-                                side: (0, bitget_parsers_1.parsetOrderSideFutures)(o.side),
-                                trade: (0, bitget_parsers_1.parsetOrderTradeSide)(o.side),
-                                type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
-                                stop: (0, bitget_parsers_1.parseStopType)(o.planType),
-                                status: (0, bitget_parsers_1.parsePlanStatus)(o.status),
-                                symbol: this.parseSymbol(o.symbol),
-                                baseQuantity: +o.size,
-                                price: +o.executePrice,
-                                stopPrice: +o.triggerPrice,
-                                created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss'),
-                            });
-                        }
+                }
+                else {
+                    const algoResponse = yield this.get(`/api/mix/v1/plan/currentPlan`, { params, errorMessage });
+                    const o = Array.isArray(algoResponse.data) ? algoResponse.data.find(o => o.orderId === params.orderId) : algoResponse.data;
+                    if (!o) {
+                        return Promise.reject(`No s'ha pogut obtenir l'ordre ${request.id} a Bitget ${this.market}.`);
+                    }
+                    if (raw) {
+                        return o;
+                    }
+                    return Promise.resolve({
+                        exchangeId: o.orderId,
+                        side: (0, bitget_parsers_1.parseFuturesOrderSide)(o.side),
+                        trade: (0, bitget_parsers_1.parseFuturesTradeSide)(o.side),
+                        type: (0, bitget_parsers_1.parseOrderType)(o.orderType),
+                        stop: (0, bitget_parsers_1.parseStopType)(o.planType),
+                        status: (0, bitget_parsers_1.parsePlanStatus)(o.status),
+                        symbol: this.parseSymbol(o.symbol),
+                        baseQuantity: +o.size,
+                        price: +o.executePrice,
+                        stopPrice: +o.triggerPrice,
+                        created: (0, moment_1.default)(+o.cTime).format('YYYY-MM-DD HH:mm:ss'),
                     });
                 }
-                return Promise.resolve(o);
             }
         });
     }
@@ -526,7 +600,7 @@ class BitgetApi extends node_api_client_1.ApiClient {
                     marginCoin,
                     size: +request.baseQuantity,
                     clientOid: request.id,
-                    side: (0, bitget_parsers_2.formatOrderTradeSide)(request.side, request.trade),
+                    side: (0, bitget_parsers_2.formatFuturesTradeSide)(request.side, request.trade),
                     timeInForceValue: 'normal',
                 };
                 if (!request.stop) {
