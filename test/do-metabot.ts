@@ -15,15 +15,15 @@ import chalk from 'chalk';
  * ```
  */
 
-const unixTime = () => timestamp().replace(new RegExp(`[ :.-]`, 'g'), '_');
-const ts = unixTime();
-
 /** Crea sendos archivos `-raw.ts` con las respuestas originales obtenidas del exchange, sin parsear. */
 const raw = true;
 /** Ataca a la api de test o a la real. */
 const isTest = false;
 /** Muestra las cuentas sin movimientos y los listados sin órdenes. */
 const verbose = false;
+
+const unixTime = () => timestamp().replace(new RegExp(`[ :.-]`, 'g'), '_');
+const ts = unixTime();
 
 /** Archivo donde se escribirá la salida. */
 const logFileName = `results/${ts}.ts`;
@@ -44,16 +44,11 @@ function writeLog(variable: string, data: any, fileName?: string) {
 const testApi = async () => {
   try {
 
-    const options: ApiOptions = {
-      ...getApiKeys({ isTest }),
-      // market: 'spot',
-      // market: 'futures',
-      isTest,
-    } as any;
-
     // Create output log folder.
     const logFolder = `metabot/snapshot`;  
     Resource.createFolder(`./test/${logFolder}`);
+
+    const options: ApiOptions = { ...getApiKeys({ isTest }), isTest } as any;
 
     // ---------------------------------------------------------------------------------------------------
     //  SPOT
