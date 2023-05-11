@@ -36,3 +36,5 @@ npm-debug.log*
 node_modules
 precode
 /test/api-keys.ts
+/test/metabot
+/test/results

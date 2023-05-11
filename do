@@ -32,3 +32,9 @@ then
   npx ts-node test/test-ws-market.ts
 fi
 
+
+if [ $FIRST_ARGUMENT == "metabot" ] 
+then
+  npx ts-node test/do-metabot.ts
+fi
+

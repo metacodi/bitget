@@ -36,8 +36,8 @@ const testApi = async () => {
 
     const options: ApiOptions = {
       ...getApiKeys({ isTest }),
-      market: 'spot',
-      // market: 'futures',
+      // market: 'spot',
+      market: 'futures',
       isTest,
     } as any;
 
@@ -54,17 +54,17 @@ const testApi = async () => {
     console.log('getAccountInfo() =>', accountInfo);
     // writeLog(`accountInfo_${options.market}_${timestamp}`, accountInfo, 'results/accountInfo.ts');
 
-    const quoteAsset = 'USDT';
-    const baseAsset: any = 'BTC';
-    // const productType = await api.getMarketSymbol({ quoteAsset, baseAsset });
-    const productType = api.exchangeSymbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
-    const startTime = options.market === 'futures' ? { startTime: moment().subtract(1, 'month').unix() * 1000 } : undefined;
-    const endTime = options.market === 'futures' ? { endTime: moment().unix() * 1000 } : undefined;
-    // const endTime = options.market === 'futures' ? { endTime: moment().subtract(1, 'month').add(20, 'days').unix() * 1000 } : undefined;
-    const getHistoryOrders = await api.getHistoryOrders( { symbol: { quoteAsset, baseAsset }, ...startTime, ...endTime });
-    const getHistoryOrders_raw = await api.getHistoryOrders( { symbol: { quoteAsset, baseAsset }, ...startTime, ...endTime }, true);
-    writeLog(`${options.market}_${productType.symbol}_${timestamp}`, getHistoryOrders, `results/getHistoryOrders_${options.market}_${productType.symbol}.ts`);
-    writeLog(`${options.market}_${productType.symbol}_raw_${timestamp}`, getHistoryOrders_raw, `results/getHistoryOrders_${options.market}_${productType.symbol}_raw.ts`);
+    // const quoteAsset = 'USD';
+    // const baseAsset: any = 'BTC';
+    // // const productType = await api.getMarketSymbol({ quoteAsset, baseAsset });
+    // const productType = api.exchangeSymbols.find(s => s.baseCoin === baseAsset && s.quoteCoin === quoteAsset);
+    // const startTime = options.market === 'futures' ? { startTime: moment().subtract(1, 'month').unix() * 1000 } : undefined;
+    // const endTime = options.market === 'futures' ? { endTime: moment().unix() * 1000 } : undefined;
+    // // const endTime = options.market === 'futures' ? { endTime: moment().subtract(1, 'month').add(20, 'days').unix() * 1000 } : undefined;
+    // const getHistoryOrders = await api.getHistoryOrders( { symbol: { quoteAsset, baseAsset }, ...startTime, ...endTime });
+    // const getHistoryOrders_raw = await api.getHistoryOrders( { symbol: { quoteAsset, baseAsset }, ...startTime, ...endTime }, true);
+    // writeLog(`${options.market}_${productType.symbol}_${timestamp}`, getHistoryOrders, `results/getHistoryOrders_${options.market}_${productType.symbol}.ts`);
+    // writeLog(`${options.market}_${productType.symbol}_raw_${timestamp}`, getHistoryOrders_raw, `results/getHistoryOrders_${options.market}_${productType.symbol}_raw.ts`);
 
     // const results: any[] = [];
     // const getHistoryOrders: any[] = [];
@@ -84,10 +84,18 @@ const testApi = async () => {
     // writeLog(`getHistoryOrders_${options.market}`, getHistoryOrders, `results/getHistoryOrders_${options.market}.ts`);
     // writeLog(`getHistoryOrders_${options.market}_raw`, getHistoryOrders_raw, `results/getHistoryOrders_${options.market}_raw.ts`);
 
-    const getOpenOrders = await api.getOpenOrders(options.market === 'spot' ? {} : { symbol : { quoteAsset, baseAsset }});
-    const getOpenOrders_raw = await api.getOpenOrders(options.market === 'spot' ? {} : { symbol : { quoteAsset, baseAsset }}, true);
-    writeLog(`getOpenOrders_${options.market}_${timestamp}`, getOpenOrders, 'results/getOpenOrders.ts');
-    writeLog(`getOpenOrders_${options.market}_raw_${timestamp}`, getOpenOrders_raw, 'results/getOpenOrders_raw.ts');
+    // const getOpenOrders = await api.getOpenOrders(options.market === 'spot' ? {} : { symbol : { quoteAsset, baseAsset }});
+    // const getOpenOrders_raw = await api.getOpenOrders(options.market === 'spot' ? {} : { symbol : { quoteAsset, baseAsset }}, true);
+    // writeLog(`getOpenOrders_${options.market}_${timestamp}`, getOpenOrders, 'results/getOpenOrders.ts');
+    // writeLog(`getOpenOrders_${options.market}_raw_${timestamp}`, getOpenOrders_raw, 'results/getOpenOrders_raw.ts');
+
+    const getAccountBill = await api.getAccountBill();
+    writeLog(`getAccountBill_${options.market}_${timestamp}`, getAccountBill, `results/getAccountBill_${options.market}.ts`);
+
+    // const before = moment().subtract(1, 'month').unix();
+    // const after = moment().unix();
+    // const getTransferList = await api.getTransferList({ coinId: 1 /* BTC=1 */, fromType: 'exchange', after, before,  });
+    // writeLog(`getTransferList_${options.market}_${timestamp}`, getTransferList, 'results/getTransferList.ts');
 
     // const url = `test/results/getHistoryOrders_futures_raw.ts`;
     // const content: {[key: string]: any}[] = await Resource.open(url, { parseJsonFile: true })

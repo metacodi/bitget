@@ -19,7 +19,14 @@ if [%1]==[test] (
     npx ts-node test/test-ws-user.ts
   ) else if [%2]==[req] (
     npx ts-node test/test-req.ts
+  ) else if [%2]==[metabot] (
+    npx ts-node test/do-metabot.ts
   ) else (
     npx ts-node test/test-ws-market.ts
   )
+)
+
+
+if [%1]==[metabot] (
+  npx ts-node test/do-metabot.ts
 )
