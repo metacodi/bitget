@@ -50,6 +50,7 @@ const testApi = async () => {
 
     const options: ApiOptions = { ...getApiKeys({ isTest }), isTest } as any;
 
+
     // ---------------------------------------------------------------------------------------------------
     //  SPOT
     // ---------------------------------------------------------------------------------------------------
@@ -77,9 +78,35 @@ const testApi = async () => {
     // (spot) account-bill
     // ---------------------------------------------------------------------------------------------------
     Terminal.logInline(`- account-bill`);
-    const accountBillSpot = await spot.getAccountBill(undefined);
-    const countBillSpot = (raw ? accountBillSpot.parsed.length : accountBillSpot.length) || 0;
-    Terminal.success(`account-bill: ${chalk.yellow(countBillSpot)}`);
+    let pagBillSpot = 0;
+    let lastBillSpotId: string | undefined = undefined;
+    let countBillSpot = 0;
+    let accountBillSpot: any = raw ? { parsed: [], raw: [] } : [];
+    do {
+      const limit = 500;
+      const after = lastBillSpotId ? { after: lastBillSpotId } : undefined;
+      const request = { ...after, limit };
+      const response = await spot.getAccountBill(request);
+      const rows = (raw ? response.raw.data : response) || [];
+      if (rows.length) {
+        pagBillSpot += 1;
+        countBillSpot += rows.length;
+        const last = rows[rows.length - 1];
+        lastBillSpotId = last.billId;
+        if (raw) {
+          accountBillSpot.parsed.push(...response.parsed);
+          accountBillSpot.raw.push(response.raw);
+        } else {
+          accountBillSpot.push(...response);
+        }
+      }
+      if (rows.length < limit) {
+        Terminal.success(`account-bill: ${chalk.yellow(countBillSpot)}${pagBillSpot > 1 ? ` (${pagBillSpot} pages)` : ''}`);
+        break;
+      } else {
+        Terminal.logInline(`- account-bill: ${countBillSpot}${pagBillSpot > 1 ? ` (${pagBillSpot} pages)` : ''}`);
+      }
+    } while (true)
     if (countBillSpot || verbose) {
       if (raw) {
         writeLog(`spot_account_bill_${ts}`, accountBillSpot.parsed, `${logFolder}/(spot) account-bill.ts`);
@@ -88,7 +115,7 @@ const testApi = async () => {
         writeLog(`spot_account_bill_${ts}`, accountBillSpot, `${logFolder}/(spot) account-bill.ts`);
       }
     }
-    
+
     // (spot) orders (by symbol)
     // ---------------------------------------------------------------------------------------------------
     // NOTA: Revisem els moviments del compte per extreure'n les monedes utilitzades i recuperar-ne les ordres.
@@ -102,24 +129,9 @@ const testApi = async () => {
       const resolved = spot.resolveSymbol({ quoteAsset, baseAsset }, false /* throwError */);
       if (resolved) {
         
-        // (spot) history-orders
-        // ---------------------------------------------------------------------------------------------------
-        Terminal.logInline(`- history-orders ${chalk.green(`${symbol}`)}`);
-        // TODO: montar iteració usant params `after` i `before` per obtenir-les totes.
-        const historyOrdersSpot: any = await spot.getHistoryOrders( { symbol: { quoteAsset, baseAsset } });
-        const countHistorySpot = (raw ? historyOrdersSpot.parsed.length : historyOrdersSpot.length) || 0;
-        if (countHistorySpot || verbose) {
-          if (raw) {
-            writeLog(`spot_history_orders_${symbol}_${ts}`, historyOrdersSpot.parsed, `${logFolder}/(spot) history-orders-${symbol}.ts`);
-            writeLog(`spot_history_orders_${symbol}_${ts}`, historyOrdersSpot.raw, `${logFolder}/(spot) history-orders-${symbol}-raw.ts`);
-          } else {
-            writeLog(`spot_history_orders_${symbol}_${ts}`, historyOrdersSpot, `${logFolder}/(spot) history-orders-${symbol}.ts`);
-          }
-        }
-        
         // (spot) open-orders
         // ---------------------------------------------------------------------------------------------------
-        Terminal.logInline(`- open-orders ${chalk.green(`${symbol}`)}`);
+        Terminal.logInline(`- orders-${chalk.green(`${symbol}`)}: open`);
         const openOrdersSpot: any = await spot.getOpenOrders({});
         const countOpenSpot = (raw ? openOrdersSpot.parsed.length : openOrdersSpot.length) || 0;
         if (countOpenSpot || verbose) {
@@ -128,6 +140,48 @@ const testApi = async () => {
             writeLog(`spot_open_orders_${symbol}_${ts}`, openOrdersSpot.raw, `${logFolder}/(spot) open-orders-raw.ts`);  
           } else {
             writeLog(`spot_open_orders_${symbol}_${ts}`, openOrdersSpot, `${logFolder}/(spot) open-orders.ts`);
+          }
+        }
+        
+        // (spot) history-orders
+        // ---------------------------------------------------------------------------------------------------
+        Terminal.logInline(`- orders-${chalk.green(`${symbol}`)}: history`);
+        let pagHistorySpot = 0;
+        let lastHistorySpotId: string | undefined = undefined;
+        let countHistorySpot = 0;
+        let historyOrdersSpot: any = raw ? { parsed: [], raw: [] } : [];
+        do {
+          const after = lastHistorySpotId ? { after: lastHistorySpotId } : undefined;
+          // console.log(`\npag: ${pagHistorySpot}, lastId: ${lastHistorySpotId}`)
+          const limit = 500;
+          const request = { symbol: { quoteAsset, baseAsset }, ...after, limit };
+          const response: any = await spot.getHistoryOrders(request);
+          const rows: any[] = (raw ? response.parsed : response) || [];
+          const news = rows.filter(r => !((raw ? historyOrdersSpot.parsed : historyOrdersSpot) as any[] || []).find(p => p.exchangeId === r.exchangeId))
+          if (news.length) {
+            pagHistorySpot += 1;
+            countHistorySpot += news.length;
+            const last = news[news.length - 1];
+            lastHistorySpotId = last.exchangeId;
+            if (raw) {
+              historyOrdersSpot.parsed.push(...response.parsed);
+              historyOrdersSpot.raw.push(response.raw);
+            } else {
+              historyOrdersSpot.push(...response);
+            }
+          }
+          if (!news.length) {
+            break;
+          } else {
+            Terminal.logInline(`- orders-${chalk.green(`${symbol}`)}: history${pagHistorySpot > 1 ? ` (${pagHistorySpot} pages)` : ''}`);
+          }
+        } while (true)
+        if (countHistorySpot || verbose) {
+          if (raw) {
+            writeLog(`spot_history_orders_${symbol}_${ts}`, historyOrdersSpot.parsed, `${logFolder}/(spot) history-orders-${symbol}.ts`);
+            writeLog(`spot_history_orders_${symbol}_${ts}`, historyOrdersSpot.raw, `${logFolder}/(spot) history-orders-${symbol}-raw.ts`);
+          } else {
+            writeLog(`spot_history_orders_${symbol}_${ts}`, historyOrdersSpot, `${logFolder}/(spot) history-orders-${symbol}.ts`);
           }
         }
         if (countOpenSpot || countHistorySpot) {
@@ -166,8 +220,8 @@ const testApi = async () => {
     Terminal.success(`account-balances-positions`);
     writeLog(`futures_account_balances_positions_${ts}`, accountInfoFutures, `${logFolder}/(futures) account-balances-positions.ts`);
 
-    const startTime = { startTime: moment().subtract(1, 'month').unix() * 1000 };
     const endTime = { endTime: moment().unix() * 1000 };
+    const startTime = { startTime: moment().subtract(1, 'month').unix() * 1000 };
 
     // (futures) account-bill
     // ---------------------------------------------------------------------------------------------------
@@ -182,8 +236,53 @@ const testApi = async () => {
       for (const marginCoin of coinsFutures) {
         // Obtenim els moviments de la moneda.
         Terminal.logInline(`- account-bill-${chalk.green(marginCoin)}`);
-        const accountBillFutures = await futures.getAccountBill({ productType, marginCoin, ...startTime, ...endTime });
-        const countBillFutures = (raw ? accountBillFutures.parsed.length : accountBillFutures.length) || 0;
+        let pagBillFutures = 0;
+        let lastBillFuturesTime: moment.Moment | undefined = undefined;
+        let lastBillFuturesId: string | undefined = undefined;
+        let countBillFutures = 0;
+        let accountBillFutures: any = raw ? { parsed: [], raw: [] } : [];
+        do {
+          const lastEndId = lastBillFuturesId ? { lastEndId: lastBillFuturesId } : undefined;
+          const endMoment = moment(lastBillFuturesTime ? lastBillFuturesTime : undefined);
+          const endTime = { endTime: endMoment.unix() * 1000 };
+          const startMoment = moment(endTime.endTime);
+          const startTime = { startTime: startMoment.subtract(1, 'month').unix() * 1000 };
+          // console.log(`\npag: ${pagBillFutures}, end: ${endMoment.format('YYYY-MM-DD HH:mm:ss')}, start: ${startMoment.format('YYYY-MM-DD HH:mm:ss')}`)
+          const pageSize = 100;
+          const request = { productType, marginCoin, ...startTime, ...endTime, ...lastEndId, pageSize }
+          const response = await futures.getAccountBill(request);
+          const rows = (raw ? response.parsed : response) || [];
+          if (rows.length) {
+            pagBillFutures += 1;
+            countBillFutures += rows.length;
+            const last = rows[rows.length - 1];
+            lastBillFuturesId = last.id;
+            lastBillFuturesTime = moment(+last.cTime);
+            if (raw) {
+              accountBillFutures.parsed.push(...response.parsed);
+              accountBillFutures.raw.push(response.raw);
+            } else {
+              accountBillFutures.push(...response);
+            }
+          }
+          if (rows.length) {
+            // NOTA: Examinem els moviments per obtenir els símbols utilitzats, i més tard en recuperarem les ordres.
+            const symbols: string[] = ((raw ? accountBillFutures.parsed : accountBillFutures) as any[] || [])
+              .reduce((symbols: string, m: any) => [...symbols, ...(typeof m.symbol == 'string' && !symbols.includes(m.symbol) ? [m.symbol] : [])], [])
+            ;
+            symbolsFutures.push(...symbols.filter(s => !symbolsFutures.includes(s)));          
+          }
+          if (!rows.length) {
+            if (countBillFutures) {
+              Terminal.success(`account-bill-${chalk.green(marginCoin)}: ${chalk.yellow(countBillFutures)}${pagBillFutures > 1 ? ` (${pagBillFutures} pages)` : ''}`);
+            } else if (verbose) {
+              Terminal.fail(`account-bill-${chalk.green(marginCoin)}: ${chalk.grey(countBillFutures)}`);
+            }
+            break;
+          } else {
+            Terminal.logInline(`- account-bill-${chalk.green(marginCoin)}: ${countBillFutures}${pagBillFutures > 1 ? ` (${pagBillFutures} pages)` : ''}`);
+          }
+        } while (true)
         if (countBillFutures || verbose) {
           if (raw) {
             writeLog(`futures_account_bill_${marginCoin}_${ts}`, accountBillFutures.parsed, `${logFolder}/(futures) account-bill-${productType}.ts`);
@@ -199,12 +298,6 @@ const testApi = async () => {
           ;
           symbolsFutures.push(...symbols.filter(s => !symbolsFutures.includes(s)));          
         }
-        if (countBillFutures) {
-          Terminal.success(`account-bill-${chalk.green(marginCoin)}: ${chalk.yellow(countBillFutures)}`);
-        } else if (verbose) {
-          Terminal.fail(`account-bill-${chalk.green(marginCoin)}: ${chalk.grey(countBillFutures)}`);
-        }
-
       }
     }
 
@@ -219,24 +312,9 @@ const testApi = async () => {
       const resolved = futures.resolveSymbol({ quoteAsset, baseAsset, ...productType }, false /* throwError */);
       if (resolved) {
         
-        // (futures) history-orders
-        // ---------------------------------------------------------------------------------------------------
-        Terminal.logInline(`- history-orders ${chalk.green(`${symbol}`)}`);
-        // TODO: montar una iteració per obtenir-les totes.
-        const historyOrdersFutures: any = await futures.getHistoryOrders( { symbol: { quoteAsset, baseAsset }, ...startTime, ...endTime });
-        const countHistoryFutures = (raw ? historyOrdersFutures.parsed.length : historyOrdersFutures.length) || 0;
-        if (countHistoryFutures || verbose) {
-          if (raw) {
-            writeLog(`futures_history_orders_${symbol}_${ts}`, historyOrdersFutures.parsed, `${logFolder}/(futures) history-orders-${symbol}.ts`);
-            writeLog(`futures_history_orders_${symbol}_${ts}`, historyOrdersFutures.raw, `${logFolder}/(futures) history-orders-${symbol}-raw.ts`);
-          } else {
-            writeLog(`futures_history_orders_${symbol}_${ts}`, historyOrdersFutures, `${logFolder}/(futures) history-orders-${symbol}.ts`);
-          }
-        }
-  
         // (futures) open-orders
         // ---------------------------------------------------------------------------------------------------
-        Terminal.logInline(`- open-orders ${chalk.green(`${symbol}`)}`);
+        Terminal.logInline(`- orders-${chalk.green(`${symbol}`)}: open`);
         const openOrdersFutures: any = await futures.getOpenOrders({ symbol : { quoteAsset, baseAsset }});
         const countOpenFutures = (raw ? openOrdersFutures.parsed.length : openOrdersFutures.length) || 0;
         if (countOpenFutures || verbose) {
@@ -247,8 +325,53 @@ const testApi = async () => {
             writeLog(`futures_open_orders_${symbol}_${ts}`, openOrdersFutures, `${logFolder}/(futures) open-orders.ts`);
           }
         }
+  
+        // (futures) history-orders
+        // ---------------------------------------------------------------------------------------------------
+        Terminal.logInline(`- orders-${chalk.green(`${symbol}`)}: history`);
+        let pagHistoryFutures = 0;
+        let lastHistoryFuturesTime: moment.Moment | undefined = undefined;
+        let countHistoryFutures = 0;
+        let historyOrdersFutures: any = raw ? { parsed: [], raw: [] } : [];
+        do {
+          const endMoment = moment(lastHistoryFuturesTime ? lastHistoryFuturesTime : undefined);
+          const endTime = { endTime: endMoment.unix() * 1000 };
+          const startMoment = moment(endTime.endTime);
+          const startTime = { startTime: startMoment.subtract(1, 'month').unix() * 1000 };
+          // console.log(`\npag: ${pagHistoryFutures}, end: ${endMoment.format('YYYY-MM-DD HH:mm:ss')}, start: ${startMoment.format('YYYY-MM-DD HH:mm:ss')}`)
+          const pageSize = 100;
+          const request = { symbol: { quoteAsset, baseAsset }, ...startTime, ...endTime, pageSize };
+          const response: any = await futures.getHistoryOrders(request);
+          const rows = (raw ? response.parsed : response) || [];
+          if (rows.length) {
+            pagHistoryFutures += 1;
+            countHistoryFutures += rows.length;
+            const last = rows[rows.length - 1];
+            lastHistoryFuturesTime = moment(last.created);
+            if (raw) {
+              historyOrdersFutures.parsed.push(...response.parsed);
+              historyOrdersFutures.raw.push(response.raw);
+            } else {
+              historyOrdersFutures.push(...response);
+            }
+          }
+          if (!rows.length) {
+            break;
+          } else {
+            Terminal.logInline(`- orders-${chalk.green(`${symbol}`)}: history${pagHistoryFutures > 1 ? ` (${pagHistoryFutures} pages)` : ''}`);
+          }
+        } while (true)
+        if (countHistoryFutures || verbose) {
+          if (raw) {
+            writeLog(`futures_history_orders_${symbol}_${ts}`, historyOrdersFutures.parsed, `${logFolder}/(futures) history-orders-${symbol}.ts`);
+            writeLog(`futures_history_orders_${symbol}_${ts}`, historyOrdersFutures.raw, `${logFolder}/(futures) history-orders-${symbol}-raw.ts`);
+          } else {
+            writeLog(`futures_history_orders_${symbol}_${ts}`, historyOrdersFutures, `${logFolder}/(futures) history-orders-${symbol}.ts`);
+          }
+        }   
+
         if (countOpenFutures || countHistoryFutures) {
-          Terminal.success(`orders-${chalk.green(`${symbol}`)}: ${chalk.yellow(countOpenFutures + countHistoryFutures)}`);
+          Terminal.success(`orders-${chalk.green(`${symbol}`)}: ${chalk.yellow(countOpenFutures + countHistoryFutures)}${pagHistoryFutures > 1 ? ` (${pagHistoryFutures} pages)` : ''}`);
         } else if (verbose) {
           Terminal.fail(`orders-${chalk.green(`${symbol}`)}: ${chalk.grey(countOpenFutures + countHistoryFutures)}`);
         }

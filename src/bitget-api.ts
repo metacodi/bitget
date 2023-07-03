@@ -414,7 +414,11 @@ export class BitgetApi extends ApiClient implements ExchangeApi {
     const rawResults: any = {};
     
     if (this.market === 'spot') {
-      const response: { data: any[] } = await this.post(`api/spot/v1/account/bills`, { errorMessage });
+      const before = request.before ? { before: request.before } : undefined;
+      const after = request.after ? { after: request.after } : undefined;
+      const limit = request.limit ? { limit: request.limit } : undefined;
+      const params = { ...before, ...after, ...limit };
+      const response: { data: any[] } = await this.post(`api/spot/v1/account/bills`, { params, errorMessage });
       response.data = Array.isArray(response.data) ? response.data.map(o => ({ ...o, timestamp: moment(+o.cTime).format(`YYYY-MM-DD HH:mm:ss.SSS`)})) : response.data;
       Object.assign(rawResults, response);
       results.push(...response.data);
